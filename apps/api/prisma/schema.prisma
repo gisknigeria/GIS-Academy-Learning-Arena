@@ -1,0 +1,187 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  TRAINING_MANAGER
+  TRAINER
+  STUDENT
+  CORPORATE_CLIENT
+  SCHOOL_COORDINATOR
+  OLYMPIAD_COORDINATOR
+  EXAMINER
+  JUDGE
+  GUEST
+  ALUMNI
+}
+
+enum UserStatus {
+  ACTIVE
+  PENDING
+  SUSPENDED
+}
+
+enum DeliveryMode {
+  E_LEARNING
+  ONSITE
+  LIVE_VIRTUAL
+  HYBRID
+}
+
+enum CompetitionMode {
+  INDIVIDUAL
+  HEAD_TO_HEAD
+  TEAM
+  SCHOOL
+  CORPORATE
+  LIVE_TIMED
+  OPEN_CHALLENGE
+  OLYMPIAD
+}
+
+enum CompetitionStatus {
+  DRAFT
+  OPEN
+  LIVE
+  COMPLETED
+  ARCHIVED
+}
+
+model User {
+  id           String       @id @default(uuid())
+  email        String       @unique
+  phone        String?      @unique
+  passwordHash String
+  fullName     String
+  role         UserRole     @default(STUDENT)
+  status       UserStatus   @default(ACTIVE)
+  profile      UserProfile?
+  enrollments  Enrollment[]
+  loginLogs    LoginLog[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+model UserProfile {
+  id                   String   @id @default(uuid())
+  userId               String   @unique
+  gender               String?
+  country              String?
+  state                String?
+  lga                  String?
+  community            String?
+  institution          String?
+  profession           String?
+  highestQualification String?
+  preferredMode        String?
+  avatarUrl            String?
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model LoginLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  email     String?
+  success   Boolean
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model Course {
+  id           String       @id @default(uuid())
+  code         String       @unique
+  title        String
+  description  String?
+  level        Int?
+  deliveryMode DeliveryMode
+  lessons      Lesson[]
+  classes      Class[]
+  enrollments  Enrollment[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+model Lesson {
+  id          String   @id @default(uuid())
+  courseId    String
+  title       String
+  summary     String?
+  order       Int
+  videoUrl    String?
+  resourceUrl String?
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}
+
+model Class {
+  id        String       @id @default(uuid())
+  courseId  String
+  name      String
+  mode      DeliveryMode
+  startsAt  DateTime?
+  endsAt    DateTime?
+  course    Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  students  Enrollment[]
+}
+
+model Enrollment {
+  id         String   @id @default(uuid())
+  userId     String
+  courseId   String
+  classId    String?
+  progress   Int      @default(0)
+  points     Int      @default(0)
+  enrolledAt DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  class      Class?   @relation(fields: [classId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, courseId])
+}
+
+model Assessment {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  durationMin Int?
+  totalPoints Int      @default(100)
+  createdAt   DateTime @default(now())
+}
+
+model Competition {
+  id          String            @id @default(uuid())
+  title       String
+  mode        CompetitionMode
+  status      CompetitionStatus @default(DRAFT)
+  startsAt    DateTime?
+  endsAt      DateTime?
+  leaderboard LeaderboardEntry[]
+  createdAt   DateTime          @default(now())
+}
+
+model LeaderboardEntry {
+  id            String      @id @default(uuid())
+  competitionId String
+  participantId String
+  participant   String
+  score         Int
+  rank          Int?
+  competition   Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+}
+
+model Certificate {
+  id             String   @id @default(uuid())
+  certificateNo  String   @unique
+  userId         String
+  title          String
+  verificationId String   @unique
+  issuedAt       DateTime @default(now())
+}
