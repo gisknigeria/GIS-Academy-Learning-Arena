@@ -11,6 +11,7 @@ async function bootstrap() {
       "http://localhost:5173",
       "http://127.0.0.1:5174",
       "http://localhost:5174",
+      "https://gis-academy-learning-arena-api.vercel.app"
     ],
   });
   app.setGlobalPrefix("api");
