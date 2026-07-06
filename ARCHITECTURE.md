@@ -71,6 +71,22 @@ Useful commands:
 - `npm run prisma:migrate`
 - `npm run dev:api`
 
+## Business Configuration
+
+- Registration: public/free registration is allowed.
+- Access control: paid courses should block lesson access until payment status is `PAID` or `NOT_REQUIRED`.
+- Payment provider: Paystack.
+- Recommended starter email provider: Brevo free plan for SMTP/API transactional email, then move to a paid plan when volume grows.
+- Alternate developer-friendly email provider: Resend.
+
+Email environment variables:
+
+- `BREVO_API_KEY`
+- `BREVO_SENDER_EMAIL`
+- `BREVO_SENDER_NAME`
+
+Do not commit real provider keys. If an API key is ever shared in chat or screenshots, rotate it before production.
+
 ## Data Layer
 
 Use PostgreSQL as the main database. Use Prisma migrations for schema changes.

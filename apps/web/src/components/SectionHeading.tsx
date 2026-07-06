@@ -1,7 +1,10 @@
+import type { ReactNode } from "react";
+
 type SectionHeadingProps = {
   eyebrow: string;
   title: string;
-  action?: string;
+  /** Pass a string for a plain text-button, or a ReactNode for a custom element. */
+  action?: ReactNode;
   compact?: boolean;
 };
 
@@ -12,7 +15,11 @@ export function SectionHeading({ eyebrow, title, action, compact = false }: Sect
         <span className="eyebrow">{eyebrow}</span>
         <h2>{title}</h2>
       </div>
-      {action ? <button className="text-button">{action}</button> : null}
+      {typeof action === "string" ? (
+        <button className="text-button">{action}</button>
+      ) : action ? (
+        action
+      ) : null}
     </div>
   );
 }

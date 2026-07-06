@@ -1,6 +1,17 @@
-import { Bell, Menu, Search } from "lucide-react";
+import { Bell, LogOut, Menu, Search } from "lucide-react";
+import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export function Topbar() {
+  const { logout, user } = useAuth();
+  const initials = user?.fullName
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase() ?? "GA";
+
   return (
     <header className="topbar">
       <button className="icon-button menu-button" aria-label="Open menu">
@@ -13,13 +24,19 @@ export function Topbar() {
       <button className="icon-button" aria-label="Notifications">
         <Bell size={20} />
       </button>
-      <div className="profile">
-        <span>DA</span>
+
+      {/* Profile link — clicking opens the profile page */}
+      <Link to="/profile" className="profile topbar-profile-link" aria-label="My profile">
+        <span>{initials}</span>
         <div>
-          <strong>Demo Learner</strong>
-          <small>Gold League</small>
+          <strong>{user?.fullName ?? "GIS User"}</strong>
+          <small>{user?.role.replaceAll("_", " ") ?? "Member"}</small>
         </div>
-      </div>
+      </Link>
+
+      <button className="icon-button" aria-label="Log out" onClick={logout}>
+        <LogOut size={19} />
+      </button>
     </header>
   );
 }

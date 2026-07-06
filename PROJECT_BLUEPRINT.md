@@ -238,6 +238,15 @@ The first screen after login should never feel empty. Every role should see usef
 
 The platform identity should combine GIS professionalism with competition energy. A good internal product concept is:
 
-**GIS Academy Learning Arena**
+**GIS Konsult Learning Arena**
 
 This keeps the seriousness of GIS training while making the assessment, Olympiad, and challenge experience exciting.
+
+## Brand Direction
+
+- Primary color: deep GIS green `#0C3326`
+- Secondary color: growth green `#146B4A`
+- Energy color: electric lime `#D8FF78`
+- Award/accent color: amber `#F5B83D`
+- Base color: clean white `#FFFFFF`
+- Suggested font direction: modern geometric sans-serif, starting with the system font stack and later upgrading to Inter or Sora.

@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
 }
 
 enum UserRole {
@@ -26,6 +27,14 @@ enum UserStatus {
   ACTIVE
   PENDING
   SUSPENDED
+}
+
+enum PaymentStatus {
+  NOT_REQUIRED
+  PENDING
+  PAID
+  OVERDUE
+  BLOCKED
 }
 
 enum DeliveryMode {
@@ -62,8 +71,17 @@ model User {
   fullName     String
   role         UserRole     @default(STUDENT)
   status       UserStatus   @default(ACTIVE)
+  paymentStatus PaymentStatus @default(PENDING)
   profile      UserProfile?
   enrollments  Enrollment[]
+  lessonProgress LessonProgress[]
+  submissions    Submission[]
+  attempts       Attempt[]
+  competitionParticipations CompetitionParticipant[]
+  competitionAttempts       CompetitionAttempt[]
+  createdTeams              Team[]                   @relation("TeamCreator")
+  teamMemberships           TeamMember[]
+  attendanceRecords         AttendanceRecord[]
   loginLogs    LoginLog[]
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
@@ -97,17 +115,21 @@ model LoginLog {
 }
 
 model Course {
-  id           String       @id @default(uuid())
-  code         String       @unique
-  title        String
-  description  String?
-  level        Int?
-  deliveryMode DeliveryMode
-  lessons      Lesson[]
-  classes      Class[]
-  enrollments  Enrollment[]
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  id              String       @id @default(uuid())
+  code            String       @unique
+  title           String
+  description     String?
+  level           Int?
+  deliveryMode    DeliveryMode
+  requiresPayment Boolean      @default(true)
+  isArchived      Boolean      @default(false)
+  lessons         Lesson[]
+  classes         Class[]
+  enrollments     Enrollment[]
+  assignments     Assignment[]
+  assessments     Assessment[]
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 }
 
 model Lesson {
@@ -119,6 +141,7 @@ model Lesson {
   videoUrl    String?
   resourceUrl String?
   course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  progress    LessonProgress[]
 }
 
 model Class {
@@ -130,6 +153,7 @@ model Class {
   endsAt    DateTime?
   course    Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
   students  Enrollment[]
+  attendanceRecords AttendanceRecord[]
 }
 
 model Enrollment {
@@ -147,24 +171,231 @@ model Enrollment {
   @@unique([userId, courseId])
 }
 
-model Assessment {
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+}
+
+model AttendanceRecord {
+  id        String           @id @default(uuid())
+  classId   String
+  userId    String
+  date      DateTime
+  status    AttendanceStatus @default(PRESENT)
+  note      String?
+  class     Class            @relation(fields: [classId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@unique([classId, userId, date])
+  @@index([classId, date])
+}
+
+model LessonProgress {
   id          String   @id @default(uuid())
+  userId      String
+  lessonId    String
+  completedAt DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson      Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+}
+
+model Assignment {
+  id          String       @id @default(uuid())
+  courseId    String
   title       String
   description String?
-  durationMin Int?
-  totalPoints Int      @default(100)
-  createdAt   DateTime @default(now())
+  dueDate     DateTime?
+  maxScore    Int          @default(100)
+  isPublished Boolean      @default(false)
+  course      Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  submissions Submission[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+enum SubmissionStatus {
+  PENDING
+  SUBMITTED
+  GRADED
+  RETURNED
+}
+
+model Submission {
+  id           String           @id @default(uuid())
+  assignmentId String
+  studentId    String
+  answer       String?
+  fileUrl      String?
+  status       SubmissionStatus @default(SUBMITTED)
+  score        Int?
+  feedback     String?
+  submittedAt  DateTime         @default(now())
+  gradedAt     DateTime?
+  assignment   Assignment       @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  student      User             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([assignmentId, studentId])
+}
+
+enum QuestionType {
+  MCQ
+  TRUE_FALSE
+  SHORT_ANSWER
+}
+
+enum AttemptStatus {
+  IN_PROGRESS
+  SUBMITTED
+  TIMED_OUT
+}
+
+model Assessment {
+  id               String      @id @default(uuid())
+  courseId         String?
+  title            String
+  description      String?
+  durationMin      Int         @default(30)
+  passMark         Int         @default(50)
+  totalPoints      Int         @default(100)
+  shuffleQuestions Boolean     @default(false)
+  isPublished      Boolean     @default(false)
+  course           Course?     @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  questions        Question[]
+  attempts         Attempt[]
+  competitions     Competition[]
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+}
+
+model Question {
+  id            String       @id @default(uuid())
+  assessmentId  String
+  text          String
+  type          QuestionType @default(MCQ)
+  /// JSON array of strings for MCQ options; empty for TRUE_FALSE / SHORT_ANSWER
+  options       Json         @default("[]")
+  /// For MCQ: the correct option string. For TRUE_FALSE: "true" or "false". For SHORT_ANSWER: null (manual or keyword match)
+  correctAnswer String?
+  points        Int          @default(1)
+  order         Int          @default(0)
+  explanation   String?
+  assessment    Assessment   @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@index([assessmentId, order])
+}
+
+model Attempt {
+  id           String        @id @default(uuid())
+  assessmentId String
+  userId       String
+  /// JSON object: { questionId: answerString }
+  answers      Json          @default("{}")
+  score        Int?
+  maxScore     Int?
+  percentage   Int?
+  passed       Boolean?
+  status       AttemptStatus @default(IN_PROGRESS)
+  startedAt    DateTime      @default(now())
+  submittedAt  DateTime?
+  assessment   Assessment    @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([assessmentId, userId])
 }
 
 model Competition {
-  id          String            @id @default(uuid())
-  title       String
-  mode        CompetitionMode
-  status      CompetitionStatus @default(DRAFT)
-  startsAt    DateTime?
-  endsAt      DateTime?
-  leaderboard LeaderboardEntry[]
-  createdAt   DateTime          @default(now())
+  id              String            @id @default(uuid())
+  title           String
+  description     String?
+  mode            CompetitionMode
+  status          CompetitionStatus @default(DRAFT)
+  /// Optional link to an Assessment for its question bank
+  assessmentId    String?
+  assessment      Assessment?       @relation(fields: [assessmentId], references: [id], onDelete: SetNull)
+  durationMin     Int               @default(30)
+  maxParticipants Int?
+  isPublic        Boolean           @default(true)
+  /// Passphrase required to join when isPublic = false
+  joinCode        String?
+  startsAt        DateTime?
+  endsAt          DateTime?
+  participants    CompetitionParticipant[]
+  competitionAttempts CompetitionAttempt[]
+  leaderboard     LeaderboardEntry[]
+  teams           Team[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+}
+
+model CompetitionParticipant {
+  id            String      @id @default(uuid())
+  competitionId String
+  userId        String
+  teamId        String?
+  score         Int         @default(0)
+  rank          Int?
+  joinedAt      DateTime    @default(now())
+  competition   Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team          Team?       @relation(fields: [teamId], references: [id], onDelete: SetNull)
+
+  @@unique([competitionId, userId])
+  @@index([competitionId, score])
+  @@index([teamId])
+}
+
+model Team {
+  id            String      @id @default(uuid())
+  competitionId String
+  name          String
+  code          String?
+  score         Int         @default(0)
+  rank          Int?
+  createdById   String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  competition   Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  createdBy     User?       @relation("TeamCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  members       TeamMember[]
+  participants  CompetitionParticipant[]
+
+  @@unique([competitionId, name])
+  @@index([competitionId, score])
+}
+
+model TeamMember {
+  id       String   @id @default(uuid())
+  teamId   String
+  userId   String
+  joinedAt DateTime @default(now())
+  team     Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([userId])
+}
+
+model CompetitionAttempt {
+  id            String      @id @default(uuid())
+  competitionId String
+  userId        String
+  /// JSON object: { questionId: answerString }
+  answers       Json        @default("{}")
+  score         Int?
+  maxScore      Int?
+  percentage    Int?
+  durationSec   Int?
+  submittedAt   DateTime?
+  competition   Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([competitionId, userId])
 }
 
 model LeaderboardEntry {
@@ -184,4 +415,12 @@ model Certificate {
   title          String
   verificationId String   @unique
   issuedAt       DateTime @default(now())
+}
+
+model PlatformSetting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

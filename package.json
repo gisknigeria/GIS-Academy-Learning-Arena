@@ -16,7 +16,8 @@
     "preview:web": "npm --workspace apps/web run preview",
     "prisma:generate": "npm --workspace apps/api run prisma:generate",
     "prisma:migrate": "npm --workspace apps/api run prisma:migrate",
-    "prisma:studio": "npm --workspace apps/api run prisma:studio"
+    "prisma:studio": "npm --workspace apps/api run prisma:studio",
+    "prisma:seed": "npm --workspace apps/api run prisma:seed"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^5.0.0",

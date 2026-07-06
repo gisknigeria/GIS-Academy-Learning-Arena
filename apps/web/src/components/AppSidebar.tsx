@@ -1,6 +1,9 @@
-import { ChevronRight, Layers3, Sparkles } from "lucide-react";
+import { ChevronRight, Sparkles } from "lucide-react";
 import { NavLink } from "react-router-dom";
+import logoMark from "../assets/gis-academy-logo.svg";
+import { useAuth } from "../context/AuthContext";
 import { navItems } from "../data/navigation";
+import { getCoachPanel, getVisibleNavPages } from "../lib/roles";
 import type { PageId } from "../types/navigation";
 
 type AppSidebarProps = {
@@ -8,20 +11,27 @@ type AppSidebarProps = {
 };
 
 export function AppSidebar({ activePage }: AppSidebarProps) {
+  const { user } = useAuth();
+  const role = user?.role ?? "GUEST";
+  const visiblePages = getVisibleNavPages(role);
+  const coach = getCoachPanel(role);
+
+  const visibleNavItems = navItems.filter((item) => visiblePages.has(item.id));
+
   return (
     <aside className="sidebar">
       <div className="brand">
         <div className="brand-mark">
-          <Layers3 size={22} />
+          <img src={logoMark} alt="" />
         </div>
         <div>
-          <strong>GIS Academy</strong>
+          <strong>GIS Konsult</strong>
           <span>Learning Arena</span>
         </div>
       </div>
 
       <nav className="nav-list" aria-label="Primary">
-        {navItems.map((item) => {
+        {visibleNavItems.map((item) => {
           const Icon = item.icon;
           return (
             <NavLink
@@ -38,10 +48,10 @@ export function AppSidebar({ activePage }: AppSidebarProps) {
 
       <section className="coach-panel">
         <Sparkles size={20} />
-        <h2>Today's focus</h2>
-        <p>Finish one practical task and enter one arena challenge to keep your weekly pace strong.</p>
+        <h2>{coach.heading}</h2>
+        <p>{coach.body}</p>
         <button>
-          View plan
+          {coach.cta}
           <ChevronRight size={16} />
         </button>
       </section>
