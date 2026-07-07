@@ -1,5 +1,6 @@
 import {
   Archive,
+  ArrowRight,
   BookOpen,
   Filter,
   Loader2,
@@ -22,16 +23,24 @@ import type { PaymentStatus, UserRole } from "../types/auth";
 import type { Course } from "../types/course";
 import { DELIVERY_MODE_LABELS } from "../types/course";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Delivery mode colour config ─────────────────────────────────────────────
+
+const MODE_CONFIG: Record<
+  Course["deliveryMode"],
+  { badge: string; gradient: string; dot: string }
+> = {
+  E_LEARNING:   { badge: "badge-green",  gradient: "linear-gradient(135deg, #0c3326 0%, #146b4a 100%)", dot: "#1fa66a" },
+  ONSITE:       { badge: "badge-blue",   gradient: "linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)", dot: "#2563eb" },
+  LIVE_VIRTUAL: { badge: "badge-orange", gradient: "linear-gradient(135deg, #7c2d12 0%, #e9812b 100%)", dot: "#e9812b" },
+  HYBRID:       { badge: "badge-purple", gradient: "linear-gradient(135deg, #3b0764 0%, #7c3aed 100%)", dot: "#7c3aed" },
+};
 
 function DeliveryBadge({ mode }: { mode: Course["deliveryMode"] }) {
-  const cls: Record<Course["deliveryMode"], string> = {
-    E_LEARNING: "badge-green",
-    ONSITE: "badge-blue",
-    LIVE_VIRTUAL: "badge-orange",
-    HYBRID: "badge-purple",
-  };
-  return <span className={`course-badge ${cls[mode]}`}>{DELIVERY_MODE_LABELS[mode]}</span>;
+  return (
+    <span className={`course-badge ${MODE_CONFIG[mode].badge}`}>
+      {DELIVERY_MODE_LABELS[mode]}
+    </span>
+  );
 }
 
 function LevelTag({ level }: { level?: number | null }) {
@@ -115,7 +124,7 @@ function CourseRow({
   );
 }
 
-// ─── Student card ─────────────────────────────────────────────────────────────
+// ─── Student card — premium design ───────────────────────────────────────────
 
 function CourseCard({
   course,
@@ -128,12 +137,43 @@ function CourseCard({
 }) {
   const access = getCourseAccess(course, role, paymentStatus);
   const isLocked = !access.allowed;
+  const cfg = MODE_CONFIG[course.deliveryMode];
+  const lessonCount = course._count?.lessons ?? 0;
+  const enrollCount = course._count?.enrollments ?? 0;
 
   return (
-    <article className={`course-card${isLocked ? " course-card-locked" : ""}`}>
-      <div className="course-card-header">
-        <span className="course-code">{course.code}</span>
-        <div className="course-card-badges">
+    <article className={`course-card-v2${isLocked ? " course-card-v2--locked" : ""}`}>
+
+      {/* Coloured header band */}
+      <div
+        className="course-card-v2-header"
+        style={{ background: isLocked ? "linear-gradient(135deg, #6b7280, #9ca3af)" : cfg.gradient }}
+        aria-hidden="true"
+      >
+        {/* Grid pattern overlay */}
+        <div className="course-card-v2-grid-overlay" />
+
+        <div className="course-card-v2-header-content">
+          {/* Level pill */}
+          {course.level && (
+            <span className="course-card-v2-level">GIS {course.level}</span>
+          )}
+
+          {/* Lesson count in top-right */}
+          <span className="course-card-v2-lesson-count">
+            <BookOpen size={12} />
+            {lessonCount} lesson{lessonCount !== 1 ? "s" : ""}
+          </span>
+        </div>
+
+        {/* Code centred */}
+        <div className="course-card-v2-code">{course.code}</div>
+      </div>
+
+      {/* Body */}
+      <div className="course-card-v2-body">
+        {/* Mode + payment badges */}
+        <div className="course-card-v2-badges">
           <DeliveryBadge mode={course.deliveryMode} />
           {course.requiresPayment ? (
             <span className="badge-orange badge-xs">Paid</span>
@@ -141,38 +181,46 @@ function CourseCard({
             <span className="badge-green badge-xs">Free</span>
           )}
         </div>
-      </div>
 
-      <h3>{course.title}</h3>
+        {/* Title */}
+        <h3 className="course-card-v2-title">{course.title}</h3>
 
-      {course.description && (
-        <p className={isLocked ? "course-desc-muted" : ""}>{course.description}</p>
-      )}
+        {/* Description */}
+        {course.description && (
+          <p className={`course-card-v2-desc${isLocked ? " course-card-v2-desc--muted" : ""}`}>
+            {course.description.length > 100
+              ? `${course.description.slice(0, 100)}…`
+              : course.description}
+          </p>
+        )}
 
-      <div className="course-card-meta">
-        <LevelTag level={course.level} />
-        <span className="count-chip">
-          <BookOpen size={13} />
-          {course._count?.lessons ?? 0} lessons
-        </span>
-        <span className="count-chip">
-          <Users size={13} />
-          {course._count?.enrollments ?? 0} enrolled
-        </span>
-      </div>
-
-      {isLocked ? (
-        <PaymentGate
-          accessStatus={access as { allowed: false; reason: "payment_required" | "account_blocked" | "account_overdue" }}
-          compact
-        />
-      ) : (
-        <div className="course-card-footer">
-          <Link className="primary-button course-enroll-btn" to={`/courses/${course.id}`}>
-            {course.requiresPayment ? "Enroll" : "Enroll free"}
-          </Link>
+        {/* Enrollment count */}
+        <div className="course-card-v2-meta">
+          <span className="course-card-v2-enrolled">
+            <Users size={13} />
+            {enrollCount.toLocaleString()} enrolled
+          </span>
         </div>
-      )}
+
+        {/* CTA or payment gate */}
+        <div className="course-card-v2-footer">
+          {isLocked ? (
+            <PaymentGate
+              accessStatus={access as { allowed: false; reason: "payment_required" | "account_blocked" | "account_overdue" }}
+              compact
+            />
+          ) : (
+            <Link
+              className="course-card-v2-cta"
+              to={`/courses/${course.id}`}
+              style={{ background: cfg.gradient }}
+            >
+              {course.requiresPayment ? "Enroll now" : "Start free"}
+              <ArrowRight size={15} />
+            </Link>
+          )}
+        </div>
+      </div>
     </article>
   );
 }
@@ -387,7 +435,7 @@ export function CoursesPage() {
 
       {/* Student cards */}
       {!loading && courses.length > 0 && !isAdmin && (
-        <div className="course-grid">
+        <div className="course-grid-v2">
           {courses.map((c) => (
             <CourseCard key={c.id} course={c} role={role} paymentStatus={paymentStatus} />
           ))}

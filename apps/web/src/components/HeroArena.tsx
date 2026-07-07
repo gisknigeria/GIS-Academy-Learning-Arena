@@ -2,20 +2,25 @@ import {
   BarChart3,
   BookOpen,
   CalendarDays,
+  ClipboardCheck,
+  ClipboardList,
   Play,
   PlusCircle,
   RadioTower,
   Settings,
   Trophy,
+  Upload,
   UserCheck,
   Users,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { getRoleLabel, isAdminRole, isCoordinatorRole, isInstructorRole } from "../lib/roles";
 
-// ─── Student / Alumni / Guest hero ───────────────────────────────────────────
+// ─── Student / Alumni hero ────────────────────────────────────────────────────
 
 function StudentHero({ name }: { name: string }) {
+  const navigate = useNavigate();
   return (
     <section className="hero">
       <div className="hero-copy">
@@ -25,11 +30,11 @@ function StudentHero({ name }: { name: string }) {
           Pick up where you left off, complete your daily mission, and climb the national arena.
         </p>
         <div className="hero-actions">
-          <button className="primary-button">
+          <button className="primary-button" onClick={() => navigate("/learn")}>
             <Play size={18} />
             Continue learning
           </button>
-          <button className="secondary-button">
+          <button className="secondary-button" onClick={() => navigate("/arena")}>
             <Trophy size={18} />
             Enter arena
           </button>
@@ -54,29 +59,74 @@ function StudentHero({ name }: { name: string }) {
   );
 }
 
-// ─── Trainer / Examiner hero ──────────────────────────────────────────────────
+// ─── Guest hero ───────────────────────────────────────────────────────────────
 
-function TrainerHero({ name }: { name: string }) {
+function GuestHero({ name }: { name: string }) {
+  const navigate = useNavigate();
   return (
-    <section className="hero hero-instructor">
+    <section className="hero">
       <div className="hero-copy">
-        <span className="eyebrow">Instructor Dashboard</span>
-        <h1>Good day, {name.split(" ")[0]}.</h1>
+        <span className="eyebrow">GIS Konsult Learning Arena</span>
+        <h1>Welcome, {name.split(" ")[0]}.</h1>
         <p>
-          You have 11 practicals to grade and 4 learner questions awaiting a reply.
+          Explore our GIS courses, join live competitions, and start building your geospatial skills today.
         </p>
         <div className="hero-actions">
-          <button className="primary-button">
+          <button className="primary-button" onClick={() => navigate("/courses")}>
             <BookOpen size={18} />
-            My classes
+            Browse courses
           </button>
-          <button className="secondary-button">
-            <CalendarDays size={18} />
-            Schedule
+          <button className="secondary-button" onClick={() => navigate("/arena")}>
+            <Trophy size={18} />
+            View arena
           </button>
         </div>
       </div>
-      <div className="hero-stat-panel" aria-label="Instructor quick stats">
+      <div className="arena-preview" aria-label="Live arena status">
+        <div className="pulse-row">
+          <span className="live-dot" />
+          Live challenge
+        </div>
+        <h2>Location Intelligence Sprint</h2>
+        <div className="timer">07:42</div>
+        <div className="duel">
+          <span>Team Oyo</span>
+          <strong>840</strong>
+          <em>vs</em>
+          <strong>790</strong>
+          <span>Team Lagos</span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Trainer hero ─────────────────────────────────────────────────────────────
+// Trainers: deliver content, grade submissions, manage assigned classes.
+// They cannot create/publish courses — that's Admin / Training Manager territory.
+
+function TrainerHero({ name }: { name: string }) {
+  const navigate = useNavigate();
+  return (
+    <section className="hero hero-instructor">
+      <div className="hero-copy">
+        <span className="eyebrow">Trainer Dashboard</span>
+        <h1>Good day, {name.split(" ")[0]}.</h1>
+        <p>
+          You have pending practicals to grade and learner questions awaiting a reply.
+        </p>
+        <div className="hero-actions">
+          <button className="primary-button" onClick={() => navigate("/assessments")}>
+            <ClipboardCheck size={18} />
+            Grade practicals
+          </button>
+          <button className="secondary-button" onClick={() => navigate("/classes")}>
+            <CalendarDays size={18} />
+            My classes
+          </button>
+        </div>
+      </div>
+      <div className="hero-stat-panel" aria-label="Trainer quick stats">
         <div className="hero-stat">
           <strong>96</strong>
           <span>Students</span>
@@ -98,43 +148,91 @@ function TrainerHero({ name }: { name: string }) {
   );
 }
 
+// ─── Examiner hero ────────────────────────────────────────────────────────────
+// Examiners: set and grade assessments, view class rosters.
+
+function ExaminerHero({ name }: { name: string }) {
+  const navigate = useNavigate();
+  return (
+    <section className="hero hero-instructor">
+      <div className="hero-copy">
+        <span className="eyebrow">Examiner Dashboard</span>
+        <h1>Good day, {name.split(" ")[0]}.</h1>
+        <p>
+          Review pending assessments, grade attempts, and manage your examination schedule.
+        </p>
+        <div className="hero-actions">
+          <button className="primary-button" onClick={() => navigate("/assessments")}>
+            <ClipboardList size={18} />
+            Assessments
+          </button>
+          <button className="secondary-button" onClick={() => navigate("/classes")}>
+            <Users size={18} />
+            Class roster
+          </button>
+        </div>
+      </div>
+      <div className="hero-stat-panel" aria-label="Examiner quick stats">
+        <div className="hero-stat">
+          <strong>8</strong>
+          <span>Assessments</span>
+        </div>
+        <div className="hero-stat">
+          <strong>3</strong>
+          <span>Pending grading</span>
+        </div>
+        <div className="hero-stat">
+          <strong>124</strong>
+          <span>Total attempts</span>
+        </div>
+        <div className="hero-stat">
+          <strong>68%</strong>
+          <span>Pass rate</span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ─── Super Admin hero ─────────────────────────────────────────────────────────
+// Full platform control: users, courses, payments, reports, arena.
 
 function SuperAdminHero({ name }: { name: string }) {
+  const navigate = useNavigate();
   return (
     <section className="hero hero-admin">
       <div className="hero-copy">
         <span className="eyebrow">Super Admin — Platform Control</span>
         <h1>Platform overview</h1>
         <p>
-          1,284 users · 34 active courses · ₦2.4M in pending payments. All systems operational.
+          Manage users, courses, payments and platform settings from one place.
         </p>
         <div className="hero-actions">
-          <button className="primary-button">
+          <button className="primary-button" onClick={() => navigate("/users")}>
             <Users size={18} />
             Manage users
           </button>
-          <button className="secondary-button">
-            <Settings size={18} />
-            Platform settings
+          <button className="secondary-button" onClick={() => navigate("/reports")}>
+            <BarChart3 size={18} />
+            View reports
           </button>
         </div>
       </div>
       <div className="hero-admin-grid" aria-label="Admin quick actions">
-        <button className="admin-action-card">
+        <button className="admin-action-card" onClick={() => navigate("/courses")}>
           <PlusCircle size={20} />
           <span>New course</span>
         </button>
-        <button className="admin-action-card">
+        <button className="admin-action-card" onClick={() => navigate("/users")}>
           <UserCheck size={20} />
           <span>Approvals</span>
           <em className="badge">5</em>
         </button>
-        <button className="admin-action-card">
+        <button className="admin-action-card" onClick={() => navigate("/reports")}>
           <BarChart3 size={20} />
           <span>Reports</span>
         </button>
-        <button className="admin-action-card">
+        <button className="admin-action-card" onClick={() => navigate("/arena")}>
           <RadioTower size={20} />
           <span>Live arena</span>
         </button>
@@ -143,42 +241,44 @@ function SuperAdminHero({ name }: { name: string }) {
   );
 }
 
-// ─── Admin / Training Manager hero ───────────────────────────────────────────
+// ─── Admin hero ───────────────────────────────────────────────────────────────
+// Admin: manage learners, courses, classes, assessments. Cannot change platform settings.
 
 function AdminHero({ name, role }: { name: string; role: string }) {
+  const navigate = useNavigate();
   return (
     <section className="hero hero-admin">
       <div className="hero-copy">
         <span className="eyebrow">{role} — Management Console</span>
         <h1>Good day, {name.split(" ")[0]}.</h1>
         <p>
-          842 active learners across 28 published courses. 14 assessments awaiting grading.
+          Manage learners, published courses, and assessments awaiting grading.
         </p>
         <div className="hero-actions">
-          <button className="primary-button">
+          <button className="primary-button" onClick={() => navigate("/users")}>
             <Users size={18} />
             View learners
           </button>
-          <button className="secondary-button">
+          <button className="secondary-button" onClick={() => navigate("/classes")}>
             <CalendarDays size={18} />
             Classes
           </button>
         </div>
       </div>
       <div className="hero-admin-grid" aria-label="Admin quick actions">
-        <button className="admin-action-card">
+        <button className="admin-action-card" onClick={() => navigate("/users")}>
           <UserCheck size={20} />
           <span>Approvals</span>
         </button>
-        <button className="admin-action-card">
+        <button className="admin-action-card" onClick={() => navigate("/courses")}>
           <BookOpen size={20} />
           <span>Courses</span>
         </button>
-        <button className="admin-action-card">
+        <button className="admin-action-card" onClick={() => navigate("/reports")}>
           <BarChart3 size={20} />
           <span>Reports</span>
         </button>
-        <button className="admin-action-card">
+        <button className="admin-action-card" onClick={() => navigate("/classes")}>
           <CalendarDays size={20} />
           <span>Schedule</span>
         </button>
@@ -187,9 +287,58 @@ function AdminHero({ name, role }: { name: string; role: string }) {
   );
 }
 
-// ─── Coordinator hero (School / Corporate / Olympiad) ────────────────────────
+// ─── Training Manager hero ────────────────────────────────────────────────────
+// Training Manager: curriculum planning, class scheduling, trainer assignment, reports.
+// Cannot approve users or change platform settings.
+
+function TrainingManagerHero({ name }: { name: string }) {
+  const navigate = useNavigate();
+  return (
+    <section className="hero hero-admin">
+      <div className="hero-copy">
+        <span className="eyebrow">Training Manager — Program Console</span>
+        <h1>Good day, {name.split(" ")[0]}.</h1>
+        <p>
+          Plan curricula, schedule live sessions, assign trainers, and track cohort performance.
+        </p>
+        <div className="hero-actions">
+          <button className="primary-button" onClick={() => navigate("/classes")}>
+            <CalendarDays size={18} />
+            Manage classes
+          </button>
+          <button className="secondary-button" onClick={() => navigate("/reports")}>
+            <BarChart3 size={18} />
+            Cohort reports
+          </button>
+        </div>
+      </div>
+      <div className="hero-admin-grid" aria-label="Training manager quick actions">
+        <button className="admin-action-card" onClick={() => navigate("/classes")}>
+          <CalendarDays size={20} />
+          <span>Schedule</span>
+        </button>
+        <button className="admin-action-card" onClick={() => navigate("/courses")}>
+          <BookOpen size={20} />
+          <span>Curriculum</span>
+        </button>
+        <button className="admin-action-card" onClick={() => navigate("/assessments")}>
+          <ClipboardList size={20} />
+          <span>Assessments</span>
+        </button>
+        <button className="admin-action-card" onClick={() => navigate("/reports")}>
+          <BarChart3 size={20} />
+          <span>Reports</span>
+        </button>
+      </div>
+    </section>
+  );
+}
+
+// ─── School / Corporate Coordinator hero ──────────────────────────────────────
+// Coordinators: enroll learners, track their group's progress, download certificates.
 
 function CoordinatorHero({ name, role }: { name: string; role: string }) {
+  const navigate = useNavigate();
   return (
     <section className="hero hero-coordinator">
       <div className="hero-copy">
@@ -199,11 +348,11 @@ function CoordinatorHero({ name, role }: { name: string; role: string }) {
           Monitor your group's learning progress, manage enrollments, and stay on top of upcoming classes.
         </p>
         <div className="hero-actions">
-          <button className="primary-button">
+          <button className="primary-button" onClick={() => navigate("/classes")}>
             <Users size={18} />
             My group
           </button>
-          <button className="secondary-button">
+          <button className="secondary-button" onClick={() => navigate("/reports")}>
             <BarChart3 size={18} />
             Progress report
           </button>
@@ -232,8 +381,10 @@ function CoordinatorHero({ name, role }: { name: string; role: string }) {
 }
 
 // ─── Olympiad Coordinator hero ────────────────────────────────────────────────
+// Olympiad Coordinator: manage brackets, assign judges, run live competitions.
 
 function OlympiadHero({ name }: { name: string }) {
+  const navigate = useNavigate();
   return (
     <section className="hero hero-arena">
       <div className="hero-copy">
@@ -243,17 +394,60 @@ function OlympiadHero({ name }: { name: string }) {
           128 schools · 2,840 participants · Registration closes in 3 days.
         </p>
         <div className="hero-actions">
-          <button className="primary-button">
+          <button className="primary-button" onClick={() => navigate("/arena")}>
             <Trophy size={18} />
             Manage brackets
           </button>
-          <button className="secondary-button">
+          <button className="secondary-button" onClick={() => navigate("/arena")}>
             <RadioTower size={18} />
             Live challenges
           </button>
         </div>
       </div>
       <div className="arena-preview" aria-label="Live olympiad status">
+        <div className="pulse-row">
+          <span className="live-dot" />
+          4 challenges live
+        </div>
+        <h2>School Speed Mapping</h2>
+        <div className="timer">04:18</div>
+        <div className="duel">
+          <span>Kaduna</span>
+          <strong>18,920</strong>
+          <em>vs</em>
+          <strong>18,310</strong>
+          <span>Oyo</span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Judge hero ───────────────────────────────────────────────────────────────
+// Judges: view and score live arena competitions only.
+
+function JudgeHero({ name }: { name: string }) {
+  const navigate = useNavigate();
+  return (
+    <section className="hero hero-arena">
+      <div className="hero-copy">
+        <span className="eyebrow">Judge Panel</span>
+        <h1>Welcome, {name.split(" ")[0]}.</h1>
+        <p>
+          Review live competition entries, monitor scores, and submit your adjudication.
+        </p>
+        <div className="hero-actions">
+          <button className="primary-button" onClick={() => navigate("/arena")}>
+            <RadioTower size={18} />
+            Live arena
+          </button>
+          <button className="secondary-button" onClick={() => navigate("/reports")}>
+            <BarChart3 size={18} />
+            Score reports
+          </button>
+        </div>
+      </div>
+      <div className="arena-preview" aria-label="Live competition status">
         <div className="pulse-row">
           <span className="live-dot" />
           4 challenges live
@@ -281,12 +475,15 @@ export function HeroArena() {
   const roleLabel = getRoleLabel(role);
 
   if (role === "SUPER_ADMIN") return <SuperAdminHero name={name} />;
+  if (role === "TRAINING_MANAGER") return <TrainingManagerHero name={name} />;
   if (isAdminRole(role)) return <AdminHero name={name} role={roleLabel} />;
-  if (role === "OLYMPIAD_COORDINATOR" || role === "JUDGE")
-    return <OlympiadHero name={name} />;
+  if (role === "OLYMPIAD_COORDINATOR") return <OlympiadHero name={name} />;
+  if (role === "JUDGE") return <JudgeHero name={name} />;
   if (isCoordinatorRole(role)) return <CoordinatorHero name={name} role={roleLabel} />;
+  if (role === "EXAMINER") return <ExaminerHero name={name} />;
   if (isInstructorRole(role)) return <TrainerHero name={name} />;
+  if (role === "GUEST") return <GuestHero name={name} />;
 
-  // STUDENT, ALUMNI, GUEST
+  // STUDENT, ALUMNI
   return <StudentHero name={name} />;
 }

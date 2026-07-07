@@ -135,7 +135,7 @@ export function DashboardPage() {
 
           {/* Trainer review card */}
           {(role === "STUDENT" || role === "TRAINER" || role === "EXAMINER") && (
-            <TrainerReviewCard />
+            <TrainerReviewCard liveStats={liveStats} />
           )}
 
           {/* Admin insight — live numbers */}
