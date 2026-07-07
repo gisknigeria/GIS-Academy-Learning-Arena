@@ -1,20 +1,25 @@
 import { ArrowLeft, CheckCircle2, ExternalLink, Loader2, Video } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { AchievementBadgeToast } from "../components/AchievementBadge";
 import { PaymentGate } from "../components/PaymentGate";
 import { useAuth } from "../context/AuthContext";
+import { usePlayerXP } from "../hooks/usePlayerXP";
 import { coursesApi } from "../lib/courses-api";
+import { sounds } from "../lib/sound";
 import type { Course, CourseProgress, Lesson } from "../types/course";
 
 export function LessonPlayerPage() {
   const { courseId, lessonId } = useParams();
   const { token } = useAuth();
+  const { awardXP, awardBadge } = usePlayerXP();
   const [course, setCourse] = useState<Course | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [progress, setProgress] = useState<CourseProgress | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [badgeToast, setBadgeToast] = useState<string | null>(null);
 
   const currentIndex = useMemo(
     () => lessons.findIndex((lesson) => lesson.id === lessonId),
@@ -64,6 +69,16 @@ export function LessonPlayerPage() {
             : lesson,
         ),
       );
+      // Award XP + play sound
+      sounds.lessonComplete();
+      void awardXP("lesson_complete", { courseId, lessonId });
+      // Award first_lesson badge (idempotent — backend ignores duplicates)
+      void awardBadge("first_lesson");
+      // Check if course is now fully complete
+      if (updatedProgress.progress === 100) {
+        setBadgeToast("course_graduate");
+        void awardBadge("course_graduate");
+      }
     } catch {
       setError("Could not mark this lesson as complete. Please try again.");
     } finally {
@@ -184,6 +199,13 @@ export function LessonPlayerPage() {
           </div>
         </aside>
       </div>
+
+      {badgeToast && (
+        <AchievementBadgeToast badgeKey={badgeToast} onClose={() => setBadgeToast(null)} />
+      )}
     </section>
   );
 }
+
+// Badge toast is rendered outside the main section for correct stacking context
+

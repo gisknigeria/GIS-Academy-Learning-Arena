@@ -5,6 +5,7 @@ export type Certificate = {
   title: string;
   verificationId: string;
   issuedAt: string;
+  courseId?: string | null;
   user?: {
     id: string;
     fullName: string;
@@ -21,6 +22,8 @@ export type VerifiedCertificate = {
     fullName: string;
     email: string;
   } | null;
+  courseTitle?: string | null;
+  qrCodeDataUrl?: string;
 };
 
 export type IssueCertificatePayload = {

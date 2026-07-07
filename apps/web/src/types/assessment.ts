@@ -55,6 +55,7 @@ export type AttemptBreakdownItem = {
   points: number;
   earnedPoints: number;
   correct: boolean | null;
+  gradingComment?: string | null;
 };
 
 export type AttemptResult = {

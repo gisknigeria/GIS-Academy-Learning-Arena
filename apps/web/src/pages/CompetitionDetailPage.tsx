@@ -10,6 +10,8 @@ import {
   XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import TeamInvite from "../components/TeamInvite";
+import TeamMembers from "../components/TeamMembers";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { competitionsApi } from "../lib/competitions-api";
@@ -47,6 +49,7 @@ export function CompetitionDetailPage() {
   const [selectedTeamId, setSelectedTeamId] = useState("");
   const [newTeamName, setNewTeamName] = useState("");
   const [newTeamCode, setNewTeamCode] = useState("");
+  const [showMembersForTeam, setShowMembersForTeam] = useState<string | null>(null);
 
   // Inline edit
   const [editing, setEditing] = useState(false);
@@ -405,6 +408,11 @@ export function CompetitionDetailPage() {
                   </div>
                 );
               })}
+              {showMembersForTeam ? (
+                <div style={{ marginTop: 12 }}>
+                  <TeamMembers competitionId={competition.id} teamId={showMembersForTeam} />
+                </div>
+              ) : null}
             </div>
           )}
         </div>

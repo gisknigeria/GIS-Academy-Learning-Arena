@@ -119,6 +119,24 @@ export function CertificatesPage() {
     }
   }
 
+  async function handleDownloadPdf(certificateId: string) {
+    if (!token) return;
+
+    try {
+      const blob = await certificatesApi.downloadPdf(token, certificateId);
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `certificate-${certificateId}.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not download certificate PDF.");
+    }
+  }
+
   return (
     <section className="module-page certificates-page">
       <SectionHeading
@@ -191,16 +209,25 @@ export function CertificatesPage() {
                   <div className="certificate-meta">
                     <span>{certificate.certificateNo}</span>
                     <code>{certificate.verificationId}</code>
-                    <Link
-                      className="certificate-verify-link"
-                      to={`/verify/${certificate.verificationId}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      title="Open public verification page"
-                    >
-                      <ExternalLink size={13} />
-                      Verify
-                    </Link>
+                    <div className="certificate-actions">
+                      <Link
+                        className="certificate-verify-link"
+                        to={`/verify/${certificate.verificationId}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        title="Open public verification page"
+                      >
+                        <ExternalLink size={13} />
+                        Verify
+                      </Link>
+                      <button
+                        type="button"
+                        className="secondary-button small-button"
+                        onClick={() => void handleDownloadPdf(certificate.id)}
+                      >
+                        Download PDF
+                      </button>
+                    </div>
                   </div>
                 </article>
               ))}

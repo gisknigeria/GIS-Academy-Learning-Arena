@@ -11,7 +11,9 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { usePlayerXP } from "../hooks/usePlayerXP";
 import { competitionsApi } from "../lib/competitions-api";
+import { sounds } from "../lib/sound";
 import type { CompetitionAttemptResult, CompetitionSession } from "../types/competition";
 
 function formatTime(seconds: number) {
@@ -24,6 +26,7 @@ export function CompetitionChallengePage() {
   const { id } = useParams();
   const { token } = useAuth();
   const navigate = useNavigate();
+  const { awardXP } = usePlayerXP();
 
   const [session, setSession] = useState<CompetitionSession | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -47,6 +50,8 @@ export function CompetitionChallengePage() {
       setSession(data);
       setAnswers(data.savedAnswers ?? {});
       setTimeLeft(data.durationMin * 60);
+      sounds.arenaJoin();
+      void awardXP("competition_enter", { competitionId: id });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not start challenge.");
     } finally {

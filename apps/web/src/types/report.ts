@@ -80,3 +80,33 @@ export type CertificateReports = {
     user: { id: string; fullName: string; email: string } | null;
   }[];
 };
+
+export type ReportFilters = {
+  from?: string;
+  to?: string;
+  courseId?: string;
+  classId?: string;
+  role?: UserRole;
+  competitionId?: string;
+};
+
+export type PaymentReport = {
+  userId: string;
+  fullName: string;
+  email: string;
+  paymentStatus: PaymentStatus;
+  courseId?: string;
+  courseTitle?: string;
+  amountDue?: number | null;
+  dueDate?: string | null;
+};
+
+export type TeamReport = {
+  teamId: string;
+  teamName: string;
+  competitionId: string;
+  competitionTitle: string;
+  members: number;
+  score: number;
+  rank?: number | null;
+};

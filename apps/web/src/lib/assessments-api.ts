@@ -12,7 +12,33 @@ import type {
 } from "../types/assessment";
 
 export const assessmentsApi = {
-  // ── Assessments ──────────────────────────────────────────────────────────
+  createBank(token: string, title: string, description?: string) {
+    return apiRequest(`/assessments/banks`, { token, method: "POST", body: { title, description } });
+  },
+
+  listBanks(token: string) {
+    return apiRequest<any[]>(`/assessments/banks`, { token });
+  },
+
+  addQuestionToBank(token: string, bankId: string, questionId: string) {
+    return apiRequest(`/assessments/banks/${bankId}/questions`, { token, method: "POST", body: { questionId } });
+  },
+
+  drawFromBank(token: string, bankId: string, n = 10) {
+    return apiRequest(`/assessments/banks/${bankId}/draw?n=${n}`, { token });
+  },
+
+  gradeAttempt(token: string, attemptId: string, grades: Record<string, number>, comments?: Record<string, string>) {
+    return apiRequest(`/assessments/attempts/${attemptId}/grade`, {
+      token,
+      method: "POST",
+      body: { grades, comments },
+    });
+  },
+
+  flagAttempt(token: string, attemptId: string, reason?: string) {
+    return apiRequest(`/assessments/attempts/${attemptId}/flag`, { token, method: "POST", body: { reason } });
+  },
 
   list(token: string, all = false): Promise<Assessment[]> {
     return apiRequest<Assessment[]>(`/assessments${all ? "?all=true" : ""}`, { token });
@@ -33,8 +59,6 @@ export const assessmentsApi = {
   remove(token: string, id: string): Promise<{ deleted: true }> {
     return apiRequest<{ deleted: true }>(`/assessments/${id}`, { method: "DELETE", token });
   },
-
-  // ── Questions ────────────────────────────────────────────────────────────
 
   addQuestion(token: string, assessmentId: string, payload: CreateQuestionPayload): Promise<Question> {
     return apiRequest<Question>(`/assessments/${assessmentId}/questions`, {
@@ -59,8 +83,6 @@ export const assessmentsApi = {
     });
   },
 
-  // ── Attempts ─────────────────────────────────────────────────────────────
-
   startAttempt(token: string, assessmentId: string): Promise<AttemptSession> {
     return apiRequest<AttemptSession>(`/assessments/${assessmentId}/attempt`, {
       method: "POST",
@@ -68,11 +90,7 @@ export const assessmentsApi = {
     });
   },
 
-  submitAttempt(
-    token: string,
-    attemptId: string,
-    answers: Record<string, string>,
-  ): Promise<AttemptResult> {
+  submitAttempt(token: string, attemptId: string, answers: Record<string, string>): Promise<AttemptResult> {
     return apiRequest<AttemptResult>(`/assessments/attempts/${attemptId}/submit`, {
       method: "POST",
       token,
@@ -92,3 +110,5 @@ export const assessmentsApi = {
     return apiRequest<AttemptSummary[]>(`/assessments/${assessmentId}/attempts`, { token });
   },
 };
+
+export default assessmentsApi;
