@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
+import { randomBytes } from "crypto";
 import { CompetitionMode, CompetitionStatus, QuestionType } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { EmailService } from "../email/email.service";
@@ -17,6 +18,132 @@ import { UpdateCompetitionDto } from "./dto/update-competition.dto";
 @Injectable()
 export class CompetitionsService {
   constructor(private readonly prisma: PrismaService, private readonly emailService: EmailService) {}
+
+  // ---- Team invite + management helpers ----
+
+  async createTeamInvite(
+    competitionId: string,
+    teamId: string,
+    userId: string,
+    options?: { expiresHours?: number; isAdmin?: boolean },
+  ) {
+    const team = await this.prisma.team.findUnique({ where: { id: teamId } });
+    if (!team || team.competitionId !== competitionId) throw new NotFoundException("Team not found.");
+
+    if (!options?.isAdmin && team.createdById !== userId) {
+      throw new ForbiddenException("Only the team creator or admins can create invites.");
+    }
+
+    const token = randomBytes(18).toString("base64url");
+    const expiresAt = options?.expiresHours ? new Date(Date.now() + options.expiresHours * 3600 * 1000) : null;
+
+    const invite = await this.prisma.teamInvite.create({
+      data: {
+        teamId,
+        token,
+        createdBy: userId,
+        expiresAt: expiresAt ?? undefined,
+      },
+    });
+
+    return invite;
+  }
+
+  async acceptTeamInvite(token: string, userId: string) {
+    const invite = await this.prisma.teamInvite.findUnique({ where: { token }, include: { team: true } });
+    if (!invite) throw new NotFoundException("Invite not found.");
+    if (invite.expiresAt && invite.expiresAt.getTime() < Date.now()) throw new BadRequestException("Invite expired.");
+
+    const team = invite.team;
+
+    // Check team capacity / locked
+    if (team.locked && team.maxMembers) {
+      const count = await this.prisma.teamMember.count({ where: { teamId: team.id } });
+      if (count >= team.maxMembers) throw new BadRequestException("Team is full.");
+    }
+
+    // Idempotent add
+    await this.prisma.teamMember.upsert({
+      where: { teamId_userId: { teamId: team.id, userId } },
+      create: { teamId: team.id, userId },
+      update: {},
+    });
+
+    // Ensure competition participant record is present and linked to this team
+    await this.prisma.competitionParticipant.upsert({
+      where: { competitionId_userId: { competitionId: team.competitionId, userId } },
+      create: { competitionId: team.competitionId, userId, teamId: team.id },
+      update: { teamId: team.id },
+    });
+
+    return this.prisma.team.findUnique({ where: { id: team.id }, include: this.teamInclude() });
+  }
+
+  async setTeamLock(
+    competitionId: string,
+    teamId: string,
+    userId: string,
+    locked: boolean,
+    maxMembers?: number,
+    isAdmin = false,
+  ) {
+    const team = await this.prisma.team.findUnique({ where: { id: teamId } });
+    if (!team || team.competitionId !== competitionId) throw new NotFoundException("Team not found.");
+    if (!isAdmin && team.createdById !== userId) throw new ForbiddenException("Only team creator or admin can change lock.");
+
+    return this.prisma.team.update({ where: { id: teamId }, data: { locked, maxMembers } });
+  }
+
+  async setTeamCaptain(competitionId: string, teamId: string, captainId: string, userId: string, isAdmin = false) {
+    const team = await this.prisma.team.findUnique({ where: { id: teamId } });
+    if (!team || team.competitionId !== competitionId) throw new NotFoundException("Team not found.");
+    if (!isAdmin && team.createdById !== userId) throw new ForbiddenException("Only team creator or admin can set captain.");
+
+    // Ensure captain is a member
+    const membership = await this.prisma.teamMember.findUnique({ where: { teamId_userId: { teamId, userId: captainId } } });
+    if (!membership) throw new BadRequestException("Captain must be a member of the team.");
+
+    return this.prisma.team.update({ where: { id: teamId }, data: { captainId } });
+  }
+
+  async moveMember(competitionId: string, userIdToMove: string, targetTeamId: string) {
+    const target = await this.prisma.team.findUnique({ where: { id: targetTeamId } });
+    if (!target || target.competitionId !== competitionId) throw new NotFoundException("Target team not found.");
+
+    // ensure user is participant
+    const participant = await this.prisma.competitionParticipant.findUnique({ where: { competitionId_userId: { competitionId, userId: userIdToMove } } });
+    if (!participant) throw new NotFoundException("User is not a participant in this competition.");
+
+    // Check capacity
+    if (target.locked && target.maxMembers) {
+      const count = await this.prisma.teamMember.count({ where: { teamId: target.id } });
+      if (count >= target.maxMembers) throw new BadRequestException("Target team is full.");
+    }
+
+    // Remove from old team membership if any
+    await this.prisma.teamMember.deleteMany({ where: { userId: userIdToMove, team: { competitionId } } });
+
+    // Add to new team
+    await this.prisma.teamMember.upsert({
+      where: { teamId_userId: { teamId: target.id, userId: userIdToMove } },
+      create: { teamId: target.id, userId: userIdToMove },
+      update: {},
+    });
+
+    // Update competition participant record
+    await this.prisma.competitionParticipant.update({
+      where: { competitionId_userId: { competitionId, userId: userIdToMove } },
+      data: { teamId: target.id },
+    });
+
+    return this.prisma.team.findUnique({ where: { id: target.id }, include: this.teamInclude() });
+  }
+
+  async getTeamMembers(competitionId: string, teamId: string) {
+    const team = await this.prisma.team.findUnique({ where: { id: teamId }, include: this.teamInclude() });
+    if (!team || team.competitionId !== competitionId) throw new NotFoundException("Team not found.");
+    return team;
+  }
 
   // ─── CRUD ─────────────────────────────────────────────────────────────────
 
@@ -215,6 +342,7 @@ export class CompetitionsService {
     await this.findOne(competitionId);
     await this.rerankTeams(competitionId);
 
+    // Default behavior: return full teams. Controller may pass viewerId/isAdmin and post-process.
     return this.prisma.team.findMany({
       where: { competitionId },
       orderBy: [{ score: "desc" }, { createdAt: "asc" }],

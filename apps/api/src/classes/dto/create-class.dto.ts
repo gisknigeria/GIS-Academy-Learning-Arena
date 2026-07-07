@@ -15,6 +15,10 @@ export class CreateClassDto {
 
   @IsOptional()
   @IsString()
+  trainerId?: string;
+
+  @IsOptional()
+  @IsString()
   startsAt?: string;
 
   @IsOptional()

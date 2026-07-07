@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Req, StreamableFile, UseGuards } from "@nestjs/common";
 import { UserRole } from "@prisma/client";
 import { Roles } from "../auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
@@ -44,5 +44,15 @@ export class CertificatesController {
   @Post("issue")
   issue(@Body() dto: IssueCertificateDto) {
     return this.certificatesService.issue(dto);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get(":id/pdf")
+  async downloadPdf(@Param("id") id: string, @Req() req: AuthenticatedRequest) {
+    const buffer = await this.certificatesService.getCertificatePdf(id, req.user.sub, req.user.role);
+    return new StreamableFile(buffer, {
+      type: "application/pdf",
+      disposition: `attachment; filename="certificate-${id}.pdf"`,
+    });
   }
 }

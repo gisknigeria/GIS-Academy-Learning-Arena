@@ -9,5 +9,6 @@ import { CertificatesService } from "./certificates.service";
   imports: [AuthModule, PrismaModule, EmailModule],
   controllers: [CertificatesController],
   providers: [CertificatesService],
+  exports: [CertificatesService],
 })
 export class CertificatesModule {}

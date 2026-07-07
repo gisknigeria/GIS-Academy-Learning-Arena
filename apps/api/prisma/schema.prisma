@@ -81,8 +81,18 @@ model User {
   competitionAttempts       CompetitionAttempt[]
   createdTeams              Team[]                   @relation("TeamCreator")
   teamMemberships           TeamMember[]
+  playerStats               PlayerStats?
+  pointsTransactions        PointsTransaction[]
+  userBadges                UserBadge[]
+  userMissions              UserMission[]
+  arenaHistories            ArenaHistory[]
+  createdInvites            TeamInvite[]
   attendanceRecords         AttendanceRecord[]
   loginLogs    LoginLog[]
+  notifications         Notification[]
+  classesAsTrainer      Class[]          @relation("ClassTrainer")
+  certificates          Certificate[]
+  announcementsAuthored ClassAnnouncement[]
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 }
@@ -128,6 +138,7 @@ model Course {
   enrollments     Enrollment[]
   assignments     Assignment[]
   assessments     Assessment[]
+  certificates    Certificate[]
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 }
@@ -147,13 +158,16 @@ model Lesson {
 model Class {
   id        String       @id @default(uuid())
   courseId  String
+  trainerId String?
   name      String
   mode      DeliveryMode
   startsAt  DateTime?
   endsAt    DateTime?
   course    Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  trainer   User?        @relation("ClassTrainer", fields: [trainerId], references: [id], onDelete: SetNull)
   students  Enrollment[]
   attendanceRecords AttendanceRecord[]
+  announcements     ClassAnnouncement[]
 }
 
 model Enrollment {
@@ -247,11 +261,14 @@ enum QuestionType {
   MCQ
   TRUE_FALSE
   SHORT_ANSWER
+  FILE_UPLOAD
+  MAP_TASK
 }
 
 enum AttemptStatus {
   IN_PROGRESS
   SUBMITTED
+  GRADED
   TIMED_OUT
 }
 
@@ -286,6 +303,7 @@ model Question {
   order         Int          @default(0)
   explanation   String?
   assessment    Assessment   @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  questionBanks QuestionBank[] @relation("QuestionBankQuestions")
 
   @@index([assessmentId, order])
 }
@@ -303,6 +321,12 @@ model Attempt {
   status       AttemptStatus @default(IN_PROGRESS)
   startedAt    DateTime      @default(now())
   submittedAt  DateTime?
+  gradedAt     DateTime?
+  gradedBy     String?
+  flagged      Boolean       @default(false)
+  flagReason   String?
+  flaggedAt    DateTime?
+  gradingComments Json?
   assessment   Assessment    @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -329,6 +353,7 @@ model Competition {
   competitionAttempts CompetitionAttempt[]
   leaderboard     LeaderboardEntry[]
   teams           Team[]
+  arenaHistories   ArenaHistory[]
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 }
@@ -355,6 +380,12 @@ model Team {
   competitionId String
   name          String
   code          String?
+  /// Maximum number of members allowed in this team (null = unlimited)
+  maxMembers    Int?
+  /// When true, prevents auto-joining if maxMembers is reached
+  locked        Boolean     @default(false)
+  /// Optional captain user id
+  captainId     String?
   score         Int         @default(0)
   rank          Int?
   createdById   String?
@@ -364,9 +395,24 @@ model Team {
   createdBy     User?       @relation("TeamCreator", fields: [createdById], references: [id], onDelete: SetNull)
   members       TeamMember[]
   participants  CompetitionParticipant[]
+  invites       TeamInvite[]
 
   @@unique([competitionId, name])
   @@index([competitionId, score])
+}
+
+model TeamInvite {
+  id         String   @id @default(uuid())
+  teamId     String
+  token      String   @unique
+  createdBy  String
+  expiresAt  DateTime?
+  createdAt  DateTime @default(now())
+
+  team       Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  creator    User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+
+  @@index([teamId])
 }
 
 model TeamMember {
@@ -398,6 +444,118 @@ model CompetitionAttempt {
   @@index([competitionId, userId])
 }
 
+/// Player/profile statistics, XP, streaks, points, wins/losses
+model PlayerStats {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  xp            Int      @default(0)
+  level         Int      @default(1)
+  points        Int      @default(0)
+  streak        Int      @default(0)
+  longestStreak Int?
+  wins          Int      @default(0)
+  losses        Int      @default(0)
+  achievementsCount Int  @default(0)
+  country       String?
+  school        String?
+  corporate     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model QuestionBank {
+  id          String     @id @default(uuid())
+  title       String
+  description String?
+  questions   Question[] @relation("QuestionBankQuestions")
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+/// Records points added/removed with reasons for audit/history
+model PointsTransaction {
+  id        String   @id @default(uuid())
+  userId    String
+  amount    Int
+  reason    String?
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model Badge {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  title     String
+  description String?
+  iconUrl   String?
+  points    Int      @default(0)
+  createdAt DateTime @default(now())
+  userBadges UserBadge[]
+}
+
+model UserBadge {
+  id        String   @id @default(uuid())
+  userId    String
+  badgeId   String
+  awardedAt DateTime @default(now())
+  revokedAt DateTime?
+  details   Json?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@index([userId])
+}
+
+model DailyMission {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  title     String
+  description String?
+  rewardPoints Int   @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  userMissions UserMission[]
+}
+
+model UserMission {
+  id          String   @id @default(uuid())
+  missionId   String
+  userId      String
+  progress    Int      @default(0)
+  completed   Boolean  @default(false)
+  lastUpdated DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mission DailyMission @relation(fields: [missionId], references: [id], onDelete: Cascade)
+
+  @@unique([missionId, userId])
+  @@index([userId])
+}
+
+model ArenaHistory {
+  id            String   @id @default(uuid())
+  userId        String
+  competitionId String
+  attemptId     String?
+  score         Int?
+  rank          Int?
+  result        Json?
+  createdAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+
+  @@index([competitionId, createdAt])
+}
+
 model LeaderboardEntry {
   id            String      @id @default(uuid())
   competitionId String
@@ -412,9 +570,15 @@ model Certificate {
   id             String   @id @default(uuid())
   certificateNo  String   @unique
   userId         String
+  courseId       String?
   title          String
   verificationId String   @unique
   issuedAt       DateTime @default(now())
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course? @relation(fields: [courseId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, courseId])
 }
 
 model PlatformSetting {
@@ -423,4 +587,46 @@ model PlatformSetting {
   value     String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model ClassAnnouncement {
+  id        String   @id @default(uuid())
+  classId   String
+  authorId  String?
+  title     String
+  body      String
+  pinned    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  class  Class? @relation(fields: [classId], references: [id], onDelete: Cascade)
+  author User?  @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([classId, pinned])
+}
+
+// ─── In-app notifications ─────────────────────────────────────────────────────
+
+enum NotificationType {
+  WELCOME
+  ASSIGNMENT_GRADED
+  CERTIFICATE_ISSUED
+  COMPETITION_LIVE
+  PAYMENT_SUCCESS
+  GENERAL
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType @default(GENERAL)
+  title     String
+  body      String
+  link      String?          // optional deep-link (e.g. /arena/abc)
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read, createdAt])
 }

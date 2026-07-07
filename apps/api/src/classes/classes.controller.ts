@@ -8,6 +8,8 @@ import { CreateClassDto } from "./dto/create-class.dto";
 import { EnrollStudentDto } from "./dto/enroll-student.dto";
 import { MarkAttendanceDto } from "./dto/mark-attendance.dto";
 import { UpdateClassDto } from "./dto/update-class.dto";
+import { BulkEnrollDto } from "./dto/bulk-enroll.dto";
+import { CreateAnnouncementDto } from "./dto/create-announcement.dto";
 
 const WRITE_ROLES = [
   UserRole.SUPER_ADMIN,
@@ -56,6 +58,12 @@ export class ClassesController {
     return this.classesService.enroll(id, dto);
   }
 
+  @Roles(...WRITE_ROLES)
+  @Post(":id/enroll/bulk")
+  bulkEnroll(@Param("id") id: string, @Body() dto: BulkEnrollDto) {
+    return this.classesService.bulkEnroll(id, dto);
+  }
+
   @Get(":id/students")
   students(@Param("id") id: string) {
     return this.classesService.listStudents(id);
@@ -70,5 +78,37 @@ export class ClassesController {
   @Get(":id/attendance")
   attendance(@Param("id") id: string, @Query("date") date?: string) {
     return this.classesService.listAttendance(id, date);
+  }
+
+  @Get(":id/attendance/analytics")
+  attendanceAnalytics(@Param("id") id: string, @Query("from") from?: string, @Query("to") to?: string) {
+    return this.classesService.attendanceAnalytics(id, from, to);
+  }
+
+  @Get(":id/attendance/export")
+  exportAttendance(@Param("id") id: string, @Query("date") date?: string) {
+    return this.classesService.exportAttendanceCsv(id, date);
+  }
+
+  @Get(":id/schedule")
+  schedule(@Param("id") id: string) {
+    return this.classesService.getSchedule(id);
+  }
+
+  @Roles(...WRITE_ROLES)
+  @Post(":id/announcements")
+  createAnnouncement(@Param("id") id: string, @Body() dto: CreateAnnouncementDto, @Query("author") author?: string) {
+    return this.classesService.createAnnouncement(id, author ?? null, dto);
+  }
+
+  @Get(":id/announcements")
+  listAnnouncements(@Param("id") id: string) {
+    return this.classesService.listAnnouncements(id);
+  }
+
+  @Roles(...WRITE_ROLES)
+  @Delete("announcements/:id")
+  deleteAnnouncement(@Param("id") id: string) {
+    return this.classesService.removeAnnouncement(id);
   }
 }

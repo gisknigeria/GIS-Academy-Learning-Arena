@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
+import { CertificatesService } from "../certificates/certificates.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateCourseDto } from "./dto/create-course.dto";
 import { QueryCoursesDto } from "./dto/query-courses.dto";
@@ -13,7 +14,10 @@ import { UpdateLessonDto } from "./dto/update-lesson.dto";
 
 @Injectable()
 export class CoursesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly certificatesService: CertificatesService,
+  ) {}
 
   async create(dto: CreateCourseDto) {
     const existing = await this.prisma.course.findUnique({
@@ -225,9 +229,13 @@ export class CoursesService {
       create: { userId, lessonId },
     });
 
-    await this.ensureEnrollmentAndRefreshProgress(courseId, userId);
+    const summary = await this.ensureEnrollmentAndRefreshProgress(courseId, userId);
 
-    return this.getCourseProgress(courseId, userId);
+    if (summary.progress === 100) {
+      await this.certificatesService.issueAutoCompletion(userId, courseId).catch(() => null);
+    }
+
+    return summary;
   }
 
   /**

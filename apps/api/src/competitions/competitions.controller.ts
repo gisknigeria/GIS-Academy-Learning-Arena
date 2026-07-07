@@ -65,8 +65,18 @@ export class CompetitionsController {
 
   /** GET /api/competitions/:id/teams */
   @Get(":id/teams")
-  listTeams(@Param("id") id: string) {
-    return this.competitionsService.listTeams(id);
+  async listTeams(@Param("id") id: string, @Req() req: AuthenticatedRequest) {
+    const teams = await this.competitionsService.listTeams(id);
+    const isAdmin = isPaymentExempt(req.user.role);
+
+    return teams.map((t) => {
+      const out = { ...t } as any;
+      if (!isAdmin && out.createdById !== req.user.sub) {
+        // hide sensitive join code
+        delete out.code;
+      }
+      return out;
+    });
   }
 
   /** POST /api/competitions/:id/teams */
@@ -77,6 +87,69 @@ export class CompetitionsController {
     @Req() req: AuthenticatedRequest,
   ) {
     return this.competitionsService.createTeam(id, req.user.sub, dto);
+  }
+
+  /** POST /api/competitions/:id/teams/:teamId/invite */
+  @Post(":id/teams/:teamId/invite")
+  async createTeamInvite(
+    @Param("id") id: string,
+    @Param("teamId") teamId: string,
+    @Body("expiresHours") expiresHours: number,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const isAdmin = isPaymentExempt(req.user.role);
+    const invite = await this.competitionsService.createTeamInvite(id, teamId, req.user.sub, {
+      expiresHours,
+      isAdmin,
+    });
+    return invite;
+  }
+
+  /** POST /api/competitions/invitations/:token/join */
+  @Post("invitations/:token/join")
+  async acceptInvite(@Param("token") token: string, @Req() req: AuthenticatedRequest) {
+    return this.competitionsService.acceptTeamInvite(token, req.user.sub);
+  }
+
+  /** PATCH /api/competitions/:id/teams/:teamId/lock */
+  @Patch(":id/teams/:teamId/lock")
+  async setTeamLock(
+    @Param("id") id: string,
+    @Param("teamId") teamId: string,
+    @Body() body: { locked: boolean; maxMembers?: number },
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const isAdmin = isPaymentExempt(req.user.role);
+    return this.competitionsService.setTeamLock(id, teamId, req.user.sub, body.locked, body.maxMembers, isAdmin);
+  }
+
+  /** PATCH /api/competitions/:id/teams/:teamId/captain */
+  @Patch(":id/teams/:teamId/captain")
+  async setTeamCaptain(
+    @Param("id") id: string,
+    @Param("teamId") teamId: string,
+    @Body("captainId") captainId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const isAdmin = isPaymentExempt(req.user.role);
+    return this.competitionsService.setTeamCaptain(id, teamId, captainId, req.user.sub, isAdmin);
+  }
+
+  /** POST /api/competitions/:id/teams/:teamId/move-member */
+  @Roles(...STAFF_ROLES)
+  @Post(":id/teams/:teamId/move-member")
+  async moveMember(
+    @Param("id") id: string,
+    @Param("teamId") teamId: string,
+    @Body("userId") userId: string,
+  ) {
+    return this.competitionsService.moveMember(id, userId, teamId);
+  }
+
+  /** GET /api/competitions/:id/teams/:teamId/members */
+  @Get(":id/teams/:teamId/members")
+  async getTeamMembers(@Param("id") id: string, @Param("teamId") teamId: string) {
+    return this.competitionsService.getTeamMembers(id, teamId);
   }
 
   /** POST /api/competitions/:id/teams/:teamId/join */

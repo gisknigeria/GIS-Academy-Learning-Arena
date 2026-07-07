@@ -5,8 +5,10 @@ import { AssignmentsModule } from "./assignments/assignments.module";
 import { AssessmentsModule } from "./assessments/assessments.module";
 import { AuthModule } from "./auth/auth.module";
 import { CertificatesModule } from "./certificates/certificates.module";
+import { UploadsModule } from "./uploads/uploads.module";
 import { ClassesModule } from "./classes/classes.module";
 import { CompetitionsModule } from "./competitions/competitions.module";
+import { PlayersModule } from "./players/players.module";
 import { CoursesModule } from "./courses/courses.module";
 import { DashboardModule } from "./dashboard/dashboard.module";
 import { EmailModule } from "./email/email.module";
@@ -32,7 +34,9 @@ import { UsersModule } from "./users/users.module";
     AssignmentsModule,
     AssessmentsModule,
     CompetitionsModule,
+    PlayersModule,
     CertificatesModule,
+    UploadsModule,
     PlatformModule,
     LearnModule,
     ReportsModule,

@@ -62,6 +62,33 @@ export class AssessmentsController {
     return this.assessmentsService.findOne(id);
   }
 
+  // ─── Question banks & random selection ──────────────────────────────────
+
+  @Roles(...STAFF_ROLES)
+  @Post("banks")
+  createBank(@Body() body: { title: string; description?: string }) {
+    return this.assessmentsService.createQuestionBank(body.title, body.description);
+  }
+
+  @Roles(...STAFF_ROLES)
+  @Get("banks")
+  listBanks() {
+    return this.assessmentsService.listQuestionBanks();
+  }
+
+  @Roles(...STAFF_ROLES)
+  @Post("banks/:bankId/questions")
+  addQuestionToBank(@Param("bankId") bankId: string, @Body() body: { questionId: string }) {
+    return this.assessmentsService.addQuestionToBank(bankId, body.questionId);
+  }
+
+  @Roles(...STAFF_ROLES)
+  @Get("banks/:bankId/draw")
+  drawFromBank(@Param("bankId") bankId: string, @Query("n") n?: string) {
+    const count = n ? parseInt(n, 10) : 10;
+    return this.assessmentsService.drawFromBank(bankId, count);
+  }
+
   /** PATCH /api/assessments/:id — staff only */
   @Roles(...STAFF_ROLES)
   @Patch(":id")
@@ -115,6 +142,22 @@ export class AssessmentsController {
     @Req() req: AuthenticatedRequest,
   ) {
     return this.assessmentsService.submitAttempt(attemptId, req.user.sub, dto);
+  }
+
+  @Roles(...STAFF_ROLES)
+  @Post("attempts/:attemptId/grade")
+  gradeAttempt(
+    @Param("attemptId") attemptId: string,
+    @Body() body: { grades: Record<string, number>; comments?: Record<string, string> },
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.assessmentsService.gradeAttempt(attemptId, req.user.sub, body.grades, body.comments);
+  }
+
+  @Roles(...STAFF_ROLES)
+  @Post("attempts/:attemptId/flag")
+  flagAttempt(@Param("attemptId") attemptId: string, @Body() body: { reason?: string }, @Req() req: AuthenticatedRequest) {
+    return this.assessmentsService.flagAttempt(attemptId, req.user.sub, body.reason);
   }
 
   /** GET /api/assessments/attempts/mine — student's own history */

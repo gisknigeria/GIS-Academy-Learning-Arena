@@ -1,9 +1,11 @@
-import { Controller, Get, UseGuards } from "@nestjs/common";
+import { Controller, Get, Query, StreamableFile, UseGuards } from "@nestjs/common";
 import { UserRole } from "@prisma/client";
 import { Roles } from "../auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
 import { ReportsService } from "./reports.service";
+import { QueryReportsDto } from "./dto/query-reports.dto";
+import { ExportReportsDto } from "./dto/export-reports.dto";
 
 const REPORT_ROLES = [
   UserRole.SUPER_ADMIN,
@@ -44,7 +46,26 @@ export class ReportsController {
   }
 
   @Get("certificates")
-  certificates() {
-    return this.reportsService.getCertificates();
+  certificates(@Query() query: QueryReportsDto) {
+    return this.reportsService.getCertificates(query);
+  }
+
+  @Get("payments")
+  payments(@Query() query: QueryReportsDto) {
+    return this.reportsService.getPayments(query);
+  }
+
+  @Get("teams")
+  teams(@Query() query: QueryReportsDto) {
+    return this.reportsService.getTeams(query);
+  }
+
+  @Get("export")
+  async export(@Query() query: ExportReportsDto) {
+    const { buffer, filename, type } = await this.reportsService.exportReport(query);
+    return new StreamableFile(buffer, {
+      type,
+      disposition: `attachment; filename="${filename}"`,
+    });
   }
 }

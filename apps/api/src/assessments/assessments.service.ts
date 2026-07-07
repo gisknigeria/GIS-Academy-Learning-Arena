@@ -16,6 +16,93 @@ import { UpdateQuestionDto } from "./dto/update-question.dto";
 export class AssessmentsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  // ─── Question banks & random selection ───────────────────────────────────
+
+  async createQuestionBank(title: string, description?: string) {
+    return this.prisma.questionBank.create({ data: { title, description } });
+  }
+
+  async listQuestionBanks() {
+    return this.prisma.questionBank.findMany({
+      orderBy: { createdAt: "desc" },
+      include: { questions: { select: { id: true, text: true, type: true } } },
+    });
+  }
+
+  async addQuestionToBank(bankId: string, questionId: string) {
+    const bank = await this.prisma.questionBank.findUnique({ where: { id: bankId } });
+    if (!bank) throw new NotFoundException(`Question bank "${bankId}" not found.`);
+
+    const question = await this.prisma.question.findUnique({ where: { id: questionId } });
+    if (!question) throw new NotFoundException(`Question "${questionId}" not found.`);
+
+    await this.prisma.question.update({ where: { id: questionId }, data: { questionBanks: { connect: { id: bankId } } } });
+    return { added: true };
+  }
+
+  async drawFromBank(bankId: string, count = 10) {
+    const questions = await this.prisma.question.findMany({ where: { questionBanks: { some: { id: bankId } } } });
+    const shuffled = questions.sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, count);
+  }
+
+  // ─── Grading & anti-cheat basics ─────────────────────────────────────────
+
+  /** Staff: grade manual questions (short answer / file upload / map task) */
+  async gradeAttempt(
+    attemptId: string,
+    graderId: string,
+    grades: Record<string, number>,
+    comments?: Record<string, string>,
+  ) {
+    const attempt = await this.prisma.attempt.findUnique({ where: { id: attemptId }, include: { assessment: { include: { questions: true } } } });
+    if (!attempt) throw new NotFoundException("Attempt not found.");
+
+    // Only non-in-progress attempts can be graded
+    if (attempt.status === AttemptStatus.IN_PROGRESS) throw new BadRequestException("Attempt is still in progress.");
+
+    // Build map of questions
+    const qMap: Record<string, any> = {};
+    for (const q of attempt.assessment.questions) qMap[q.id] = q;
+
+    // Sum provided grades, cap at question.points
+    let added = 0;
+    for (const [qId, pts] of Object.entries(grades)) {
+      const q = qMap[qId];
+      if (!q) continue;
+      const assign = Math.max(0, Math.min(q.points ?? 0, Math.floor(pts)));
+      added += assign;
+    }
+
+    const prevScore = attempt.score ?? 0;
+    const maxScore = attempt.maxScore ?? attempt.assessment.questions.reduce((s: number, q: any) => s + (q.points ?? 0), 0);
+    const newScore = prevScore + added;
+    const percentage = maxScore === 0 ? 0 : Math.round((newScore / maxScore) * 100);
+    const passed = percentage >= attempt.assessment.passMark;
+
+    const updated = await this.prisma.attempt.update({
+      where: { id: attemptId },
+      data: {
+        score: newScore,
+        percentage,
+        passed,
+        status: AttemptStatus.GRADED,
+        gradedAt: new Date(),
+        gradedBy: graderId,
+        gradingComments: comments ?? undefined,
+      },
+    });
+    return { updated: true, score: updated.score, percentage: updated.percentage, passed: updated.passed };
+  }
+
+  /** Staff: flag an attempt as suspicious */
+  async flagAttempt(attemptId: string, staffId: string, reason?: string) {
+    const attempt = await this.prisma.attempt.findUnique({ where: { id: attemptId } });
+    if (!attempt) throw new NotFoundException("Attempt not found.");
+    await this.prisma.attempt.update({ where: { id: attemptId }, data: { flagged: true, flagReason: reason ?? null, flaggedAt: new Date(), gradedBy: staffId } });
+    return { flagged: true };
+  }
+
   // ─── Assessments CRUD ────────────────────────────────────────────────────
 
   async create(dto: CreateAssessmentDto) {
@@ -321,7 +408,8 @@ export class AssessmentsService {
   }) {
     const answers = attempt.answers as Record<string, string>;
 
-    const breakdown = attempt.assessment.questions.map((q) => {
+const gradingComments = (attempt as any).gradingComments as Record<string, string> | undefined;
+      const breakdown = attempt.assessment.questions.map((q) => {
       const studentAnswer = answers[q.id] ?? null;
       const isAutoScored = q.type !== QuestionType.SHORT_ANSWER;
       const correct = isAutoScored
@@ -339,6 +427,7 @@ export class AssessmentsService {
         points: q.points,
         earnedPoints: correct ? q.points : 0,
         correct,
+        gradingComment: gradingComments?.[q.id] ?? null,
       };
     });
 

@@ -18,6 +18,10 @@ export class UpdateClassDto {
 
   @IsOptional()
   @IsString()
+  trainerId?: string;
+
+  @IsOptional()
+  @IsString()
   startsAt?: string;
 
   @IsOptional()

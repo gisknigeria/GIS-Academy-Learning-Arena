@@ -1,4 +1,4 @@
-import { IsString, MinLength } from "class-validator";
+import { IsOptional, IsString, MinLength } from "class-validator";
 
 export class IssueCertificateDto {
   @IsString()
@@ -8,4 +8,8 @@ export class IssueCertificateDto {
   @IsString()
   @MinLength(3)
   title!: string;
+
+  @IsOptional()
+  @IsString()
+  courseId?: string;
 }
