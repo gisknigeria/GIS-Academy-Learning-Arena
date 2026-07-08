@@ -17,6 +17,11 @@ export class PlayersController {
     return this.playersService.addPoints(userId, body.amount, body.reason, body.meta);
   }
 
+  @Post(":userId/reward")
+  reward(@Param("userId") userId: string, @Body() body: { event: string; reason?: string; points?: number; xp?: number; streak?: number; meta?: any }) {
+    return this.playersService.applyReward(userId, body);
+  }
+
   @Post(":userId/award-badge")
   awardBadge(@Param("userId") userId: string, @Body() body: { badgeKey: string }) {
     return this.playersService.awardBadge(userId, body.badgeKey);

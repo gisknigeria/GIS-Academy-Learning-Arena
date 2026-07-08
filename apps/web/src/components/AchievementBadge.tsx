@@ -27,12 +27,26 @@ export const BADGE_REGISTRY: Record<string, BadgeDefinition> = {
     icon: <Shield size={28} />,
     color: "blue",
   },
+  streak_3: {
+    key: "streak_3",
+    title: "Momentum Builder",
+    description: "Maintained a 3-day learning streak",
+    icon: <Zap size={28} />,
+    color: "orange",
+  },
   streak_7: {
     key: "streak_7",
     title: "Week Warrior",
     description: "Maintained a 7-day streak",
     icon: <Zap size={28} />,
     color: "orange",
+  },
+  streak_14: {
+    key: "streak_14",
+    title: "Consistency Champion",
+    description: "Maintained a 14-day streak",
+    icon: <Trophy size={28} />,
+    color: "blue",
   },
   streak_30: {
     key: "streak_30",

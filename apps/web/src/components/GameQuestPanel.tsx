@@ -154,9 +154,47 @@ const PROJECTION_QUESTIONS: Question[] = [
   },
 ];
 
+const WORKFLOW_QUESTIONS: Question[] = [
+  {
+    id: "workflow-1",
+    question: "Which order is best for a basic GIS workflow?",
+    options: ["Collect data → clean data → analyze → present results", "Present results → collect data → clean → analyze", "Analyze → collect data → present → clean", "Clean → present → collect → analyze"],
+    correct: 0,
+    explanation: "A sound GIS workflow usually starts with data collection, followed by cleaning, analysis, and then presentation.",
+  },
+  {
+    id: "workflow-2",
+    question: "When should you use a buffer analysis?",
+    options: ["To calculate a zone around a feature", "To classify landcover pixels", "To convert raster to vector", "To clip a map to a page size"],
+    correct: 0,
+    explanation: "Buffers are ideal when you need to create a proximity zone around roads, rivers, or other features.",
+  },
+  {
+    id: "workflow-3",
+    question: "Which is the best next step after creating a map layout?",
+    options: ["Export a final map product", "Delete the base layer", "Convert the projection to a random one", "Remove all labels"],
+    correct: 0,
+    explanation: "After layout design, the final step is often exporting the map for sharing or printing.",
+  },
+  {
+    id: "workflow-4",
+    question: "What does a legend help a map reader do?",
+    options: ["Measure the Earth's radius", "Interpret symbols and colours", "Rotate the map", "Add new coordinates"],
+    correct: 1,
+    explanation: "A legend explains what symbols, colours, and patterns represent on the map.",
+  },
+  {
+    id: "workflow-5",
+    question: "Which layer should usually be drawn first in a map?",
+    options: ["Labels", "Reference or base layer", "Annotations", "Callout boxes"],
+    correct: 1,
+    explanation: "Base layers are typically drawn first so thematic layers and labels remain visible and readable.",
+  },
+];
+
 // ─── Game definitions ─────────────────────────────────────────────────────────
 
-type GameId = "puzzle" | "coordinate" | "projection";
+type GameId = "puzzle" | "coordinate" | "projection" | "workflow";
 
 const GAMES: {
   id: GameId;
@@ -189,6 +227,14 @@ const GAMES: {
     icon: <Globe2 size={26} />,
     questions: PROJECTION_QUESTIONS,
     xp: 110,
+  },
+  {
+    id: "workflow",
+    title: "Spatial Workflow Lab",
+    subtitle: "Practice the thinking steps behind real GIS projects.",
+    icon: <Sparkles size={26} />,
+    questions: WORKFLOW_QUESTIONS,
+    xp: 130,
   },
 ];
 

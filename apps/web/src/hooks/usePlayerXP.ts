@@ -15,7 +15,8 @@ export type XPEvent =
   | "quest_complete"     // +120 XP, +60 pts  (all puzzles done)
   | "quiz_pass"          // +80 XP, +40 pts
   | "competition_enter"  // +10 XP
-  | "daily_login";       // +15 XP, +5 pts
+  | "daily_login"        // +15 XP, +5 pts
+  | "streak_milestone";  // +60 XP, +25 pts
 
 const XP_TABLE: Record<XPEvent, { xp: number; points: number; reason: string }> = {
   lesson_complete:   { xp: 50,  points: 30, reason: "Lesson completed" },
@@ -24,6 +25,7 @@ const XP_TABLE: Record<XPEvent, { xp: number; points: number; reason: string }> 
   quiz_pass:         { xp: 80,  points: 40, reason: "Assessment passed" },
   competition_enter: { xp: 10,  points: 0,  reason: "Entered competition" },
   daily_login:       { xp: 15,  points: 5,  reason: "Daily login bonus" },
+  streak_milestone:  { xp: 60,  points: 25, reason: "Streak milestone reached" },
 };
 
 export function usePlayerXP() {
@@ -34,11 +36,18 @@ export function usePlayerXP() {
       if (!user || !token) return;
       const entry = XP_TABLE[event];
       try {
-        await playersApi.addPoints(token, user.id, entry.points, entry.reason, {
-          xp: entry.xp,
+        await playersApi.reward(token, user.id, {
           event,
-          ...meta,
+          reason: entry.reason,
+          points: entry.points,
+          xp: entry.xp,
+          streak: typeof meta?.streak === "number" ? meta.streak : undefined,
+          meta: {
+            event,
+            ...meta,
+          },
         });
+        window.dispatchEvent(new CustomEvent("player:rewarded", { detail: { event } }));
       } catch {
         // Fire-and-forget — never block the user
       }
@@ -51,6 +60,7 @@ export function usePlayerXP() {
       if (!user || !token) return;
       try {
         await playersApi.awardBadge(token, user.id, badgeKey);
+        window.dispatchEvent(new CustomEvent("player:rewarded", { detail: { event: "badge_awarded", badgeKey } }));
       } catch {
         // Badge may already be earned — ignore
       }

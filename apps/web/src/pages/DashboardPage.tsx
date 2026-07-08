@@ -61,6 +61,15 @@ export function DashboardPage() {
     void loadLiveData();
   }, [loadLiveData]);
 
+  useEffect(() => {
+    const handleRewardRefresh = () => {
+      void loadLiveData();
+    };
+
+    window.addEventListener("player:rewarded", handleRewardRefresh);
+    return () => window.removeEventListener("player:rewarded", handleRewardRefresh);
+  }, [loadLiveData]);
+
   return (
     <>
       <HeroArena />

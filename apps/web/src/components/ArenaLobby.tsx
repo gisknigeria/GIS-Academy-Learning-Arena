@@ -8,7 +8,7 @@
  * - Static fallback when no API data is available
  */
 
-import { Clock, RadioTower, Swords, Trophy, Users } from "lucide-react";
+import { Clock, RadioTower, Sparkles, Swords, Trophy, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type { Competition } from "../types/competition";
@@ -113,20 +113,26 @@ function LiveCompetitionRow({ comp }: { comp: Competition }) {
             <span className="arena-matchmaking-dot" />
             <span className="arena-matchmaking-dot" style={{ animationDelay: "0.15s" }} />
             <span className="arena-matchmaking-dot" style={{ animationDelay: "0.3s" }} />
-            <span className="arena-matchmaking-text">Battle live</span>
+            <span className="arena-matchmaking-text">Battle live • Matchmaking active</span>
           </div>
         )}
         {isOpen && (
-          <div className="arena-waiting-bar">
-            <div
-              className="arena-waiting-fill"
-              style={{
-                width: comp.maxParticipants
-                  ? `${Math.min(100, (participants / comp.maxParticipants) * 100)}%`
-                  : "60%",
-              }}
-            />
-          </div>
+          <>
+            <div className="arena-waiting-bar">
+              <div
+                className="arena-waiting-fill"
+                style={{
+                  width: comp.maxParticipants
+                    ? `${Math.min(100, (participants / comp.maxParticipants) * 100)}%`
+                    : "60%",
+                }}
+              />
+            </div>
+            <div className="arena-waiting-room">
+              <span><Sparkles size={11} /> Waiting room</span>
+              <span>{Math.max(0, (comp.maxParticipants ?? 12) - participants)} spots left</span>
+            </div>
+          </>
         )}
       </div>
 
@@ -146,7 +152,7 @@ function LiveCompetitionRow({ comp }: { comp: Competition }) {
 
 function StaticCompetitionRow({ comp }: { comp: StaticCompetition }) {
   return (
-    <article className="arena-lobby-row">
+    <article className="arena-lobby-row arena-lobby-row--preview">
       <div className="arena-lobby-row-icon">
         <Swords size={18} />
       </div>
@@ -159,6 +165,10 @@ function StaticCompetitionRow({ comp }: { comp: StaticCompetition }) {
           <span><Users size={11} />{comp.players} players</span>
           <span>{comp.type}</span>
         </div>
+        <div className="arena-waiting-room arena-waiting-room--preview">
+          <span><Sparkles size={11} /> Matchmaking ready</span>
+          <span>Join when the lobby opens</span>
+        </div>
       </div>
       <div className="arena-lobby-row-action">
         <Link className="secondary-button small-button" to="/arena">View</Link>
@@ -170,22 +180,18 @@ function StaticCompetitionRow({ comp }: { comp: StaticCompetition }) {
 // ─── Root component ───────────────────────────────────────────────────────────
 
 export function ArenaLobby({ liveCompetitions, competitions }: ArenaLobbyProps) {
-  const hasLive = liveCompetitions && liveCompetitions.length > 0;
+  const hasLive = Boolean(liveCompetitions && liveCompetitions.length > 0);
 
-  if (hasLive) {
-    return (
-      <div className="arena-lobby-list">
-        {liveCompetitions.map((comp) => (
-          <LiveCompetitionRow key={comp.id} comp={comp} />
-        ))}
-        <Link className="arena-lobby-view-all" to="/arena">
-          View all competitions →
-        </Link>
-      </div>
-    );
-  }
-
-  return (
+  const lobbyBody = hasLive ? (
+    <div className="arena-lobby-list">
+      {liveCompetitions!.map((comp) => (
+        <LiveCompetitionRow key={comp.id} comp={comp} />
+      ))}
+      <Link className="arena-lobby-view-all" to="/arena">
+        View all competitions →
+      </Link>
+    </div>
+  ) : (
     <div className="arena-lobby-list">
       {(competitions ?? []).map((comp) => (
         <StaticCompetitionRow key={comp.name} comp={comp} />
@@ -193,6 +199,21 @@ export function ArenaLobby({ liveCompetitions, competitions }: ArenaLobbyProps) 
       <Link className="arena-lobby-view-all" to="/arena">
         View all competitions →
       </Link>
+    </div>
+  );
+
+  return (
+    <div className="arena-lobby-shell">
+      <div className="arena-lobby-heading">
+        <div>
+          <p className="eyebrow">Arena lobby</p>
+          <h3>GIS competitions with instant feedback</h3>
+        </div>
+        <span className={`arena-lobby-status ${hasLive ? "arena-lobby-status--live" : ""}`}>
+          {hasLive ? <><RadioTower size={14} /> Live now</> : <><Sparkles size={14} /> Matchmaking ready</>}
+        </span>
+      </div>
+      {lobbyBody}
     </div>
   );
 }

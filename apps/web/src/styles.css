@@ -3102,6 +3102,86 @@ textarea {
    30. GAME QUEST PANEL (Dashboard)
    ============================================================================= */
 
+.arena-lobby-shell { display: grid; gap: 10px; }
+.arena-lobby-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 2px 2px;
+}
+.arena-lobby-heading h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--ink);
+}
+.arena-lobby-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: rgba(20,107,74,0.1);
+  color: var(--green-700);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.arena-lobby-status--live {
+  background: rgba(220,38,38,0.1);
+  color: #b91c1c;
+}
+.arena-lobby-list { display: grid; gap: 10px; }
+.arena-lobby-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: var(--panel);
+  transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition);
+}
+.arena-lobby-row:hover { border-color: rgba(20,107,74,0.35); box-shadow: var(--shadow); transform: translateY(-1px); }
+.arena-lobby-row--live { border-color: rgba(220,38,38,0.3); background: linear-gradient(90deg, rgba(248,113,113,0.1), rgba(255,255,255,0.95)); }
+.arena-lobby-row--preview { background: linear-gradient(90deg, rgba(20,107,74,0.06), rgba(255,255,255,0.95)); }
+.arena-lobby-row-icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 12px; background: rgba(20,107,74,0.12); color: var(--green-700); flex-shrink: 0; }
+.arena-lobby-row-body { flex: 1; display: grid; gap: 6px; min-width: 0; }
+.arena-lobby-row-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.arena-lobby-row-top strong { font-size: 0.95rem; }
+.arena-lobby-row-meta { display: flex; flex-wrap: wrap; gap: 8px; color: var(--muted); font-size: 0.78rem; font-weight: 700; }
+.arena-lobby-row-meta span { display: inline-flex; align-items: center; gap: 4px; }
+.arena-lobby-row-action { flex-shrink: 0; }
+.arena-lobby-countdown { color: var(--orange); }
+.arena-matchmaking-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(220,38,38,0.1);
+  color: #b91c1c;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+.arena-matchmaking-dot { width: 7px; height: 7px; border-radius: 999px; background: currentColor; animation: pulse-red 1.1s ease-in-out infinite; }
+.arena-waiting-bar { height: 7px; border-radius: 999px; background: rgba(20,107,74,0.12); overflow: hidden; }
+.arena-waiting-fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--lime), #38bdf8); transition: width 0.25s ease; }
+.arena-waiting-room { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
+.arena-waiting-room span { display: inline-flex; align-items: center; gap: 4px; }
+.arena-waiting-room--preview { opacity: 0.85; }
+.arena-lobby-view-all {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  color: var(--green-700);
+  font-weight: 800;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
 .game-quest-panel {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 220px;
@@ -3235,6 +3315,44 @@ textarea {
 .mini-game-card strong,
 .mini-game-card span { display: block; }
 .mini-game-card span { margin-top: 3px; color: var(--muted); font-size: 0.82rem; line-height: 1.35; }
+.mini-game-card--progress { align-items: flex-start; }
+.mini-game-card-icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 12px; background: rgba(20,107,74,0.12); color: var(--green-700); }
+.mini-game-mini-bar { height: 6px; border-radius: 999px; background: rgba(20,107,74,0.12); overflow: hidden; margin: 6px 0 4px; }
+.mini-game-mini-bar div { height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--lime), #ffcf47); }
+.mini-game-question-area { display: grid; gap: 12px; }
+.mini-game-question-counter { margin: 0; font-size: 0.78rem; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.72); }
+.mini-game-question-text { margin: 0; font-size: 1rem; line-height: 1.6; color: #fff; }
+.mini-game-options { display: grid; gap: 8px; }
+.mini-game-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: 1px solid rgba(255,255,255,0.16);
+  border-radius: var(--radius);
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  padding: 11px 12px;
+  text-align: left;
+  font-weight: 700;
+  transition: transform var(--transition), background var(--transition), border-color var(--transition);
+}
+.mini-game-option:hover:not(:disabled), .mini-game-option.is-selected { transform: translateY(-1px); border-color: rgba(216,255,120,0.8); background: rgba(216,255,120,0.16); }
+.mini-game-option.is-correct { border-color: rgba(216,255,120,0.9); background: rgba(216,255,120,0.24); }
+.mini-game-option.is-wrong { border-color: rgba(248,113,113,0.9); background: rgba(248,113,113,0.16); }
+.mini-game-option-letter { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 999px; background: rgba(255,255,255,0.15); font-size: 0.8rem; }
+.mini-game-feedback { display: flex; gap: 8px; align-items: flex-start; border-radius: var(--radius); padding: 10px 12px; font-size: 0.9rem; line-height: 1.5; }
+.mini-game-feedback.is-correct { background: rgba(216,255,120,0.18); color: #f6ffe0; }
+.mini-game-feedback.is-wrong { background: rgba(248,113,113,0.16); color: #ffe4e6; }
+.mini-game-actions { display: flex; justify-content: flex-start; }
+.mini-game-complete {
+  display: grid;
+  gap: 8px;
+  padding: 12px 0 4px;
+  color: #f6ffe0;
+}
+.mini-game-complete strong { font-size: 1.05rem; }
+.mini-game-complete p { margin: 0; color: rgba(255,255,255,0.8); }
 
 .quest-reset-button {
   display: flex;
@@ -3254,7 +3372,140 @@ textarea {
 .quest-reset-button:hover { background: #fff; border-color: var(--green-700); }
 
 /* =============================================================================
-   31. LEARN PAGE
+   31. ACHIEVEMENT / STREAK / LESSON FEEDBACK
+   ============================================================================= */
+
+.achievement-toast {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 800;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(320px, calc(100vw - 24px));
+  padding: 14px 14px 14px 12px;
+  border: 1px solid rgba(255,255,255,0.16);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  animation: modal-enter 0.2s ease;
+}
+.achievement-toast--gold { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #78350f; }
+.achievement-toast--green { background: linear-gradient(135deg, #dcfce7, #bbf7d0); color: #14532d; }
+.achievement-toast--blue { background: linear-gradient(135deg, #dbeafe, #bfdbfe); color: #1d4ed8; }
+.achievement-toast--purple { background: linear-gradient(135deg, #ede9fe, #ddd6fe); color: #6d28d9; }
+.achievement-toast--orange { background: linear-gradient(135deg, #ffedd5, #fdba74); color: #9a2c00; }
+.achievement-toast-icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 14px; background: rgba(255,255,255,0.65); flex-shrink: 0; }
+.achievement-toast-body { display: grid; gap: 3px; flex: 1; min-width: 0; }
+.achievement-toast-eyebrow { font-size: 0.72rem; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.7; }
+.achievement-toast-body strong { font-size: 0.95rem; }
+.achievement-toast-body span { font-size: 0.8rem; opacity: 0.85; }
+.achievement-toast-close {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+}
+
+.badge-card {
+  display: grid;
+  gap: 6px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  padding: 14px;
+  background: var(--panel);
+}
+.badge-card--earned { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.25); }
+.badge-card--gold { background: linear-gradient(135deg, #fffbeb, #fef3c7); }
+.badge-card--green { background: linear-gradient(135deg, #f0fdf4, #dcfce7); }
+.badge-card--blue { background: linear-gradient(135deg, #eff6ff, #dbeafe); }
+.badge-card--purple { background: linear-gradient(135deg, #faf5ff, #ede9fe); }
+.badge-card--orange { background: linear-gradient(135deg, #fff7ed, #ffedd5); }
+.badge-card-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,0.7); }
+.badge-card strong { font-size: 0.92rem; }
+.badge-card span, .badge-card small { color: var(--muted); font-size: 0.78rem; }
+.badge-card--locked { opacity: 0.72; }
+
+.streak-modal {
+  position: relative;
+  width: min(460px, calc(100vw - 24px));
+  padding: 28px 24px 24px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #0f172a, #1d4ed8 48%, #0f766e 100%);
+  color: #fff;
+  box-shadow: var(--shadow);
+  text-align: center;
+  animation: modal-enter 0.18s ease;
+}
+.streak-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  border: 0;
+  background: rgba(255,255,255,0.16);
+  color: #fff;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+}
+.streak-modal-orb {
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  margin: 0 auto 12px;
+  border-radius: 24px;
+  background: rgba(255,255,255,0.18);
+  color: var(--lime);
+  animation: quest-bob 2.4s ease-in-out infinite;
+}
+.streak-confetti { position: absolute; inset: 0; pointer-events: none; overflow: hidden; border-radius: inherit; }
+.confetti-dot { position: absolute; width: 10px; height: 18px; top: -8px; border-radius: 999px; animation: confetti-fall 2.8s linear infinite; }
+.confetti-dot--1 { left: 10%; background: #fde68a; animation-delay: 0s; }
+.confetti-dot--2 { left: 28%; background: #bfdbfe; animation-delay: 0.2s; }
+.confetti-dot--3 { left: 46%; background: #bbf7d0; animation-delay: 0.4s; }
+.confetti-dot--4 { left: 68%; background: #f9a8d4; animation-delay: 0.6s; }
+.streak-modal h2 { margin: 8px 0 8px; font-size: clamp(1.35rem, 3vw, 1.8rem); }
+.streak-modal p { margin: 0 0 14px; color: rgba(255,255,255,0.8); }
+.streak-modal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.18);
+  padding: 7px 12px;
+  margin-bottom: 14px;
+  font-size: 0.88rem;
+  font-weight: 900;
+}
+
+.lesson-progress-card {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 14px;
+  background: var(--panel);
+}
+.lesson-streak-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(20,107,74,0.12);
+  color: var(--green-700);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+/* =============================================================================
+   32. LEARN PAGE
    ============================================================================= */
 
 .learn-page { display: grid; gap: 24px; }
@@ -3562,6 +3813,12 @@ textarea {
   50%       { box-shadow: 0 0 0 8px rgba(216,255,120,0); }
 }
 
+@keyframes confetti-fall {
+  0% { transform: translate3d(0, -12px, 0) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  100% { transform: translate3d(0, 220px, 0) rotate(360deg); opacity: 0; }
+}
+
 /* Utility animation classes */
 .spin          { animation: spin 1s linear infinite; }
 .pulse-green-a { animation: pulse-green 1.2s ease-in-out infinite; }
@@ -3649,6 +3906,13 @@ textarea {
 
   .quest-side-stack {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .achievement-toast {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    width: auto;
   }
 
   .module-grid,
@@ -3785,8 +4049,56 @@ textarea {
 
   .hero { padding: 18px; }
 
+  .arena-lobby-heading h3 {
+    font-size: 0.95rem;
+  }
+
+  .arena-lobby-status {
+    width: 100%;
+    justify-content: center;
+  }
+
   .puzzle-board,
   .quest-side-stack { grid-template-columns: 1fr; }
+
+  .lesson-player-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .lesson-player-actions .secondary-button {
+    width: 100%;
+  }
+
+  .arena-lobby-heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .arena-lobby-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .arena-lobby-row-action {
+    width: 100%;
+  }
+
+  .arena-lobby-row-action .primary-button,
+  .arena-lobby-row-action .secondary-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .arena-lobby-row-top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .arena-waiting-room {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 
   .puzzle-answer {
     align-items: stretch;

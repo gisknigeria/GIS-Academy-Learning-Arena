@@ -1,4 +1,4 @@
-import { ArrowLeft, CheckCircle2, ExternalLink, Loader2, Video } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ExternalLink, Flame, Loader2, Video } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { AchievementBadgeToast } from "../components/AchievementBadge";
@@ -6,7 +6,7 @@ import { PaymentGate } from "../components/PaymentGate";
 import { useAuth } from "../context/AuthContext";
 import { usePlayerXP } from "../hooks/usePlayerXP";
 import { coursesApi } from "../lib/courses-api";
-import { sounds } from "../lib/sound";
+import { isSoundEnabled, sounds, toggleSound } from "../lib/sound";
 import type { Course, CourseProgress, Lesson } from "../types/course";
 
 export function LessonPlayerPage() {
@@ -20,6 +20,11 @@ export function LessonPlayerPage() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [badgeToast, setBadgeToast] = useState<string | null>(null);
+  const [soundOn, setSoundOn] = useState(isSoundEnabled);
+  const [streak, setStreak] = useState(() => {
+    if (typeof window === "undefined") return 0;
+    return Number(localStorage.getItem("gis_quest_streak") ?? 0);
+  });
 
   const currentIndex = useMemo(
     () => lessons.findIndex((lesson) => lesson.id === lessonId),
@@ -69,12 +74,24 @@ export function LessonPlayerPage() {
             : lesson,
         ),
       );
-      // Award XP + play sound
-      sounds.lessonComplete();
+
+      if (soundOn) {
+        sounds.lessonComplete();
+      }
+
       void awardXP("lesson_complete", { courseId, lessonId });
-      // Award first_lesson badge (idempotent — backend ignores duplicates)
       void awardBadge("first_lesson");
-      // Check if course is now fully complete
+
+      const nextStreak = Number(localStorage.getItem("gis_quest_streak") ?? 0) + 1;
+      localStorage.setItem("gis_quest_streak", String(nextStreak));
+      setStreak(nextStreak);
+      void awardXP("streak_milestone", { streak: nextStreak });
+
+      if ([3, 7, 14, 30].includes(nextStreak)) {
+        setBadgeToast(`streak_${nextStreak}`);
+        void awardBadge(`streak_${nextStreak}`);
+      }
+
       if (updatedProgress.progress === 100) {
         setBadgeToast("course_graduate");
         void awardBadge("course_graduate");
@@ -84,6 +101,11 @@ export function LessonPlayerPage() {
     } finally {
       setSaving(false);
     }
+  }
+
+  function handleSoundToggle() {
+    const on = toggleSound();
+    setSoundOn(on);
   }
 
   if (loading) {
@@ -158,6 +180,9 @@ export function LessonPlayerPage() {
               <CheckCircle2 size={18} />
               {currentLesson.completed ? "Completed" : saving ? "Saving..." : "Mark complete"}
             </button>
+            <button className="secondary-button" onClick={handleSoundToggle} type="button">
+              {soundOn ? "Sound on" : "Sound off"}
+            </button>
             <div className="lesson-nav-actions">
               {previousLesson ? (
                 <Link className="secondary-button" to={`/courses/${courseId}/lessons/${previousLesson.id}`}>
@@ -179,6 +204,10 @@ export function LessonPlayerPage() {
             <span>
               {progress?.completedLessons ?? 0} of {progress?.totalLessons ?? lessons.length} lessons completed
             </span>
+            <div className="lesson-streak-pill">
+              <Flame size={16} />
+              {streak} day streak
+            </div>
             <div className="progress-track">
               <div style={{ width: `${progress?.progress ?? 0}%` }} />
             </div>

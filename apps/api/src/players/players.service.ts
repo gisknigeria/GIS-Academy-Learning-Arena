@@ -38,6 +38,47 @@ export class PlayersService {
     return this.prisma.playerStats.findUnique({ where: { userId } });
   }
 
+  async applyReward(
+    userId: string,
+    payload: { event: string; reason?: string; points?: number; xp?: number; streak?: number; meta?: Record<string, unknown> },
+  ) {
+    await this.ensureStats(userId);
+
+    const update: Record<string, any> = {};
+    const current = await this.prisma.playerStats.findUnique({ where: { userId } });
+
+    if (typeof payload.points === "number" && payload.points !== 0) {
+      await this.prisma.pointsTransaction.create({
+        data: {
+          userId,
+          amount: payload.points,
+          reason: payload.reason ?? payload.event,
+          meta: payload.meta as Prisma.InputJsonValue | undefined,
+        },
+      });
+      update.points = { increment: payload.points };
+    }
+
+    if (typeof payload.xp === "number" && payload.xp !== 0) {
+      await this.addXp(userId, payload.xp);
+    }
+
+    if (typeof payload.streak === "number" && current) {
+      const nextStreak = Math.max(current.streak, payload.streak);
+      const longestStreak = Math.max(current.longestStreak ?? 0, nextStreak);
+      if (nextStreak !== current.streak || longestStreak !== current.longestStreak) {
+        update.streak = nextStreak;
+        update.longestStreak = longestStreak;
+      }
+    }
+
+    if (Object.keys(update).length > 0) {
+      await this.prisma.playerStats.update({ where: { userId }, data: update as any });
+    }
+
+    return this.prisma.playerStats.findUnique({ where: { userId } });
+  }
+
   async awardBadge(userId: string, badgeKey: string) {
     const badge = await this.prisma.badge.findUnique({ where: { key: badgeKey } });
     if (!badge) throw new NotFoundException("Badge not found");

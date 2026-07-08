@@ -35,6 +35,18 @@ export const playersApi = {
     return apiRequest<PlayerStatsResponse>("/players/me/stats", { token });
   },
 
+  reward(
+    token: string,
+    userId: string,
+    payload: { event: string; reason?: string; points?: number; xp?: number; streak?: number; meta?: Record<string, unknown> },
+  ): Promise<PlayerStatsResponse> {
+    return apiRequest<PlayerStatsResponse>(`/players/${userId}/reward`, {
+      method: "POST",
+      token,
+      body: payload,
+    });
+  },
+
   addPoints(
     token: string,
     userId: string,
