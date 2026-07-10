@@ -76,7 +76,7 @@ import type { PageId } from "../types/navigation";
  * "dashboard" is always visible.
  */
 export function getVisibleNavPages(role: UserRole): Set<PageId> {
-  const always: PageId[] = ["dashboard"];
+  const always: PageId[] = ["dashboard", "knowledge"];
 
   const byRole: Record<UserRole, PageId[]> = {
     SUPER_ADMIN: ["courses", "learn", "arena", "classes", "assessments", "certificates", "reports", "users"],
@@ -128,7 +128,7 @@ export function getCoachPanel(role: UserRole): CoachPanelConfig {
     },
     STUDENT: {
       heading: "Today's focus",
-      body: "Finish one practical task and enter one arena challenge to keep your weekly pace strong.",
+      body: "Finish one practical task and enter one Knowledge Hub challenge to keep your weekly pace strong.",
       cta: "View plan",
     },
     CORPORATE_CLIENT: {

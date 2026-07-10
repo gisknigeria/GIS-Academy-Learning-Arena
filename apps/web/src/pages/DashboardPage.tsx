@@ -30,7 +30,7 @@ export function DashboardPage() {
   // Live stats from API
   const [liveStats, setLiveStats] = useState<DashboardPublicStats | null>(null);
 
-  // Live competitions for arena lobby
+  // Live competitions for the challenge lobby
   const [liveCompetitions, setLiveCompetitions] = useState<Competition[]>([]);
 
   const staticStats = getStatsByRole(role);
@@ -119,14 +119,14 @@ export function DashboardPage() {
             </>
           )}
 
-          {/* Arena lobby — student / alumni / olympiad roles */}
+          {/* Challenge lobby — student / alumni / olympiad roles */}
           {(role === "STUDENT" ||
             role === "ALUMNI" ||
             role === "GUEST" ||
             role === "OLYMPIAD_COORDINATOR" ||
             role === "JUDGE") && (
             <>
-              <SectionHeading eyebrow="Active competitions" title="Arena lobby" compact />
+              <SectionHeading eyebrow="Active competitions" title="Challenge lobby" compact />
               <ArenaLobby
                 liveCompetitions={liveCompetitions.length > 0 ? liveCompetitions : undefined}
                 competitions={staticCompetitions}

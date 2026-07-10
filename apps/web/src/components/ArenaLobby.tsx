@@ -1,7 +1,7 @@
 /**
- * ArenaLobby
+ * ChallengeLobby
  *
- * Improved competition lobby card for the dashboard:
+ * Improved Knowledge Hub competition lobby card for the dashboard:
  * - Live competitions from API with real-time-style animated player counts
  * - Matchmaking pulsing UI for LIVE competitions
  * - Countdown to start for OPEN competitions
@@ -109,11 +109,11 @@ function LiveCompetitionRow({ comp }: { comp: Competition }) {
 
         {/* Matchmaking waiting bar — pulsing when live */}
         {isLive && (
-          <div className="arena-matchmaking-bar" aria-label="Live battle in progress">
+          <div className="arena-matchmaking-bar" aria-label="Live challenge in progress">
             <span className="arena-matchmaking-dot" />
             <span className="arena-matchmaking-dot" style={{ animationDelay: "0.15s" }} />
             <span className="arena-matchmaking-dot" style={{ animationDelay: "0.3s" }} />
-            <span className="arena-matchmaking-text">Battle live • Matchmaking active</span>
+            <span className="arena-matchmaking-text">Challenge live • Matching learners</span>
           </div>
         )}
         {isOpen && (
@@ -139,7 +139,7 @@ function LiveCompetitionRow({ comp }: { comp: Competition }) {
       <div className="arena-lobby-row-action">
         <Link
           className={isLive ? "primary-button small-button" : "secondary-button small-button"}
-          to={`/arena/${comp.id}`}
+          to={`/competitions/${comp.id}`}
         >
           {isLive ? "Enter" : "View"}
         </Link>
@@ -171,7 +171,7 @@ function StaticCompetitionRow({ comp }: { comp: StaticCompetition }) {
         </div>
       </div>
       <div className="arena-lobby-row-action">
-        <Link className="secondary-button small-button" to="/arena">View</Link>
+        <Link className="secondary-button small-button" to="/competitions">View</Link>
       </div>
     </article>
   );
@@ -187,7 +187,7 @@ export function ArenaLobby({ liveCompetitions, competitions }: ArenaLobbyProps) 
       {liveCompetitions!.map((comp) => (
         <LiveCompetitionRow key={comp.id} comp={comp} />
       ))}
-      <Link className="arena-lobby-view-all" to="/arena">
+      <Link className="arena-lobby-view-all" to="/competitions">
         View all competitions →
       </Link>
     </div>
@@ -196,7 +196,7 @@ export function ArenaLobby({ liveCompetitions, competitions }: ArenaLobbyProps) 
       {(competitions ?? []).map((comp) => (
         <StaticCompetitionRow key={comp.name} comp={comp} />
       ))}
-      <Link className="arena-lobby-view-all" to="/arena">
+      <Link className="arena-lobby-view-all" to="/competitions">
         View all competitions →
       </Link>
     </div>
@@ -206,8 +206,8 @@ export function ArenaLobby({ liveCompetitions, competitions }: ArenaLobbyProps) 
     <div className="arena-lobby-shell">
       <div className="arena-lobby-heading">
         <div>
-          <p className="eyebrow">Arena lobby</p>
-          <h3>GIS competitions with instant feedback</h3>
+          <p className="eyebrow">Challenge lobby</p>
+          <h3>Knowledge Hub competitions with instant feedback</h3>
         </div>
         <span className={`arena-lobby-status ${hasLive ? "arena-lobby-status--live" : ""}`}>
           {hasLive ? <><RadioTower size={14} /> Live now</> : <><Sparkles size={14} /> Matchmaking ready</>}

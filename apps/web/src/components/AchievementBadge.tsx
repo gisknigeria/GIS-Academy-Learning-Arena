@@ -57,7 +57,7 @@ export const BADGE_REGISTRY: Record<string, BadgeDefinition> = {
   },
   arena_debut: {
     key: "arena_debut",
-    title: "Arena Debut",
+    title: "Challenge Debut",
     description: "Entered your first competition",
     icon: <Star size={28} />,
     color: "purple",

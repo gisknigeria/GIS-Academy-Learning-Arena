@@ -41,7 +41,7 @@ export class ErrorBoundary extends Component<Props, State> {
               <div className="brand-mark brand-mark--lg">
                 <img src={logoMark} alt="" />
               </div>
-              <span className="not-found-brand-name">GIS Academy</span>
+              <span className="not-found-brand-name">Knowledge Hub</span>
             </div>
 
             <div className="error-page-icon" aria-hidden="true">

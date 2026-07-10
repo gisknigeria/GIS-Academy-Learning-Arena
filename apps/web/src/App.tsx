@@ -20,6 +20,7 @@ import { LessonPlayerPage } from "./pages/LessonPlayerPage";
 import { CompetitionDetailPage } from "./pages/CompetitionDetailPage";
 import { CompetitionChallengePage } from "./pages/CompetitionChallengePage";
 import { DashboardPage } from "./pages/DashboardPage";
+import { KnowledgeHubPage } from "./pages/KnowledgeHubPage";
 import { LearnPage } from "./pages/LearnPage";
 import { LoginPage } from "./pages/LoginPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
@@ -42,6 +43,7 @@ function App() {
           <Route element={<DashboardLayout />}>
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/knowledge-hub" element={<KnowledgeHubPage />} />
             <Route element={<RoleRoute page="courses" />}>
               <Route path="/courses" element={<CoursesPage />} />
               <Route path="/courses/:id" element={<CourseDetailPage />} />
@@ -51,7 +53,10 @@ function App() {
               <Route path="/learn" element={<LearnPage />} />
             </Route>
             <Route element={<RoleRoute page="arena" />}>
-              <Route path="/arena" element={<ArenaPage />} />
+              <Route path="/competitions" element={<ArenaPage />} />
+              <Route path="/competitions/:id" element={<CompetitionDetailPage />} />
+              <Route path="/competitions/:id/challenge" element={<CompetitionChallengePage />} />
+              <Route path="/arena" element={<Navigate to="/competitions" replace />} />
               <Route path="/arena/:id" element={<CompetitionDetailPage />} />
               <Route path="/arena/:id/challenge" element={<CompetitionChallengePage />} />
             </Route>

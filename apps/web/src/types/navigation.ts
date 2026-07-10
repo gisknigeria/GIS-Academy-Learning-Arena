@@ -1,5 +1,6 @@
 export type PageId =
   | "dashboard"
+  | "knowledge"
   | "learn"
   | "arena"
   | "classes"

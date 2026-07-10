@@ -7,7 +7,7 @@ export function ProtectedRoute() {
   const location = useLocation();
 
   if (isLoading) {
-    return <PageLoading label="Preparing your arena…" />;
+    return <PageLoading label="Preparing Knowledge Hub..." />;
   }
 
   if (!isAuthenticated) {

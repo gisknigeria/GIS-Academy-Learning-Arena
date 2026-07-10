@@ -97,7 +97,7 @@ export function ArenaPage() {
         assessmentId: createForm.assessmentId,
       });
       setShowCreate(false);
-      navigate(`/arena/${created.id}`);
+      navigate(`/competitions/${created.id}`);
     } catch (err) {
       setCreateError(err instanceof Error ? err.message : "Failed to create.");
     } finally {
@@ -119,7 +119,7 @@ export function ArenaPage() {
     try {
       await competitionsApi.join(token, id, isPublic ? undefined : joinCode);
       setJoiningId(null);
-      navigate(`/arena/${id}`);
+      navigate(`/competitions/${id}`);
     } catch (err) {
       setJoinError(err instanceof Error ? err.message : "Could not join.");
     } finally {
@@ -130,8 +130,8 @@ export function ArenaPage() {
   return (
     <section className="module-page">
       <SectionHeading
-        eyebrow="Competition arena"
-        title="Live battles and Olympiad contests"
+        eyebrow="Knowledge Hub challenges"
+        title="Live competitions and skill contests"
         action={
           isStaff ? (
             <button className="primary-button small-button" onClick={() => setShowCreate(true)}>
@@ -158,7 +158,7 @@ export function ArenaPage() {
       {error ? <p className="form-error">{error}</p> : null}
 
       {loading ? (
-        <div className="page-loading"><Loader2 size={22} className="spin" />Loading arena…</div>
+        <div className="page-loading"><Loader2 size={22} className="spin" />Loading challenges...</div>
       ) : (
         <div className="workstream">
           <SectionHeading eyebrow="Open now" title="Challenge lobby" compact />
@@ -213,18 +213,18 @@ export function ArenaPage() {
 
                     <div className="lobby-card-actions">
                       {isStaff ? (
-                        <Link className="secondary-button small-button" to={`/arena/${comp.id}`}>
+                        <Link className="secondary-button small-button" to={`/competitions/${comp.id}`}>
                           Manage
                         </Link>
                       ) : joined ? (
                         <Link
                           className={comp.status === "LIVE" ? "primary-button small-button" : "secondary-button small-button"}
-                          to={`/arena/${comp.id}`}
+                          to={`/competitions/${comp.id}`}
                         >
                           {comp.status === "LIVE" ? "Enter" : "View"}
                         </Link>
                       ) : (comp.status === "OPEN" || comp.status === "LIVE") && TEAM_MODES.has(comp.mode) ? (
-                        <Link className="primary-button small-button" to={`/arena/${comp.id}`}>
+                        <Link className="primary-button small-button" to={`/competitions/${comp.id}`}>
                           Choose team
                         </Link>
                       ) : comp.status === "OPEN" || comp.status === "LIVE" ? (

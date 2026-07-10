@@ -12,7 +12,7 @@ export function NotFoundPage() {
           <div className="brand-mark brand-mark--lg">
             <img src={logoMark} alt="" />
           </div>
-          <span className="not-found-brand-name">GIS Academy</span>
+          <span className="not-found-brand-name">Knowledge Hub</span>
         </div>
 
         <div className="not-found-visual" aria-hidden="true">
@@ -23,7 +23,7 @@ export function NotFoundPage() {
         <div className="not-found-copy">
           <h1>You've wandered off the map.</h1>
           <p>
-            This coordinate doesn't exist in the GIS Academy system. The page may
+            This coordinate doesn't exist in Knowledge Hub. The page may
             have been moved, renamed, or the link could be incorrect.
           </p>
         </div>

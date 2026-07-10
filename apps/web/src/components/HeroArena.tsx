@@ -24,23 +24,23 @@ function StudentHero({ name }: { name: string }) {
   return (
     <section className="hero">
       <div className="hero-copy">
-        <span className="eyebrow">GIS Konsult Learning Arena</span>
+        <span className="eyebrow">Knowledge Hub</span>
         <h1>Welcome back, {name.split(" ")[0]}.</h1>
         <p>
-          Pick up where you left off, complete your daily mission, and climb the national arena.
+          Pick up where you left off, complete your daily mission, and grow through personalised challenges.
         </p>
         <div className="hero-actions">
           <button className="primary-button" onClick={() => navigate("/learn")}>
             <Play size={18} />
             Continue learning
           </button>
-          <button className="secondary-button" onClick={() => navigate("/arena")}>
+          <button className="secondary-button" onClick={() => navigate("/competitions")}>
             <Trophy size={18} />
-            Enter arena
+            View challenges
           </button>
         </div>
       </div>
-      <div className="arena-preview" aria-label="Live arena status">
+      <div className="arena-preview" aria-label="Live challenge status">
         <div className="pulse-row">
           <span className="live-dot" />
           Live challenge
@@ -66,7 +66,7 @@ function GuestHero({ name }: { name: string }) {
   return (
     <section className="hero">
       <div className="hero-copy">
-        <span className="eyebrow">GIS Konsult Learning Arena</span>
+        <span className="eyebrow">Knowledge Hub</span>
         <h1>Welcome, {name.split(" ")[0]}.</h1>
         <p>
           Explore our GIS courses, join live competitions, and start building your geospatial skills today.
@@ -76,13 +76,13 @@ function GuestHero({ name }: { name: string }) {
             <BookOpen size={18} />
             Browse courses
           </button>
-          <button className="secondary-button" onClick={() => navigate("/arena")}>
+          <button className="secondary-button" onClick={() => navigate("/competitions")}>
             <Trophy size={18} />
-            View arena
+            View challenges
           </button>
         </div>
       </div>
-      <div className="arena-preview" aria-label="Live arena status">
+      <div className="arena-preview" aria-label="Live challenge status">
         <div className="pulse-row">
           <span className="live-dot" />
           Live challenge
@@ -195,7 +195,7 @@ function ExaminerHero({ name }: { name: string }) {
 }
 
 // ─── Super Admin hero ─────────────────────────────────────────────────────────
-// Full platform control: users, courses, payments, reports, arena.
+// Full platform control: users, courses, payments, reports, challenges.
 
 function SuperAdminHero({ name }: { name: string }) {
   const navigate = useNavigate();
@@ -232,9 +232,9 @@ function SuperAdminHero({ name }: { name: string }) {
           <BarChart3 size={20} />
           <span>Reports</span>
         </button>
-        <button className="admin-action-card" onClick={() => navigate("/arena")}>
+        <button className="admin-action-card" onClick={() => navigate("/competitions")}>
           <RadioTower size={20} />
-          <span>Live arena</span>
+          <span>Live challenges</span>
         </button>
       </div>
     </section>
@@ -394,11 +394,11 @@ function OlympiadHero({ name }: { name: string }) {
           128 schools · 2,840 participants · Registration closes in 3 days.
         </p>
         <div className="hero-actions">
-          <button className="primary-button" onClick={() => navigate("/arena")}>
+          <button className="primary-button" onClick={() => navigate("/competitions")}>
             <Trophy size={18} />
             Manage brackets
           </button>
-          <button className="secondary-button" onClick={() => navigate("/arena")}>
+          <button className="secondary-button" onClick={() => navigate("/competitions")}>
             <RadioTower size={18} />
             Live challenges
           </button>
@@ -424,7 +424,7 @@ function OlympiadHero({ name }: { name: string }) {
 }
 
 // ─── Judge hero ───────────────────────────────────────────────────────────────
-// Judges: view and score live arena competitions only.
+// Judges: view and score live Knowledge Hub competitions only.
 
 function JudgeHero({ name }: { name: string }) {
   const navigate = useNavigate();
@@ -437,9 +437,9 @@ function JudgeHero({ name }: { name: string }) {
           Review live competition entries, monitor scores, and submit your adjudication.
         </p>
         <div className="hero-actions">
-          <button className="primary-button" onClick={() => navigate("/arena")}>
+          <button className="primary-button" onClick={() => navigate("/competitions")}>
             <RadioTower size={18} />
-            Live arena
+            Live challenges
           </button>
           <button className="secondary-button" onClick={() => navigate("/reports")}>
             <BarChart3 size={18} />

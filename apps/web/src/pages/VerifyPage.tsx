@@ -72,7 +72,7 @@ export function VerifyPage() {
         <div className="verify-header-inner">
           <Link to="/login" className="verify-brand">
             <img src={logoMark} alt="GIS Konsult" width={32} />
-            <span>GIS Konsult Learning Arena</span>
+            <span>Knowledge Hub</span>
           </Link>
           <Link to="/login" className="secondary-button small-button">
             <ExternalLink size={14} />
@@ -144,7 +144,7 @@ export function VerifyPage() {
                 {/* Decorative header */}
                 <div className="verify-cert-header">
                   <img src={logoMark} alt="" width={28} />
-                  <span>GIS Konsult Learning Arena</span>
+                  <span>Knowledge Hub</span>
                   <span className="verify-cert-badge">Verified ✓</span>
                 </div>
 
@@ -178,7 +178,7 @@ export function VerifyPage() {
 
                 <div className="verify-cert-footer">
                   <CheckCircle2 size={14} />
-                  Authenticity verified by GIS Konsult Learning Arena
+                  Authenticity verified by Knowledge Hub
                 </div>
               </div>
             </div>
@@ -189,7 +189,7 @@ export function VerifyPage() {
       {/* Footer */}
       <footer className="verify-footer">
         <p>
-          © {new Date().getFullYear()} GIS Konsult Learning Arena ·{" "}
+          © {new Date().getFullYear()} Knowledge Hub ·{" "}
           <Link to="/login">Platform login</Link>
         </p>
       </footer>

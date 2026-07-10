@@ -36,9 +36,9 @@ export function LoginPage() {
     <main className="auth-page">
       <section className="auth-visual">
         <img src={logoMark} alt="" />
-        <span className="eyebrow">GIS Konsult Learning Arena</span>
-        <h1>Sign in, continue learning, and defend your rank.</h1>
-        <p>Access your GIS courses, live competitions, certificates, leaderboards, and trainer feedback.</p>
+        <span className="eyebrow">Knowledge Hub</span>
+        <h1>Sign in, continue your missions, and grow with feedback.</h1>
+        <p>Access your personalised dashboard, courses, challenges, certificates, leaderboards, and trainer feedback.</p>
       </section>
 
       <section className="auth-panel">
@@ -57,7 +57,7 @@ export function LoginPage() {
           </label>
           {error ? <p className="form-error">{error}</p> : null}
           <button className="primary-button" disabled={isSubmitting}>
-            {isSubmitting ? "Signing in..." : "Enter arena"}
+            {isSubmitting ? "Signing in..." : "Enter Knowledge Hub"}
           </button>
         </form>
         <p className="auth-switch">

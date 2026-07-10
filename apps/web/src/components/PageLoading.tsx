@@ -25,7 +25,7 @@ export function PageLoading({ label = "Loading…", inline = false }: PageLoadin
     <main className="full-page-loading" role="status" aria-label={label}>
       <div className="full-page-loading-inner">
         <div className="fpl-logo">
-          <img src={logoMark} alt="GIS Academy" />
+          <img src={logoMark} alt="Knowledge Hub" />
         </div>
         <div className="fpl-spinner" aria-hidden="true">
           <span className="fpl-ring" />

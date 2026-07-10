@@ -173,7 +173,7 @@ export function CompetitionDetailPage() {
   if (error || !competition) {
     return (
       <section className="module-page">
-        <Link className="back-link" to="/arena"><ArrowLeft size={16} />Back</Link>
+        <Link className="back-link" to="/competitions"><ArrowLeft size={16} />Back</Link>
         <p className="form-error">{error || "Not found."}</p>
       </section>
     );
@@ -188,7 +188,7 @@ export function CompetitionDetailPage() {
 
   return (
     <section className="module-page">
-      <Link className="back-link" to="/arena"><ArrowLeft size={16} />Back to arena</Link>
+      <Link className="back-link" to="/competitions"><ArrowLeft size={16} />Back to competitions</Link>
 
       {/* ── Hero ── */}
       <div className="comp-detail-hero">
@@ -285,7 +285,7 @@ export function CompetitionDetailPage() {
           </div>
           <button
             className="primary-button"
-            onClick={() => navigate(`/arena/${competition.id}/challenge`)}
+            onClick={() => navigate(`/competitions/${competition.id}/challenge`)}
           >
             <RadioTower size={16} />Enter challenge
           </button>

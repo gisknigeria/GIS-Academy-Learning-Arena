@@ -56,7 +56,7 @@ export type QuickAction = {
 
 const studentStats: Stat[] = [
   { label: "Learning progress", value: "68%", note: "+12% this week", icon: GraduationCap },
-  { label: "Arena points", value: "14,280", note: "Gold league", icon: Zap },
+  { label: "Challenge points", value: "14,280", note: "Gold league", icon: Zap },
   { label: "Current streak", value: "11 days", note: "Keep it alive", icon: Flame },
   { label: "National rank", value: "#24", note: "Top 3%", icon: Medal },
 ];
@@ -144,10 +144,10 @@ const studentMissions: Mission[] = [
     tone: "orange",
   },
   {
-    title: "Join live Location Intelligence Battle",
+    title: "Join live Location Intelligence Challenge",
     meta: "Starts in 18 minutes, 42 players waiting",
     action: "Join",
-    route: "/arena",
+    route: "/competitions",
     icon: RadioTower,
     tone: "blue",
   },
@@ -293,7 +293,7 @@ const olympiadMissions: Mission[] = [
     title: "Finalise bracket for School Olympiad",
     meta: "128 schools confirmed — draw closes tomorrow",
     action: "Finalise",
-    route: "/arena",
+    route: "/competitions",
     icon: Trophy,
     tone: "green",
   },
@@ -301,7 +301,7 @@ const olympiadMissions: Mission[] = [
     title: "Assign 3 judges to ArcGIS Speed Round",
     meta: "Round starts Saturday at 10 AM",
     action: "Assign",
-    route: "/arena",
+    route: "/competitions",
     icon: UserCheck,
     tone: "orange",
   },
@@ -309,7 +309,7 @@ const olympiadMissions: Mission[] = [
     title: "Review competition leaderboard",
     meta: "Live scores — 4 challenges active",
     action: "View",
-    route: "/arena",
+    route: "/competitions",
     icon: BarChart3,
     tone: "blue",
   },

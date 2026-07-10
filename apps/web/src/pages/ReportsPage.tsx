@@ -135,7 +135,7 @@ export function ReportsPage() {
             />
             <StatCard
               icon={Trophy}
-              label="Arena"
+              label="Challenges"
               value={overview.competitions}
               note={`${overview.participants} competition joins`}
             />
@@ -201,13 +201,13 @@ export function ReportsPage() {
               <div className="report-panel-header">
                 <div>
                   <span>Leaderboard</span>
-                  <h3>Top arena players</h3>
+                  <h3>Top challenge players</h3>
                 </div>
                 <Medal size={20} />
               </div>
               <div className="report-list">
                 {(competitions?.topParticipants ?? []).length === 0 ? (
-                  <p className="report-empty">No arena scores yet.</p>
+                  <p className="report-empty">No challenge scores yet.</p>
                 ) : (
                   competitions?.topParticipants.map((entry) => (
                     <article className="report-list-item" key={`${entry.competition.id}-${entry.user.id}`}>
@@ -246,7 +246,7 @@ export function ReportsPage() {
               <div className="report-panel-header">
                 <div>
                   <span>Competitions</span>
-                  <h3>Arena operations</h3>
+                  <h3>Challenge operations</h3>
                 </div>
               </div>
               <div className="report-list">

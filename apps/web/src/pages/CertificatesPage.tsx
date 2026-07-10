@@ -159,7 +159,7 @@ export function CertificatesPage() {
           <p>
             {featuredCertificate
               ? `Certificate ${featuredCertificate.certificateNo} was issued on ${formatDate(featuredCertificate.issuedAt)}.`
-              : "Complete courses, assessments, and arena challenges to unlock verified certificates."}
+              : "Complete courses, assessments, and Knowledge Hub challenges to unlock verified certificates."}
           </p>
         </article>
         <article className="module-card">

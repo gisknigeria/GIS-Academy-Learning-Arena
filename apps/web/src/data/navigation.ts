@@ -5,6 +5,7 @@ import {
   BookOpenCheck,
   ClipboardList,
   GraduationCap,
+  Sparkles,
   Trophy,
   UserCog,
   Users,
@@ -21,9 +22,10 @@ export type NavigationItem = {
 
 export const navItems: NavigationItem[] = [
   { id: "dashboard", label: "Dashboard", icon: Activity, path: "/dashboard" },
+  { id: "knowledge", label: "Knowledge Hub", icon: Sparkles, path: "/knowledge-hub" },
   { id: "courses", label: "Courses", icon: GraduationCap, path: "/courses" },
   { id: "learn", label: "Learn", icon: BookOpenCheck, path: "/learn" },
-  { id: "arena", label: "Arena", icon: Trophy, path: "/arena" },
+  { id: "arena", label: "Challenges", icon: Trophy, path: "/competitions" },
   { id: "classes", label: "Classes", icon: Users, path: "/classes" },
   { id: "assessments", label: "Assessments", icon: ClipboardList, path: "/assessments" },
   { id: "certificates", label: "Certificates", icon: Award, path: "/certificates" },

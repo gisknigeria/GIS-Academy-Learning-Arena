@@ -40,11 +40,11 @@ export function AppSidebar({ activePage, isOpen, onClose }: AppSidebarProps) {
       {/* Brand header */}
       <div className="brand">
         <div className="brand-mark">
-          <img src={logoMark} alt="GIS Academy logo" />
+          <img src={logoMark} alt="Knowledge Hub logo" />
         </div>
         <div>
-          <strong>GIS Academy</strong>
-          <span>Learning Arena</span>
+          <strong>Knowledge Hub</strong>
+          <span>Personalised Learning</span>
         </div>
 
         {/* Close button — visible on mobile only */}

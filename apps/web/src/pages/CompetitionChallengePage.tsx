@@ -120,7 +120,7 @@ export function CompetitionChallengePage() {
           )}
         </div>
         <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
-          <Link className="secondary-button" to={`/arena/${id}`}>
+          <Link className="secondary-button" to={`/competitions/${id}`}>
             <ArrowLeft size={15} />View leaderboard
           </Link>
         </div>
@@ -135,7 +135,7 @@ export function CompetitionChallengePage() {
   if (error && !session) {
     return (
       <section className="module-page">
-        <Link className="back-link" to={`/arena/${id}`}><ArrowLeft size={16} />Back</Link>
+        <Link className="back-link" to={`/competitions/${id}`}><ArrowLeft size={16} />Back</Link>
         <p className="form-error">{error}</p>
       </section>
     );
