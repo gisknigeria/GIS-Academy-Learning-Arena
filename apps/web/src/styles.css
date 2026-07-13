@@ -2230,6 +2230,17 @@ textarea {
   font-weight: 900;
   text-decoration: none;
 }
+
+.lesson-links .material-chip {
+  border: 1px solid rgba(20,107,74,0.12);
+}
+
+.lesson-no-materials {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
 .lesson-actions .icon-button.danger { color: #9f1239; }
 
 .lesson-open-button  { min-height: 38px; padding: 0 14px; background: #fff; color: var(--green-700); border-color: var(--color-border); }
@@ -2428,9 +2439,40 @@ textarea {
   border: 1px solid var(--color-border);
   padding: 16px;
 }
-.lesson-resource-panel a,
-.lesson-resource-panel span { display: inline-flex; align-items: center; gap: 8px; width: fit-content; color: var(--green-700); font-weight: 900; text-decoration: none; }
-.lesson-resource-panel span { color: var(--muted); }
+.lesson-resource-panel a {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  color: var(--green-700);
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.lesson-resource-panel a > span,
+.lesson-download-list a > span {
+  display: grid;
+  gap: 2px;
+  color: inherit;
+}
+
+.lesson-resource-panel a strong,
+.lesson-download-list a strong {
+  color: var(--green-900);
+  font-size: 0.72rem;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.lesson-resource-panel > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  color: var(--muted);
+  font-weight: 900;
+}
 
 .lesson-locked-panel {
   display: flex;

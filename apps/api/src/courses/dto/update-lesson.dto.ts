@@ -1,4 +1,4 @@
-import { IsArray, IsInt, IsOptional, IsString, IsUrl, Min, MinLength } from "class-validator";
+import { IsArray, IsInt, IsOptional, IsString, Min, MinLength } from "class-validator";
 
 export class UpdateLessonDto {
   @IsOptional()
@@ -20,23 +20,23 @@ export class UpdateLessonDto {
   order?: number;
 
   @IsOptional()
-  @IsUrl({ require_tld: false })
+  @IsString()
   videoUrl?: string;
 
   @IsOptional()
-  @IsUrl({ require_tld: false })
+  @IsString()
   resourceUrl?: string;
 
   @IsOptional()
-  @IsUrl({ require_tld: false })
+  @IsString()
   subtitleUrl?: string;
 
   @IsOptional()
-  @IsUrl({ require_tld: false })
+  @IsString()
   slideUrl?: string;
 
   @IsOptional()
-  @IsUrl({ require_tld: false })
+  @IsString()
   mapUrl?: string;
 
   @IsOptional()

@@ -1,4 +1,4 @@
-import { ArrowLeft, BookOpen, CheckCircle2, Edit3, ExternalLink, Loader2, PlayCircle, PlusCircle, Search, Trophy, Trash2, Video } from "lucide-react";
+import { ArrowLeft, BookOpen, CheckCircle2, Edit3, FileArchive, FileText, Image, Loader2, Map, PlayCircle, PlusCircle, Presentation, Search, Trophy, Trash2, Video } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { AssignmentSection } from "../components/AssignmentSection";
@@ -39,17 +39,47 @@ const emptyForm: LessonFormState = {
 
 function toLessonPayload(form: LessonFormState): CreateLessonPayload {
   return {
-    title: form.title,
-    summary: form.summary || undefined,
-    content: form.content || undefined,
+    title: form.title.trim(),
+    summary: form.summary.trim() || undefined,
+    content: form.content.trim() || undefined,
     order: Number(form.order),
-    videoUrl: form.videoUrl || undefined,
-    resourceUrl: form.resourceUrl || undefined,
-    subtitleUrl: form.subtitleUrl || undefined,
-    slideUrl: form.slideUrl || undefined,
-    mapUrl: form.mapUrl || undefined,
+    videoUrl: form.videoUrl.trim() || undefined,
+    resourceUrl: form.resourceUrl.trim() || undefined,
+    subtitleUrl: form.subtitleUrl.trim() || undefined,
+    slideUrl: form.slideUrl.trim() || undefined,
+    mapUrl: form.mapUrl.trim() || undefined,
     attachments: form.attachments,
   };
+}
+
+function getMaterialType(nameOrUrl: string, mimeType?: string) {
+  const text = `${nameOrUrl} ${mimeType ?? ""}`.toLowerCase();
+  if (text.includes("video/") || /\.(mp4|webm|mov|m4v|avi|mkv)(\?|$)/.test(text)) return "Video";
+  if (text.includes("pdf") || /\.pdf(\?|$)/.test(text)) return "PDF";
+  if (text.includes("presentation") || /\.(ppt|pptx)(\?|$)/.test(text)) return "PowerPoint";
+  if (text.includes("image/") || /\.(png|jpe?g|gif|webp|svg)(\?|$)/.test(text)) return "Image";
+  if (/\.(zip|shp|shx|dbf|prj|geojson|kml|kmz|gpkg|tif|tiff)(\?|$)/.test(text)) return "GIS / Map";
+  if (/\.(vtt|srt)(\?|$)/.test(text)) return "Subtitle";
+  if (/\.(doc|docx|xls|xlsx|csv|txt)(\?|$)/.test(text)) return "Document";
+  return "File";
+}
+
+function MaterialIcon({ type }: { type: string }) {
+  if (type === "Video") return <Video size={14} />;
+  if (type === "PowerPoint") return <Presentation size={14} />;
+  if (type === "PDF" || type === "Document" || type === "Subtitle") return <FileText size={14} />;
+  if (type === "Image") return <Image size={14} />;
+  if (type === "GIS / Map") return <Map size={14} />;
+  return <FileArchive size={14} />;
+}
+
+function MaterialChip({ href, label, type }: { href: string; label: string; type: string }) {
+  return (
+    <a className="material-chip" href={href} target="_blank" rel="noreferrer" title={label}>
+      <MaterialIcon type={type} />
+      <span>{type}</span>
+    </a>
+  );
 }
 
 function MaterialField({
@@ -454,34 +484,30 @@ export function CourseDetailPage() {
                     {lesson.summary ? <p>{lesson.summary}</p> : null}
                     <div className="lesson-links">
                       {lesson.videoUrl ? (
-                        <a href={lesson.videoUrl} target="_blank" rel="noreferrer">
-                          <Video size={14} />
-                          Video
-                        </a>
+                        <MaterialChip href={lesson.videoUrl} type="Video" label="Video lesson" />
                       ) : null}
                       {lesson.resourceUrl ? (
-                        <a href={lesson.resourceUrl} target="_blank" rel="noreferrer">
-                          <ExternalLink size={14} />
-                          Resource
-                        </a>
+                        <MaterialChip href={lesson.resourceUrl} type={getMaterialType(lesson.resourceUrl)} label="Lesson resource" />
                       ) : null}
                       {lesson.slideUrl ? (
-                        <a href={lesson.slideUrl} target="_blank" rel="noreferrer">
-                          <ExternalLink size={14} />
-                          Slides
-                        </a>
+                        <MaterialChip href={lesson.slideUrl} type="PowerPoint" label="PowerPoint / slides" />
                       ) : null}
                       {lesson.mapUrl ? (
-                        <a href={lesson.mapUrl} target="_blank" rel="noreferrer">
-                          <ExternalLink size={14} />
-                          Map
-                        </a>
+                        <MaterialChip href={lesson.mapUrl} type="GIS / Map" label="Map file" />
                       ) : null}
                       {lesson.subtitleUrl ? (
-                        <a href={lesson.subtitleUrl} target="_blank" rel="noreferrer">
-                          <ExternalLink size={14} />
-                          Subtitles
-                        </a>
+                        <MaterialChip href={lesson.subtitleUrl} type="Subtitle" label="Subtitles" />
+                      ) : null}
+                      {lesson.attachments?.map((item) => (
+                        <MaterialChip
+                          key={item.url}
+                          href={item.url}
+                          type={getMaterialType(item.name || item.url, item.type)}
+                          label={item.name}
+                        />
+                      ))}
+                      {!lesson.videoUrl && !lesson.resourceUrl && !lesson.slideUrl && !lesson.mapUrl && !lesson.subtitleUrl && !lesson.attachments?.length ? (
+                        <span className="lesson-no-materials">No materials yet</span>
                       ) : null}
                     </div>
                   </div>
@@ -610,7 +636,9 @@ export function CourseDetailPage() {
                   <div className="lesson-attachment-list">
                     {form.attachments.map((item) => (
                       <span key={item.url}>
-                        <a href={item.url} target="_blank" rel="noreferrer">{item.name}</a>
+                        <a href={item.url} target="_blank" rel="noreferrer">
+                          {getMaterialType(item.name || item.url, item.type)} - {item.name}
+                        </a>
                         <button type="button" onClick={() => removeAttachment(item.url)}>Remove</button>
                       </span>
                     ))}

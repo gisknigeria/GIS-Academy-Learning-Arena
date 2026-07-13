@@ -1,4 +1,4 @@
-import { ArrowLeft, CheckCircle2, ExternalLink, Flame, Loader2, Lock, MessageSquare, Send, Video } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ExternalLink, FileArchive, FileText, Flame, Image, Loader2, Lock, Map, MessageSquare, Presentation, Send, Video } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import { AchievementBadgeToast } from "../components/AchievementBadge";
@@ -9,6 +9,40 @@ import { coursesApi } from "../lib/courses-api";
 import { isAdminRole, isInstructorRole } from "../lib/roles";
 import { isSoundEnabled, sounds, toggleSound } from "../lib/sound";
 import type { Course, CourseProgress, Lesson, LessonDiscussion } from "../types/course";
+
+function getMaterialType(nameOrUrl: string, mimeType?: string) {
+  const text = `${nameOrUrl} ${mimeType ?? ""}`.toLowerCase();
+  if (text.includes("video/") || /\.(mp4|webm|mov|m4v|avi|mkv)(\?|$)/.test(text)) return "Video";
+  if (text.includes("pdf") || /\.pdf(\?|$)/.test(text)) return "PDF";
+  if (text.includes("presentation") || /\.(ppt|pptx)(\?|$)/.test(text)) return "PowerPoint";
+  if (text.includes("image/") || /\.(png|jpe?g|gif|webp|svg)(\?|$)/.test(text)) return "Image";
+  if (/\.(zip|shp|shx|dbf|prj|geojson|kml|kmz|gpkg|tif|tiff)(\?|$)/.test(text)) return "GIS / Map";
+  if (/\.(vtt|srt)(\?|$)/.test(text)) return "Subtitle";
+  if (/\.(doc|docx|xls|xlsx|csv|txt)(\?|$)/.test(text)) return "Document";
+  return "File";
+}
+
+function MaterialIcon({ type }: { type: string }) {
+  if (type === "Video") return <Video size={18} />;
+  if (type === "PowerPoint") return <Presentation size={18} />;
+  if (type === "PDF" || type === "Document" || type === "Subtitle") return <FileText size={18} />;
+  if (type === "Image") return <Image size={18} />;
+  if (type === "GIS / Map") return <Map size={18} />;
+  return <FileArchive size={18} />;
+}
+
+function MaterialLink({ href, title, type }: { href: string; title: string; type: string }) {
+  return (
+    <a href={href} target="_blank" rel="noreferrer">
+      <MaterialIcon type={type} />
+      <span>
+        <strong>{type}</strong>
+        {title}
+      </span>
+      <ExternalLink size={15} />
+    </a>
+  );
+}
 
 export function LessonPlayerPage() {
   const { courseId, lessonId } = useParams();
@@ -226,36 +260,21 @@ export function LessonPlayerPage() {
 
           {!currentLesson.locked ? <div className="lesson-resource-panel">
             {currentLesson.videoUrl ? (
-              <a href={currentLesson.videoUrl} target="_blank" rel="noreferrer">
-                <Video size={18} />
-                Open video lesson
-              </a>
+              <MaterialLink href={currentLesson.videoUrl} type="Video" title="Open video lesson" />
             ) : (
               <span>No video link has been added yet.</span>
             )}
             {currentLesson.resourceUrl ? (
-              <a href={currentLesson.resourceUrl} target="_blank" rel="noreferrer">
-                <ExternalLink size={18} />
-                Open lesson resource
-              </a>
+              <MaterialLink href={currentLesson.resourceUrl} type={getMaterialType(currentLesson.resourceUrl)} title="Open lesson resource" />
             ) : null}
             {currentLesson.slideUrl ? (
-              <a href={currentLesson.slideUrl} target="_blank" rel="noreferrer">
-                <ExternalLink size={18} />
-                Open PowerPoint / slides
-              </a>
+              <MaterialLink href={currentLesson.slideUrl} type="PowerPoint" title="Open PowerPoint / slides" />
             ) : null}
             {currentLesson.mapUrl ? (
-              <a href={currentLesson.mapUrl} target="_blank" rel="noreferrer">
-                <ExternalLink size={18} />
-                Open map file
-              </a>
+              <MaterialLink href={currentLesson.mapUrl} type="GIS / Map" title="Open map file" />
             ) : null}
             {currentLesson.subtitleUrl ? (
-              <a href={currentLesson.subtitleUrl} target="_blank" rel="noreferrer">
-                <ExternalLink size={18} />
-                Open subtitles
-              </a>
+              <MaterialLink href={currentLesson.subtitleUrl} type="Subtitle" title="Open subtitles" />
             ) : null}
           </div> : null}
 
@@ -272,8 +291,12 @@ export function LessonPlayerPage() {
               <div className="lesson-download-list">
                 {currentLesson.attachments.map((item) => (
                   <a href={item.url} key={item.url} target="_blank" rel="noreferrer">
-                    <ExternalLink size={16} />
-                    {item.name}
+                    <MaterialIcon type={getMaterialType(item.name || item.url, item.type)} />
+                    <span>
+                      <strong>{getMaterialType(item.name || item.url, item.type)}</strong>
+                      {item.name}
+                    </span>
+                    <ExternalLink size={15} />
                   </a>
                 ))}
               </div>
