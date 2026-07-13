@@ -63,3 +63,22 @@ Avoid `UPLOAD_PROVIDER=local` on Render for important course files because local
 - Run Prisma migrations during Render build with `prisma:migrate:deploy`.
 - Confirm `/api/health` returns `{"status":"ok"}` after deploy.
 - Test login, trainer registration approval, course material upload, learner enrollment, lesson discussion, live session external link, and certificate verification.
+
+## Troubleshooting
+
+### `/api/courses` returns 500 on Render
+
+This usually means the deployed Neon database is behind the Prisma schema. The course list needs columns such as `Course.isArchived` and `Course.trainingCategory`, so Render must run migrations before starting the API.
+
+Use this Render build command from the repository root:
+
+```bash
+npm install && npm --workspace apps/api run prisma:generate && npm --workspace apps/api run prisma:migrate:deploy && npm --workspace apps/api run build
+```
+
+Then redeploy the backend. After deploy, test:
+
+```text
+https://your-render-service.onrender.com/api/health
+https://your-render-service.onrender.com/api/courses
+```
