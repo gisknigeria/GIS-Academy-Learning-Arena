@@ -1,10 +1,12 @@
 import { NestFactory } from "@nestjs/core";
 import { ValidationPipe } from "@nestjs/common";
+import { NestExpressApplication } from "@nestjs/platform-express";
+import path from "path";
 import { AppModule } from "./app.module";
 import { IoAdapter } from "@nestjs/platform-socket.io";
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   const allowedOrigins = [
     "http://127.0.0.1:5173",
@@ -28,6 +30,10 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
+  app.useStaticAssets(path.join(process.cwd(), "uploads"), {
+    prefix: "/uploads",
+  });
 
   // Enable WebSocket (Socket.IO) adapter
   app.useWebSocketAdapter(new IoAdapter(app));

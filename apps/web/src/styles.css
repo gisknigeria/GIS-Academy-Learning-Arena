@@ -2404,10 +2404,14 @@ textarea {
 }
 
 /* Lesson player */
-.lesson-player-page { display: grid; gap: 20px; }
+.lesson-player-page {
+  display: grid;
+  gap: 20px;
+  padding-bottom: 180px;
+}
 .lesson-player-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
+  grid-template-columns: 1fr;
   gap: 20px;
 }
 
@@ -2882,6 +2886,37 @@ textarea {
 .lesson-progress-card { box-shadow: none; padding: 14px; }
 .lesson-progress-card strong { display: block; font-size: 1.35rem; }
 .lesson-progress-card span   { display: block; color: var(--muted); margin-top: 4px; font-size: 0.88rem; }
+.lesson-bottom-sticky-card {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 18px;
+  width: min(100%, 1080px);
+  max-width: 1080px;
+  padding: 0 12px;
+  pointer-events: none;
+  z-index: 30;
+}
+.lesson-progress-card.lesson-progress-card--bottom {
+  pointer-events: auto;
+  border-radius: 20px;
+  background: rgba(10, 45, 24, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.16);
+}
+.lesson-progress-card.lesson-progress-card--bottom strong {
+  color: #fff;
+}
+.lesson-progress-card.lesson-progress-card--bottom span,
+.lesson-progress-card.lesson-progress-card--bottom .lesson-streak-pill {
+  color: rgba(255, 255, 255, 0.78);
+}
+.lesson-progress-card.lesson-progress-card--bottom .progress-track {
+  background: rgba(255,255,255,0.08);
+}
+.lesson-progress-card.lesson-progress-card--bottom .progress-track div {
+  background: #a3f7b0;
+}
 
 .progress-track { height: 9px; overflow: hidden; border-radius: 999px; background: #e8efeb; margin-top: 12px; }
 .progress-track div { height: 100%; border-radius: inherit; background: var(--green-700); transition: width 0.3s ease; }

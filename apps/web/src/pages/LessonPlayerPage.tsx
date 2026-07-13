@@ -537,20 +537,6 @@ export function LessonPlayerPage() {
         </article>
 
         <aside className="lesson-playlist">
-          <div className="lesson-progress-card">
-            <strong>{progress?.progress ?? 0}% complete</strong>
-            <span>
-              {progress?.completedLessons ?? 0} of {progress?.totalLessons ?? lessons.length} lessons completed
-            </span>
-            <div className="lesson-streak-pill">
-              <Flame size={16} />
-              {streak} day streak
-            </div>
-            <div className="progress-track">
-              <div style={{ width: `${progress?.progress ?? 0}%` }} />
-            </div>
-          </div>
-
           <div className="lesson-playlist-list">
             {lessons.map((lesson) => (
               <Link
@@ -566,6 +552,22 @@ export function LessonPlayerPage() {
             ))}
           </div>
         </aside>
+      </div>
+
+      <div className="lesson-bottom-sticky-card">
+        <div className="lesson-progress-card lesson-progress-card--bottom">
+          <strong>{progress?.progress ?? 0}% complete</strong>
+          <span>
+            {progress?.completedLessons ?? 0} of {progress?.totalLessons ?? lessons.length} lessons completed
+          </span>
+          <div className="lesson-streak-pill">
+            <Flame size={16} />
+            {streak} day streak
+          </div>
+          <div className="progress-track">
+            <div style={{ width: `${progress?.progress ?? 0}%` }} />
+          </div>
+        </div>
       </div>
 
       {badgeToast && (
