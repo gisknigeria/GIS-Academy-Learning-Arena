@@ -5,6 +5,7 @@ import { AchievementBadgeToast } from "../components/AchievementBadge";
 import { PaymentGate } from "../components/PaymentGate";
 import { useAuth } from "../context/AuthContext";
 import { usePlayerXP } from "../hooks/usePlayerXP";
+import { API_BASE_URL } from "../lib/api";
 import { coursesApi } from "../lib/courses-api";
 import { isAdminRole, isInstructorRole } from "../lib/roles";
 import { isSoundEnabled, sounds, toggleSound } from "../lib/sound";
@@ -22,6 +23,62 @@ function getMaterialType(nameOrUrl: string, mimeType?: string) {
   return "File";
 }
 
+function resolveMediaUrl(href: string) {
+  if (/^(https?:|blob:|data:)/i.test(href)) return href;
+  if (href.startsWith("/")) {
+    try {
+      return `${new URL(API_BASE_URL).origin}${href}`;
+    } catch {
+      return href;
+    }
+  }
+  return href;
+}
+
+function getVideoEmbedUrl(href: string) {
+  try {
+    const url = new URL(resolveMediaUrl(href));
+    if (url.hostname.includes("youtube.com")) {
+      const id = url.searchParams.get("v");
+      return id ? `https://www.youtube.com/embed/${id}` : href;
+    }
+    if (url.hostname.includes("youtu.be")) {
+      return `https://www.youtube.com/embed/${url.pathname.replace("/", "")}`;
+    }
+    if (url.hostname.includes("vimeo.com")) {
+      const id = url.pathname.split("/").filter(Boolean)[0];
+      return id ? `https://player.vimeo.com/video/${id}` : href;
+    }
+  } catch {
+    return href;
+  }
+  return href;
+}
+
+function getPrimaryMaterial(lesson: Lesson) {
+  if (lesson.videoUrl) {
+    return { url: lesson.videoUrl, type: "Video", title: "Video lesson" };
+  }
+  if (lesson.slideUrl) {
+    return { url: lesson.slideUrl, type: "PowerPoint", title: "PowerPoint / slides" };
+  }
+  if (lesson.resourceUrl) {
+    return { url: lesson.resourceUrl, type: getMaterialType(lesson.resourceUrl), title: "Lesson resource" };
+  }
+  if (lesson.mapUrl) {
+    return { url: lesson.mapUrl, type: "GIS / Map", title: "Map file" };
+  }
+  const firstVisibleAttachment = lesson.attachments?.find((item) => getMaterialType(item.name || item.url, item.type) !== "Subtitle");
+  if (firstVisibleAttachment) {
+    return {
+      url: firstVisibleAttachment.url,
+      type: getMaterialType(firstVisibleAttachment.name || firstVisibleAttachment.url, firstVisibleAttachment.type),
+      title: firstVisibleAttachment.name,
+    };
+  }
+  return null;
+}
+
 function MaterialIcon({ type }: { type: string }) {
   if (type === "Video") return <Video size={18} />;
   if (type === "PowerPoint") return <Presentation size={18} />;
@@ -32,8 +89,10 @@ function MaterialIcon({ type }: { type: string }) {
 }
 
 function MaterialLink({ href, title, type }: { href: string; title: string; type: string }) {
+  const resolvedHref = resolveMediaUrl(href);
+
   return (
-    <a href={href} target="_blank" rel="noreferrer">
+    <a href={resolvedHref} target="_blank" rel="noreferrer">
       <MaterialIcon type={type} />
       <span>
         <strong>{type}</strong>
@@ -41,6 +100,74 @@ function MaterialLink({ href, title, type }: { href: string; title: string; type
       </span>
       <ExternalLink size={15} />
     </a>
+  );
+}
+
+function LessonMediaStage({ lesson }: { lesson: Lesson }) {
+  const material = getPrimaryMaterial(lesson);
+
+  if (!material) {
+    return (
+      <section className="lesson-media-stage lesson-media-stage--notes">
+        <div className="lesson-media-empty">
+          <FileText size={30} />
+          <span>Text lesson</span>
+          <strong>{lesson.content ? "Read the notes below" : "No learning material has been added yet"}</strong>
+        </div>
+      </section>
+    );
+  }
+
+  const src = resolveMediaUrl(material.url);
+  const type = material.type;
+  const isDirectVideo = type === "Video" && /\.(mp4|webm|mov|m4v)(\?|$)/i.test(src);
+  const isEmbeddedVideo = type === "Video" && /(youtube\.com|youtu\.be|vimeo\.com)/i.test(src);
+  const isImage = type === "Image";
+  const isPdf = type === "PDF";
+
+  return (
+    <section className="lesson-media-stage" aria-label="Lesson material preview">
+      <div className="lesson-media-toolbar">
+        <span>
+          <MaterialIcon type={type} />
+          {type}
+        </span>
+        <a href={src} target="_blank" rel="noreferrer">
+          Open material
+          <ExternalLink size={15} />
+        </a>
+      </div>
+
+      <div className="lesson-media-frame">
+        {isDirectVideo ? (
+          <video src={src} controls autoPlay muted playsInline>
+            {lesson.subtitleUrl ? <track src={resolveMediaUrl(lesson.subtitleUrl)} kind="subtitles" /> : null}
+          </video>
+        ) : isEmbeddedVideo ? (
+          <iframe
+            src={getVideoEmbedUrl(src)}
+            title={material.title}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        ) : isImage ? (
+          <img src={src} alt={material.title} />
+        ) : isPdf ? (
+          <iframe src={src} title={material.title} />
+        ) : (
+          <div className="lesson-media-preview-fallback">
+            <MaterialIcon type={type} />
+            <span>{type}</span>
+            <strong>{material.title}</strong>
+            <p>This material is ready. Open it in a new tab for the best viewing experience.</p>
+            <a className="primary-button" href={src} target="_blank" rel="noreferrer">
+              Open material
+              <ExternalLink size={16} />
+            </a>
+          </div>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -257,6 +384,8 @@ export function LessonPlayerPage() {
               </div>
             </article>
           ) : null}
+
+          {!currentLesson.locked ? <LessonMediaStage lesson={currentLesson} /> : null}
 
           {!currentLesson.locked ? <div className="lesson-resource-panel">
             {currentLesson.videoUrl ? (
