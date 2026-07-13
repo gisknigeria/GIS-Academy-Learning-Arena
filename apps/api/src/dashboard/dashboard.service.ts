@@ -138,7 +138,7 @@ export class DashboardService {
           key: "competitions",
         },
         {
-          label: "Best arena rank",
+          label: "Best challenge rank",
           value: bestRank?.rank != null ? `#${bestRank.rank}` : "—",
           note: bestRank?.score != null ? `${bestRank.score} pts` : "Not ranked yet",
           key: "rank",
@@ -423,7 +423,7 @@ export class DashboardService {
       stats: [
         { label: "Platform users", value: String(users), note: "Active members", key: "users" },
         { label: "Available courses", value: String(courses), note: "Enroll your team", key: "courses" },
-        { label: "Competitions joined", value: "—", note: "Check arena", key: "competitions" },
+        { label: "Competitions joined", value: "—", note: "Check challenges", key: "competitions" },
         { label: "Certificates", value: "—", note: "View in certificates", key: "certificates" },
       ],
     };
@@ -435,7 +435,7 @@ export class DashboardService {
       stats: [
         { label: "Platform users", value: "—", note: "Join the community", key: "users" },
         { label: "Courses", value: "—", note: "Browse the catalogue", key: "courses" },
-        { label: "Competitions", value: "—", note: "Enter the arena", key: "competitions" },
+        { label: "Competitions", value: "—", note: "Explore challenges", key: "competitions" },
         { label: "Certificates", value: "—", note: "Earn recognition", key: "certificates" },
       ],
     };

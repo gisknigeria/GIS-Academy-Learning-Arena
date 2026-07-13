@@ -1,7 +1,10 @@
 import { Controller, Post, UploadedFile, UseInterceptors, Body, UseGuards, Req } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { UserRole } from '@prisma/client';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { UploadsService } from './uploads.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
 
 type UploadedBufferFile = {
   originalname: string;
@@ -13,7 +16,9 @@ type UploadedBufferFile = {
 export class UploadsController {
   constructor(private readonly uploadsService: UploadsService) {}
 
-  // Public lesson resource upload (may be protected in prod)
+  // Lesson material upload for trainers/admins.
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TRAINING_MANAGER, UserRole.TRAINER)
   @Post('lesson-resource')
   @UseInterceptors(FileInterceptor('file'))
   async uploadLessonResource(@UploadedFile() file: UploadedBufferFile, @Body('lessonId') lessonId?: string) {

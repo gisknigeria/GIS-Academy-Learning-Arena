@@ -12,11 +12,13 @@ export class LearnService {
       assignmentSubmissions,
       assessments,
       classes,
+      liveSessions,
     ] = await Promise.all([
       this.getEnrolledCourses(userId),
       this.getPendingAssignments(userId),
       this.getAvailableAssessments(userId),
       this.getUpcomingClasses(userId),
+      this.getUpcomingLiveSessions(userId),
     ]);
 
     // Derive "continue learning" — the in-progress course with the most recent activity
@@ -43,6 +45,7 @@ export class LearnService {
       pendingAssignments: assignmentSubmissions,
       assessments,
       upcomingClasses: classes,
+      upcomingLiveSessions: liveSessions,
     };
   }
 
@@ -217,6 +220,32 @@ export class LearnService {
       take: 5,
       include: {
         course: { select: { id: true, code: true, title: true } },
+      },
+    });
+  }
+
+  private async getUpcomingLiveSessions(userId: string) {
+    const now = new Date();
+
+    return this.prisma.liveSession.findMany({
+      where: {
+        startsAt: { gte: now },
+        class: {
+          students: { some: { userId } },
+        },
+      },
+      orderBy: { startsAt: "asc" },
+      take: 5,
+      include: {
+        class: {
+          select: {
+            id: true,
+            name: true,
+            mode: true,
+            course: { select: { id: true, code: true, title: true } },
+            trainer: { select: { id: true, fullName: true } },
+          },
+        },
       },
     });
   }

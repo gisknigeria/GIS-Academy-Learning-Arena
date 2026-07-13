@@ -31,6 +31,21 @@ export class UsersService {
     }
 
     const passwordHash = await hash(createUserDto.password, 12);
+    const profileData = {
+      institution: createUserDto.organisation,
+      preferredMode: createUserDto.learningMode,
+      ageBand: createUserDto.ageBand,
+      trainingCategory: createUserDto.trainingCategory,
+      learningGoal: createUserDto.learningGoal,
+      fanCategory: createUserDto.fanCategory,
+      favorite: createUserDto.favorite,
+      learningStyle: createUserDto.learningStyle,
+      competitionType: createUserDto.competitionType,
+      courseInterest: createUserDto.courseInterest,
+      notificationPreference: createUserDto.notificationPreference,
+      languagePreference: createUserDto.languagePreference,
+    };
+    const hasProfileData = Object.values(profileData).some((value) => value !== undefined && value !== "");
     const user = await this.prisma.user.create({
       data: {
         email: createUserDto.email.toLowerCase(),
@@ -38,6 +53,8 @@ export class UsersService {
         fullName: createUserDto.fullName,
         passwordHash,
         role: createUserDto.role ?? UserRole.STUDENT,
+        status: createUserDto.role === UserRole.TRAINER ? UserStatus.PENDING : UserStatus.ACTIVE,
+        ...(hasProfileData ? { profile: { create: profileData } } : {}),
       },
     });
 
@@ -265,6 +282,16 @@ export class UsersService {
     profession?: string;
     highestQualification?: string;
     preferredMode?: string;
+    ageBand?: string;
+    trainingCategory?: string;
+    learningGoal?: string;
+    fanCategory?: string;
+    favorite?: string;
+    learningStyle?: string;
+    competitionType?: string;
+    courseInterest?: string;
+    notificationPreference?: string;
+    languagePreference?: string;
     avatarUrl?: string;
   }) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });

@@ -10,7 +10,6 @@ const DELIVERY_MODE_OPTIONS = [
   { value: "", label: "No preference" },
   { value: "E_LEARNING", label: "E-Learning" },
   { value: "ONSITE", label: "Onsite" },
-  { value: "LIVE_VIRTUAL", label: "Live Virtual" },
   { value: "HYBRID", label: "Hybrid" },
 ];
 

@@ -17,6 +17,7 @@ import GradingPage from "./pages/GradingPage";
 import { CoursesPage } from "./pages/CoursesPage";
 import { CourseDetailPage } from "./pages/CourseDetailPage";
 import { LessonPlayerPage } from "./pages/LessonPlayerPage";
+import { LiveSessionPage } from "./pages/LiveSessionPage";
 import { CompetitionDetailPage } from "./pages/CompetitionDetailPage";
 import { CompetitionChallengePage } from "./pages/CompetitionChallengePage";
 import { DashboardPage } from "./pages/DashboardPage";
@@ -51,6 +52,7 @@ function App() {
             </Route>
             <Route element={<RoleRoute page="learn" />}>
               <Route path="/learn" element={<LearnPage />} />
+              <Route path="/live-sessions/:sessionId" element={<LiveSessionPage />} />
             </Route>
             <Route element={<RoleRoute page="arena" />}>
               <Route path="/competitions" element={<ArenaPage />} />

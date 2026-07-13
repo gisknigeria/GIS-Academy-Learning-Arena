@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import { UserRole } from "@prisma/client";
+import { UserRole, UserStatus } from "@prisma/client";
 import { compare } from "bcryptjs";
 import { EmailService } from "../email/email.service";
 import { CreateUserDto } from "../users/dto/create-user.dto";
@@ -18,9 +18,10 @@ export class AuthService {
   ) {}
 
   async register(createUserDto: CreateUserDto) {
+    const requestedRole = createUserDto.role === UserRole.TRAINER ? UserRole.TRAINER : UserRole.STUDENT;
     const user = await this.usersService.create({
       ...createUserDto,
-      role: UserRole.STUDENT,
+      role: requestedRole,
     });
     void this.emailService.sendWelcomeEmail(user.email, user.fullName).catch(() => undefined);
     const accessToken = await this.signToken({
@@ -44,6 +45,10 @@ export class AuthService {
 
     if (!passwordMatches) {
       throw new UnauthorizedException("Invalid email or password.");
+    }
+
+    if (user.status === UserStatus.SUSPENDED) {
+      throw new UnauthorizedException("This account has been suspended.");
     }
 
     const safeUser = this.usersService.toSafeUser(user);

@@ -45,6 +45,69 @@ export type ClassStudent = {
   };
 };
 
+export type ClassLessonUnlock = {
+  id: string;
+  classId: string;
+  lessonId: string;
+  unlockedAt: string;
+  lesson: {
+    id: string;
+    title: string;
+    order: number;
+    courseId: string;
+  };
+};
+
+export type LiveSession = {
+  id: string;
+  classId: string;
+  title: string;
+  description?: string | null;
+  startsAt: string;
+  endsAt?: string | null;
+  status: string;
+  meetingUrl?: string | null;
+  presentationUrl?: string | null;
+  bookUrl?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  class: {
+    id: string;
+    name: string;
+    mode: DeliveryMode;
+    course: { id: string; code: string; title: string };
+    trainer?: { id: string; fullName: string; email?: string | null } | null;
+  };
+  createdBy?: { id: string; fullName: string; role: string } | null;
+};
+
+export type ClassMessage = {
+  id: string;
+  classId: string;
+  senderId: string;
+  body: string;
+  createdAt: string;
+  sender: {
+    id: string;
+    fullName: string;
+    role: string;
+  };
+};
+
+export type CreateLiveSessionPayload = {
+  title: string;
+  description?: string;
+  startsAt: string;
+  endsAt?: string;
+  meetingUrl?: string;
+  presentationUrl?: string;
+  bookUrl?: string;
+};
+
+export type UpdateLiveSessionPayload = Partial<CreateLiveSessionPayload> & {
+  status?: string;
+};
+
 export type AttendanceRecord = {
   id: string;
   classId: string;

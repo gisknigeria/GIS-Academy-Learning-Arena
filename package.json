@@ -1,5 +1,5 @@
 {
-  "name": "gis-academy-learning-arena",
+  "name": "gis-konsult-knowledge-hub",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -16,6 +16,7 @@
     "preview:web": "npm --workspace apps/web run preview",
     "prisma:generate": "npm --workspace apps/api run prisma:generate",
     "prisma:migrate": "npm --workspace apps/api run prisma:migrate",
+    "prisma:migrate:deploy": "npm --workspace apps/api run prisma:migrate:deploy",
     "prisma:studio": "npm --workspace apps/api run prisma:studio",
     "prisma:seed": "npm --workspace apps/api run prisma:seed"
   },

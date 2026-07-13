@@ -222,7 +222,7 @@ export class CertificatesService {
       doc.on("end", () => resolve(Buffer.concat(buffers)));
     });
 
-    doc.fontSize(10).fillColor("#475569").text("GIS Konsult Learning Arena", { align: "center" });
+    doc.fontSize(10).fillColor("#475569").text("GIS Konsult Knowledge Hub", { align: "center" });
     doc.moveDown(1);
     doc.fontSize(24).fillColor("#0f172a").text("Certificate of Completion", { align: "center", underline: true });
     doc.moveDown(2);

@@ -26,6 +26,10 @@ export class UpdateCourseDto {
   description?: string;
 
   @IsOptional()
+  @IsString()
+  trainingCategory?: string;
+
+  @IsOptional()
   @IsInt()
   @Min(100)
   @Max(999)

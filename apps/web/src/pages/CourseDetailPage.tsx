@@ -1,4 +1,4 @@
-import { ArrowLeft, BookOpen, CheckCircle2, Edit3, ExternalLink, Loader2, PlayCircle, PlusCircle, Trophy, Trash2, Video } from "lucide-react";
+import { ArrowLeft, BookOpen, CheckCircle2, Edit3, ExternalLink, Loader2, PlayCircle, PlusCircle, Search, Trophy, Trash2, Video } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { AssignmentSection } from "../components/AssignmentSection";
@@ -7,34 +7,90 @@ import { SectionHeading } from "../components/SectionHeading";
 import { useAuth } from "../context/AuthContext";
 import { coursesApi } from "../lib/courses-api";
 import { isAdminRole, isInstructorRole } from "../lib/roles";
-import type { Course, CourseProgress, CreateLessonPayload, Lesson } from "../types/course";
+import type { Course, CourseProgress, CreateLessonPayload, Lesson, LessonAttachment, LessonLibraryItem } from "../types/course";
 import { DELIVERY_MODE_LABELS } from "../types/course";
 
 type LessonFormState = {
   id?: string;
   title: string;
   summary: string;
+  content: string;
   order: string;
   videoUrl: string;
   resourceUrl: string;
+  subtitleUrl: string;
+  slideUrl: string;
+  mapUrl: string;
+  attachments: LessonAttachment[];
 };
 
 const emptyForm: LessonFormState = {
   title: "",
   summary: "",
+  content: "",
   order: "1",
   videoUrl: "",
   resourceUrl: "",
+  subtitleUrl: "",
+  slideUrl: "",
+  mapUrl: "",
+  attachments: [],
 };
 
 function toLessonPayload(form: LessonFormState): CreateLessonPayload {
   return {
     title: form.title,
     summary: form.summary || undefined,
+    content: form.content || undefined,
     order: Number(form.order),
     videoUrl: form.videoUrl || undefined,
     resourceUrl: form.resourceUrl || undefined,
+    subtitleUrl: form.subtitleUrl || undefined,
+    slideUrl: form.slideUrl || undefined,
+    mapUrl: form.mapUrl || undefined,
+    attachments: form.attachments,
   };
+}
+
+function MaterialField({
+  label,
+  value,
+  uploading,
+  hint,
+  accept,
+  onUrlChange,
+  onFileChange,
+}: {
+  label: string;
+  value: string;
+  uploading: boolean;
+  hint?: string;
+  accept?: string;
+  onUrlChange: (value: string) => void;
+  onFileChange: (file: File) => void;
+}) {
+  return (
+    <div className="lesson-material-field">
+      <label>
+        {label}
+        <input value={value} onChange={(event) => onUrlChange(event.target.value)} placeholder="Paste URL or upload file" />
+      </label>
+      {hint ? <p className="lesson-material-hint">{hint}</p> : null}
+      <label className="lesson-file-picker">
+        Upload file
+        <input
+          type="file"
+          accept={accept}
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (file) onFileChange(file);
+            event.currentTarget.value = "";
+          }}
+        />
+      </label>
+      {uploading ? <span className="uploading-note">Uploading...</span> : null}
+    </div>
+  );
 }
 
 export function CourseDetailPage() {
@@ -47,7 +103,13 @@ export function CourseDetailPage() {
   const [lessonError, setLessonError] = useState("");
   const [pageError, setPageError] = useState("");
   const [showLessonForm, setShowLessonForm] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [form, setForm] = useState<LessonFormState>(emptyForm);
+  const [librarySearch, setLibrarySearch] = useState("");
+  const [libraryLessons, setLibraryLessons] = useState<LessonLibraryItem[]>([]);
+  const [libraryLoading, setLibraryLoading] = useState(false);
+  const [importingLessonId, setImportingLessonId] = useState("");
+  const [uploadingMaterial, setUploadingMaterial] = useState("");
   const [saving, setSaving] = useState(false);
   const [enrolled, setEnrolled] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
@@ -111,16 +173,75 @@ export function CourseDetailPage() {
     setShowLessonForm(true);
   }
 
+  async function loadLessonLibrary(search = librarySearch) {
+    if (!token || !id) return;
+    setLibraryLoading(true);
+    setLessonError("");
+
+    try {
+      const result = await coursesApi.searchLessonLibrary(token, {
+        search,
+        excludeCourseId: id,
+      });
+      setLibraryLessons(result);
+    } catch {
+      setLessonError("Could not load reusable lessons.");
+    } finally {
+      setLibraryLoading(false);
+    }
+  }
+
+  function openImportModal() {
+    setShowImportModal(true);
+    void loadLessonLibrary("");
+  }
+
   function startEditLesson(lesson: Lesson) {
     setForm({
       id: lesson.id,
       title: lesson.title,
       summary: lesson.summary ?? "",
+      content: lesson.content ?? "",
       order: String(lesson.order),
       videoUrl: lesson.videoUrl ?? "",
       resourceUrl: lesson.resourceUrl ?? "",
+      subtitleUrl: lesson.subtitleUrl ?? "",
+      slideUrl: lesson.slideUrl ?? "",
+      mapUrl: lesson.mapUrl ?? "",
+      attachments: lesson.attachments ?? [],
     });
     setShowLessonForm(true);
+  }
+
+  async function uploadMaterial(file: File, field: "videoUrl" | "resourceUrl" | "subtitleUrl" | "slideUrl" | "mapUrl" | "attachments") {
+    if (!token) return;
+    setUploadingMaterial(field);
+    setLessonError("");
+    try {
+      const uploaded = await coursesApi.uploadLessonResource(token, file, form.id);
+      if (field === "attachments") {
+        setForm((current) => ({
+          ...current,
+          attachments: [
+            ...current.attachments,
+            { name: file.name, url: uploaded.url, type: file.type || undefined },
+          ],
+        }));
+      } else {
+        setForm((current) => ({ ...current, [field]: uploaded.url }));
+      }
+    } catch {
+      setLessonError("Could not upload this material. Please try again.");
+    } finally {
+      setUploadingMaterial("");
+    }
+  }
+
+  function removeAttachment(url: string) {
+    setForm((current) => ({
+      ...current,
+      attachments: current.attachments.filter((item) => item.url !== url),
+    }));
   }
 
   async function handleSaveLesson(event: FormEvent<HTMLFormElement>) {
@@ -157,6 +278,25 @@ export function CourseDetailPage() {
       setLessons((current) => current.filter((lesson) => lesson.id !== lessonId));
     } catch {
       setLessonError("Could not delete lesson. Please try again.");
+    }
+  }
+
+  async function handleImportLesson(sourceLessonId: string) {
+    if (!token || !id) return;
+    setImportingLessonId(sourceLessonId);
+    setLessonError("");
+
+    try {
+      const imported = await coursesApi.importLesson(token, id, {
+        sourceLessonId,
+        order: lessons.length + 1,
+      });
+      setLessons((current) => [...current, imported].sort((a, b) => a.order - b.order));
+      setShowImportModal(false);
+    } catch {
+      setLessonError("Could not import this lesson. Please try again.");
+    } finally {
+      setImportingLessonId("");
     }
   }
 
@@ -259,10 +399,16 @@ export function CourseDetailPage() {
           ) : null}
         </div>
         {canManageLessons ? (
-          <button className="primary-button" onClick={startCreateLesson}>
-            <PlusCircle size={17} />
-            Add lesson
-          </button>
+          <div className="course-management-actions">
+            <button className="primary-button" onClick={startCreateLesson}>
+              <PlusCircle size={17} />
+              Add lesson
+            </button>
+            <button className="secondary-button" onClick={openImportModal}>
+              <BookOpen size={17} />
+              Import existing
+            </button>
+          </div>
         ) : null}
 
         {!canManageLessons && !enrolled ? (
@@ -286,10 +432,16 @@ export function CourseDetailPage() {
               <strong>No lessons yet</strong>
               <p>{canManageLessons ? "Add the first lesson to start building this course." : "Lessons will appear here once the trainer publishes them."}</p>
               {canManageLessons ? (
-                <button className="primary-button" onClick={startCreateLesson}>
-                  <PlusCircle size={17} />
-                  Add lesson
-                </button>
+                <div className="course-management-actions">
+                  <button className="primary-button" onClick={startCreateLesson}>
+                    <PlusCircle size={17} />
+                    Add lesson
+                  </button>
+                  <button className="secondary-button" onClick={openImportModal}>
+                    <BookOpen size={17} />
+                    Import existing
+                  </button>
+                </div>
               ) : null}
             </div>
           ) : (
@@ -311,6 +463,24 @@ export function CourseDetailPage() {
                         <a href={lesson.resourceUrl} target="_blank" rel="noreferrer">
                           <ExternalLink size={14} />
                           Resource
+                        </a>
+                      ) : null}
+                      {lesson.slideUrl ? (
+                        <a href={lesson.slideUrl} target="_blank" rel="noreferrer">
+                          <ExternalLink size={14} />
+                          Slides
+                        </a>
+                      ) : null}
+                      {lesson.mapUrl ? (
+                        <a href={lesson.mapUrl} target="_blank" rel="noreferrer">
+                          <ExternalLink size={14} />
+                          Map
+                        </a>
+                      ) : null}
+                      {lesson.subtitleUrl ? (
+                        <a href={lesson.subtitleUrl} target="_blank" rel="noreferrer">
+                          <ExternalLink size={14} />
+                          Subtitles
                         </a>
                       ) : null}
                     </div>
@@ -363,17 +533,90 @@ export function CourseDetailPage() {
                 <textarea value={form.summary} onChange={(event) => setForm({ ...form, summary: event.target.value })} />
               </label>
               <label>
+                Lesson content
+                <textarea
+                  value={form.content}
+                  onChange={(event) => setForm({ ...form, content: event.target.value })}
+                  rows={6}
+                  placeholder="Write the lesson notes, instructions, examples, or transcript here..."
+                />
+              </label>
+              <label>
                 Order
                 <input type="number" min={1} value={form.order} onChange={(event) => setForm({ ...form, order: event.target.value })} required />
               </label>
-              <label>
-                Video URL
-                <input value={form.videoUrl} onChange={(event) => setForm({ ...form, videoUrl: event.target.value })} placeholder="https://..." />
-              </label>
-              <label>
-                Resource URL
-                <input value={form.resourceUrl} onChange={(event) => setForm({ ...form, resourceUrl: event.target.value })} placeholder="https://..." />
-              </label>
+              <div className="lesson-material-grid">
+                <MaterialField
+                  label="Video file or link"
+                  value={form.videoUrl}
+                  uploading={uploadingMaterial === "videoUrl"}
+                  hint="Upload MP4/WebM/MOV, or paste a YouTube/Vimeo/drive link."
+                  accept="video/*,.mp4,.webm,.mov,.m4v"
+                  onUrlChange={(value) => setForm({ ...form, videoUrl: value })}
+                  onFileChange={(file) => void uploadMaterial(file, "videoUrl")}
+                />
+                <MaterialField
+                  label="Resource file or link"
+                  value={form.resourceUrl}
+                  uploading={uploadingMaterial === "resourceUrl"}
+                  hint="Use this for PDFs, images, documents, datasets, or general files."
+                  accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.zip"
+                  onUrlChange={(value) => setForm({ ...form, resourceUrl: value })}
+                  onFileChange={(file) => void uploadMaterial(file, "resourceUrl")}
+                />
+                <MaterialField
+                  label="Subtitle file"
+                  value={form.subtitleUrl}
+                  uploading={uploadingMaterial === "subtitleUrl"}
+                  hint="Upload .vtt or .srt captions for video lessons."
+                  accept=".vtt,.srt"
+                  onUrlChange={(value) => setForm({ ...form, subtitleUrl: value })}
+                  onFileChange={(file) => void uploadMaterial(file, "subtitleUrl")}
+                />
+                <MaterialField
+                  label="PowerPoint / slides"
+                  value={form.slideUrl}
+                  uploading={uploadingMaterial === "slideUrl"}
+                  hint="Upload PowerPoint, PDF, or slide deck material."
+                  accept=".ppt,.pptx,.pdf"
+                  onUrlChange={(value) => setForm({ ...form, slideUrl: value })}
+                  onFileChange={(file) => void uploadMaterial(file, "slideUrl")}
+                />
+                <MaterialField
+                  label="Map file"
+                  value={form.mapUrl}
+                  uploading={uploadingMaterial === "mapUrl"}
+                  hint="Upload GeoJSON, KML, GeoPackage, raster, or zipped shapefile bundles."
+                  accept=".zip,.shp,.shx,.dbf,.prj,.geojson,.json,.kml,.kmz,.gpkg,.tif,.tiff"
+                  onUrlChange={(value) => setForm({ ...form, mapUrl: value })}
+                  onFileChange={(file) => void uploadMaterial(file, "mapUrl")}
+                />
+              </div>
+              <div className="lesson-attachment-uploader">
+                <label>
+                  Extra attachments
+                  <input
+                    type="file"
+                    multiple
+                    onChange={(event) => {
+                      const files = Array.from(event.target.files ?? []);
+                      files.forEach((file) => void uploadMaterial(file, "attachments"));
+                      event.currentTarget.value = "";
+                    }}
+                  />
+                </label>
+                {uploadingMaterial === "attachments" ? <span className="uploading-note">Uploading attachment...</span> : null}
+                {form.attachments.length > 0 ? (
+                  <div className="lesson-attachment-list">
+                    {form.attachments.map((item) => (
+                      <span key={item.url}>
+                        <a href={item.url} target="_blank" rel="noreferrer">{item.name}</a>
+                        <button type="button" onClick={() => removeAttachment(item.url)}>Remove</button>
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
               <div className="modal-actions">
                 <button type="button" className="secondary-button" onClick={() => setShowLessonForm(false)}>
                   Cancel
@@ -383,6 +626,71 @@ export function CourseDetailPage() {
                 </button>
               </div>
             </form>
+          </section>
+        </div>
+      ) : null}
+
+      {showImportModal ? (
+        <div className="modal-backdrop" role="dialog" aria-modal="true">
+          <section className="modal-panel">
+            <div className="modal-header">
+              <h2>Import existing lesson/module</h2>
+              <button className="payment-banner-close" onClick={() => setShowImportModal(false)} aria-label="Close">
+                x
+              </button>
+            </div>
+            <form
+              className="lesson-library-search"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void loadLessonLibrary(librarySearch);
+              }}
+            >
+              <label>
+                Search library
+                <input
+                  value={librarySearch}
+                  onChange={(event) => setLibrarySearch(event.target.value)}
+                  placeholder="Search by lesson title, course code, or topic..."
+                />
+              </label>
+              <button className="secondary-button" disabled={libraryLoading}>
+                <Search size={16} />
+                {libraryLoading ? "Searching..." : "Search"}
+              </button>
+            </form>
+
+            {libraryLoading ? (
+              <div className="inline-loader">
+                <Loader2 size={18} className="spin" />
+                Loading reusable modules...
+              </div>
+            ) : libraryLessons.length === 0 ? (
+              <div className="empty-state compact">
+                <strong>No reusable lessons found</strong>
+                <p>Create lessons in another course first, then import them here as editable copies.</p>
+              </div>
+            ) : (
+              <div className="lesson-library-list">
+                {libraryLessons.map((lesson) => (
+                  <article className="lesson-library-item" key={lesson.id}>
+                    <div>
+                      <span>{lesson.course.code} - {DELIVERY_MODE_LABELS[lesson.course.deliveryMode]}</span>
+                      <strong>{lesson.title}</strong>
+                      {lesson.summary ? <p>{lesson.summary}</p> : null}
+                    </div>
+                    <button
+                      className="primary-button small-button"
+                      disabled={importingLessonId === lesson.id}
+                      onClick={() => void handleImportLesson(lesson.id)}
+                      type="button"
+                    >
+                      {importingLessonId === lesson.id ? "Importing..." : "Import copy"}
+                    </button>
+                  </article>
+                ))}
+              </div>
+            )}
           </section>
         </div>
       ) : null}

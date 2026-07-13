@@ -21,6 +21,7 @@ import {
   courseInterests,
   getPersonalizedKnowledgeHubPlan,
   getPreferenceCategory,
+  knowledgeLearningModes,
   languagePreferences,
   learningGoals,
   learningStyles,
@@ -29,6 +30,7 @@ import {
   platformModules,
   preferenceCategories,
   saveKnowledgeHubPreferences,
+  trainingCategories,
   type KnowledgeHubPreferences,
   type PreferenceCategoryKey,
 } from "../data/knowledgeHub";
@@ -144,6 +146,18 @@ export function KnowledgeHubPage() {
                 onChange={(event) => updatePreference("organisation", event.target.value)}
                 placeholder="School, academy, company"
               />
+            </label>
+            <label>
+              Training category
+              <select value={preferences.trainingCategory} onChange={(event) => updatePreference("trainingCategory", event.target.value)}>
+                {trainingCategories.map((option) => <option key={option}>{option}</option>)}
+              </select>
+            </label>
+            <label>
+              Learning mode
+              <select value={preferences.learningMode} onChange={(event) => updatePreference("learningMode", event.target.value as KnowledgeHubPreferences["learningMode"])}>
+                {knowledgeLearningModes.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+              </select>
             </label>
             <label>
               Learning goal

@@ -17,7 +17,7 @@ export class EmailService {
   async sendTransactionalEmail(options: SendEmailOptions) {
     const apiKey = this.configService.get<string>("BREVO_API_KEY");
     const senderEmail = this.configService.get<string>("BREVO_SENDER_EMAIL");
-    const senderName = this.configService.get<string>("BREVO_SENDER_NAME") ?? "GIS Konsult Learning Arena";
+    const senderName = this.configService.get<string>("BREVO_SENDER_NAME") ?? "GIS Konsult Knowledge Hub";
 
     if (!apiKey || !senderEmail) {
       this.logger.warn("Brevo email is not configured. Skipping transactional email.");
@@ -52,11 +52,11 @@ export class EmailService {
     return this.sendTransactionalEmail({
       to,
       toName,
-      subject: "Welcome to GIS Konsult Learning Arena",
+      subject: "Welcome to GIS Konsult Knowledge Hub",
       htmlContent: `
-        <h2>Welcome to GIS Konsult Learning Arena</h2>
+        <h2>Welcome to GIS Konsult Knowledge Hub</h2>
         <p>Hello ${toName}, your account has been created successfully.</p>
-        <p>You can now learn GIS, join challenges, track progress, and compete on the arena.</p>
+        <p>You can now learn GIS, join challenges, track progress, and build your skills.</p>
       `,
     });
   }

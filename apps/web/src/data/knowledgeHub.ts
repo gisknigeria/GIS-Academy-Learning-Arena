@@ -13,6 +13,8 @@ export type PreferenceCategoryKey =
 export type KnowledgeHubPreferences = {
   ageBand: string;
   organisation: string;
+  trainingCategory: string;
+  learningMode: "E_LEARNING" | "ONSITE" | "HYBRID";
   learningGoal: string;
   fanCategory: PreferenceCategoryKey;
   favorite: string;
@@ -85,6 +87,16 @@ export const preferenceCategories: PreferenceCategory[] = [
 ];
 
 export const ageBands = ["Under 13", "13-15", "16-18", "19-24", "25-34", "35+"];
+export const trainingCategories = [
+  "Academy",
+  "Corporate",
+  "Geography Green",
+];
+export const knowledgeLearningModes = [
+  { value: "E_LEARNING", label: "E-Learning" },
+  { value: "ONSITE", label: "Onsite" },
+  { value: "HYBRID", label: "Hybrid" },
+] as const;
 export const learningGoals = ["Build job-ready skills", "Prepare for competition", "Earn certificates", "Improve school performance", "Build a portfolio", "Explore career pathways"];
 export const learningStyles = ["Challenge Mode", "Coach Mode", "Story Mode", "Team Mode", "Solo Sprint", "Bootcamp Mode", "Competition Mode", "Certificate Track", "Mentorship Track", "Project Portfolio Track"];
 export const competitionTypes = ["Live quiz", "Map challenge", "Coding sprint", "Innovation contest", "Career challenge", "Team tournament", "Solo timed challenge"];
@@ -108,6 +120,8 @@ export const platformModules = [
 export const defaultKnowledgeHubPreferences: KnowledgeHubPreferences = {
   ageBand: "16-18",
   organisation: "",
+  trainingCategory: "Academy",
+  learningMode: "E_LEARNING",
   learningGoal: "Build job-ready skills",
   fanCategory: "football-clubs",
   favorite: "Arsenal",

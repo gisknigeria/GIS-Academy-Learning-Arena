@@ -13,6 +13,16 @@ export type UserProfile = {
   profession?: string | null;
   highestQualification?: string | null;
   preferredMode?: string | null;
+  ageBand?: string | null;
+  trainingCategory?: string | null;
+  learningGoal?: string | null;
+  fanCategory?: string | null;
+  favorite?: string | null;
+  learningStyle?: string | null;
+  competitionType?: string | null;
+  courseInterest?: string | null;
+  notificationPreference?: string | null;
+  languagePreference?: string | null;
   avatarUrl?: string | null;
 };
 

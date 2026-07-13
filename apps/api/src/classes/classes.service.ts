@@ -7,6 +7,10 @@ import { MarkAttendanceDto } from "./dto/mark-attendance.dto";
 import { UpdateClassDto } from "./dto/update-class.dto";
 import { BulkEnrollDto } from "./dto/bulk-enroll.dto";
 import { CreateAnnouncementDto } from "./dto/create-announcement.dto";
+import { CreateClassMessageDto } from "./dto/create-class-message.dto";
+import { CreateLiveSessionDto } from "./dto/create-live-session.dto";
+import { SetLessonUnlocksDto } from "./dto/set-lesson-unlocks.dto";
+import { UpdateLiveSessionDto } from "./dto/update-live-session.dto";
 
 @Injectable()
 export class ClassesService {
@@ -218,6 +222,45 @@ export class ClassesService {
     return { enrolled: results.length };
   }
 
+  async listLessonUnlocks(classId: string) {
+    await this.findOne(classId);
+
+    return this.prisma.classLessonUnlock.findMany({
+      where: { classId },
+      orderBy: { unlockedAt: "asc" },
+      include: {
+        lesson: { select: { id: true, title: true, order: true, courseId: true } },
+      },
+    });
+  }
+
+  async setLessonUnlocks(classId: string, dto: SetLessonUnlocksDto) {
+    const cohort = await this.findOne(classId);
+    const lessons = await this.prisma.lesson.findMany({
+      where: { id: { in: dto.lessonIds } },
+      select: { id: true, courseId: true },
+    });
+
+    const validLessonIds = lessons
+      .filter((lesson) => lesson.courseId === cohort.courseId)
+      .map((lesson) => lesson.id);
+
+    await this.prisma.$transaction([
+      this.prisma.classLessonUnlock.deleteMany({
+        where: { classId, lessonId: { notIn: validLessonIds } },
+      }),
+      ...validLessonIds.map((lessonId) =>
+        this.prisma.classLessonUnlock.upsert({
+          where: { classId_lessonId: { classId, lessonId } },
+          update: {},
+          create: { classId, lessonId },
+        }),
+      ),
+    ]);
+
+    return this.listLessonUnlocks(classId);
+  }
+
   async exportAttendanceCsv(classId: string, dateInput?: string) {
     const records = await this.listAttendance(classId, dateInput);
 
@@ -260,6 +303,94 @@ export class ClassesService {
     return this.prisma.classAnnouncement.delete({ where: { id } });
   }
 
+  async listMessages(classId: string) {
+    await this.findOne(classId);
+
+    return this.prisma.classMessage.findMany({
+      where: { classId },
+      orderBy: { createdAt: "asc" },
+      include: {
+        sender: { select: { id: true, fullName: true, role: true } },
+      },
+    });
+  }
+
+  async createMessage(classId: string, senderId: string, dto: CreateClassMessageDto) {
+    await this.findOne(classId);
+
+    return this.prisma.classMessage.create({
+      data: {
+        classId,
+        senderId,
+        body: dto.body.trim(),
+      },
+      include: {
+        sender: { select: { id: true, fullName: true, role: true } },
+      },
+    });
+  }
+
+  async listLiveSessions(classId: string) {
+    await this.findOne(classId);
+
+    return this.prisma.liveSession.findMany({
+      where: { classId },
+      orderBy: { startsAt: "asc" },
+      include: this.liveSessionInclude(),
+    });
+  }
+
+  async createLiveSession(classId: string, createdById: string | null, dto: CreateLiveSessionDto) {
+    await this.findOne(classId);
+
+    return this.prisma.liveSession.create({
+      data: {
+        classId,
+        createdById: createdById ?? undefined,
+        title: dto.title,
+        description: dto.description,
+        startsAt: new Date(dto.startsAt),
+        endsAt: dto.endsAt ? new Date(dto.endsAt) : undefined,
+        meetingUrl: dto.meetingUrl,
+        presentationUrl: dto.presentationUrl,
+        bookUrl: dto.bookUrl,
+      },
+      include: this.liveSessionInclude(),
+    });
+  }
+
+  async findLiveSession(id: string) {
+    const session = await this.prisma.liveSession.findUnique({
+      where: { id },
+      include: this.liveSessionInclude(),
+    });
+
+    if (!session) {
+      throw new NotFoundException(`Live session "${id}" not found.`);
+    }
+
+    return session;
+  }
+
+  async updateLiveSession(id: string, dto: UpdateLiveSessionDto) {
+    await this.findLiveSession(id);
+
+    return this.prisma.liveSession.update({
+      where: { id },
+      data: {
+        title: dto.title,
+        description: dto.description,
+        startsAt: dto.startsAt ? new Date(dto.startsAt) : undefined,
+        endsAt: dto.endsAt ? new Date(dto.endsAt) : dto.endsAt === "" ? null : undefined,
+        status: dto.status,
+        meetingUrl: dto.meetingUrl,
+        presentationUrl: dto.presentationUrl,
+        bookUrl: dto.bookUrl,
+      },
+      include: this.liveSessionInclude(),
+    });
+  }
+
   private async ensureCourse(courseId: string) {
     const course = await this.prisma.course.findUnique({ where: { id: courseId } });
     if (!course) throw new NotFoundException(`Course "${courseId}" not found.`);
@@ -287,6 +418,21 @@ export class ClassesService {
       course: { select: { id: true, code: true, title: true, deliveryMode: true } },
       trainer: { select: { id: true, fullName: true, role: true, email: true } },
       _count: { select: { students: true, attendanceRecords: true } },
+    } as const;
+  }
+
+  private liveSessionInclude() {
+    return {
+      class: {
+        select: {
+          id: true,
+          name: true,
+          mode: true,
+          course: { select: { id: true, code: true, title: true } },
+          trainer: { select: { id: true, fullName: true, email: true } },
+        },
+      },
+      createdBy: { select: { id: true, fullName: true, role: true } },
     } as const;
   }
 }

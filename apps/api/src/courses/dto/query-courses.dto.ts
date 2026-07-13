@@ -12,6 +12,10 @@ export class QueryCoursesDto {
   deliveryMode?: DeliveryMode;
 
   @IsOptional()
+  @IsString()
+  trainingCategory?: string;
+
+  @IsOptional()
   @Transform(({ value }: { value: string }) => value === "true")
   @IsBoolean()
   includeArchived?: boolean;

@@ -8,12 +8,14 @@ import {
   courseInterests,
   defaultKnowledgeHubPreferences,
   getPreferenceCategory,
+  knowledgeLearningModes,
   languagePreferences,
   learningGoals,
   learningStyles,
   notificationPreferences,
   preferenceCategories,
   saveKnowledgeHubPreferences,
+  trainingCategories,
   type KnowledgeHubPreferences,
   type PreferenceCategoryKey,
 } from "../data/knowledgeHub";
@@ -25,6 +27,7 @@ export function RegisterPage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [accountType, setAccountType] = useState<"STUDENT" | "TRAINER">("STUDENT");
   const [preferences, setPreferences] = useState<KnowledgeHubPreferences>(defaultKnowledgeHubPreferences);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -42,7 +45,25 @@ export function RegisterPage() {
 
     try {
       saveKnowledgeHubPreferences(preferences);
-      await register({ fullName, email, phone, password, role: "STUDENT" });
+      await register({
+        fullName,
+        email,
+        phone,
+        password,
+        role: accountType,
+        ageBand: preferences.ageBand,
+        organisation: preferences.organisation,
+        trainingCategory: preferences.trainingCategory,
+        learningMode: preferences.learningMode,
+        learningGoal: preferences.learningGoal,
+        fanCategory: preferences.fanCategory,
+        favorite: preferences.favorite,
+        learningStyle: preferences.learningStyle,
+        competitionType: preferences.competitionType,
+        courseInterest: preferences.courseInterest,
+        notificationPreference: preferences.notificationPreference,
+        languagePreference: preferences.languagePreference,
+      });
       navigate("/dashboard", { replace: true });
     } catch {
       setError("Registration failed. The email or phone may already be in use.");
@@ -95,6 +116,26 @@ export function RegisterPage() {
             Password
             <input value={password} onChange={(event) => setPassword(event.target.value)} type="password" minLength={8} required />
           </label>
+          <div className="auth-role-picker" role="radiogroup" aria-label="Account type">
+            <button
+              type="button"
+              className={accountType === "STUDENT" ? "selected" : ""}
+              onClick={() => setAccountType("STUDENT")}
+              aria-pressed={accountType === "STUDENT"}
+            >
+              <strong>Learner</strong>
+              <span>Start learning immediately.</span>
+            </button>
+            <button
+              type="button"
+              className={accountType === "TRAINER" ? "selected" : ""}
+              onClick={() => setAccountType("TRAINER")}
+              aria-pressed={accountType === "TRAINER"}
+            >
+              <strong>Trainer</strong>
+              <span>Requires approval before dashboard access.</span>
+            </button>
+          </div>
           <div className="auth-form-section">
             <span className="eyebrow">Personalise Knowledge Hub</span>
             <p>Choose what excites you so missions, alerts, badges, challenges, and recommendations feel closer to your world.</p>
@@ -113,6 +154,18 @@ export function RegisterPage() {
                 onChange={(event) => updatePreference("organisation", event.target.value)}
                 placeholder="School / company"
               />
+            </label>
+            <label>
+              Training category
+              <select value={preferences.trainingCategory} onChange={(event) => updatePreference("trainingCategory", event.target.value)}>
+                {trainingCategories.map((option) => <option key={option}>{option}</option>)}
+              </select>
+            </label>
+            <label>
+              Learning mode
+              <select value={preferences.learningMode} onChange={(event) => updatePreference("learningMode", event.target.value as KnowledgeHubPreferences["learningMode"])}>
+                {knowledgeLearningModes.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+              </select>
             </label>
             <label>
               Learning goal

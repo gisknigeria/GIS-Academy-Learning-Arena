@@ -1,6 +1,7 @@
 import { X } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { trainingCategories } from "../data/knowledgeHub";
 import { coursesApi } from "../lib/courses-api";
 import type { Course, CreateCoursePayload, DeliveryMode } from "../types/course";
 
@@ -12,7 +13,6 @@ type Props = {
 const DELIVERY_MODES: { value: DeliveryMode; label: string }[] = [
   { value: "E_LEARNING", label: "E-Learning" },
   { value: "ONSITE", label: "Onsite" },
-  { value: "LIVE_VIRTUAL", label: "Live Virtual" },
   { value: "HYBRID", label: "Hybrid" },
 ];
 
@@ -23,6 +23,7 @@ export function CreateCourseModal({ onClose, onCreated }: Props) {
     code: "",
     title: "",
     description: "",
+    trainingCategory: "Academy",
     level: undefined,
     deliveryMode: "E_LEARNING",
     requiresPayment: true,
@@ -45,6 +46,7 @@ export function CreateCourseModal({ onClose, onCreated }: Props) {
         code: form.code.trim().toUpperCase(),
         title: form.title.trim(),
         description: form.description?.trim() || undefined,
+        trainingCategory: form.trainingCategory || undefined,
         level: form.level ?? undefined,
       };
       const created = await coursesApi.create(token!, payload);
@@ -122,6 +124,20 @@ export function CreateCourseModal({ onClose, onCreated }: Props) {
               rows={3}
               onChange={(e) => set("description", e.target.value)}
             />
+          </label>
+
+          <label>
+            Training category
+            <select
+              value={form.trainingCategory ?? "Academy"}
+              onChange={(e) => set("trainingCategory", e.target.value)}
+            >
+              {trainingCategories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
           </label>
 
           <div className="form-row">

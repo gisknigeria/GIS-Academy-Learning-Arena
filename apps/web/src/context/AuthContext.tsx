@@ -11,6 +11,18 @@ type RegisterPayload = LoginPayload & {
   fullName: string;
   phone?: string;
   role?: UserRole;
+  ageBand?: string;
+  organisation?: string;
+  trainingCategory?: string;
+  learningMode?: string;
+  learningGoal?: string;
+  fanCategory?: string;
+  favorite?: string;
+  learningStyle?: string;
+  competitionType?: string;
+  courseInterest?: string;
+  notificationPreference?: string;
+  languagePreference?: string;
 };
 
 type AuthContextValue = {

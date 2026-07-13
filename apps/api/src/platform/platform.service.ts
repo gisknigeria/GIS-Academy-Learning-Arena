@@ -4,7 +4,7 @@ import { Injectable } from "@nestjs/common";
 export class PlatformService {
   getModules() {
     return {
-      product: "GIS Academy Learning Arena",
+      product: "GIS Konsult Knowledge Hub",
       backend: "NestJS",
       modules: [
         "auth",
@@ -16,7 +16,7 @@ export class PlatformService {
         "classes-and-attendance",
         "assignments",
         "assessments",
-        "competition-arena",
+        "challenges-and-competitions",
         "olympiad",
         "leaderboards-and-achievements",
         "certificates",

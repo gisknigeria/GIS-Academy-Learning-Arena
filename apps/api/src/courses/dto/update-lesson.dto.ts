@@ -1,4 +1,4 @@
-import { IsInt, IsOptional, IsString, IsUrl, Min, MinLength } from "class-validator";
+import { IsArray, IsInt, IsOptional, IsString, IsUrl, Min, MinLength } from "class-validator";
 
 export class UpdateLessonDto {
   @IsOptional()
@@ -9,6 +9,10 @@ export class UpdateLessonDto {
   @IsOptional()
   @IsString()
   summary?: string;
+
+  @IsOptional()
+  @IsString()
+  content?: string;
 
   @IsOptional()
   @IsInt()
@@ -22,4 +26,20 @@ export class UpdateLessonDto {
   @IsOptional()
   @IsUrl({ require_tld: false })
   resourceUrl?: string;
+
+  @IsOptional()
+  @IsUrl({ require_tld: false })
+  subtitleUrl?: string;
+
+  @IsOptional()
+  @IsUrl({ require_tld: false })
+  slideUrl?: string;
+
+  @IsOptional()
+  @IsUrl({ require_tld: false })
+  mapUrl?: string;
+
+  @IsOptional()
+  @IsArray()
+  attachments?: Array<{ name: string; url: string; type?: string }>;
 }

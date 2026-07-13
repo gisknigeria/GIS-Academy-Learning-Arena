@@ -6,7 +6,7 @@ export class AppController {
   health() {
     return {
       status: "ok",
-      service: "GIS Academy Learning Arena API",
+      service: "GIS Konsult Knowledge Hub API",
       timestamp: new Date().toISOString(),
     };
   }

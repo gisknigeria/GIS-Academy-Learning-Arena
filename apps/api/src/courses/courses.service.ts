@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { Prisma } from "@prisma/client";
+import { DeliveryMode, Prisma } from "@prisma/client";
 import { CertificatesService } from "../certificates/certificates.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateCourseDto } from "./dto/create-course.dto";
@@ -11,6 +11,9 @@ import { QueryCoursesDto } from "./dto/query-courses.dto";
 import { UpdateCourseDto } from "./dto/update-course.dto";
 import { CreateLessonDto } from "./dto/create-lesson.dto";
 import { UpdateLessonDto } from "./dto/update-lesson.dto";
+import { AnswerLessonDiscussionDto } from "./dto/answer-lesson-discussion.dto";
+import { CreateLessonDiscussionDto } from "./dto/create-lesson-discussion.dto";
+import { ImportLessonDto } from "./dto/import-lesson.dto";
 
 @Injectable()
 export class CoursesService {
@@ -56,6 +59,10 @@ export class CoursesService {
 
     if (query.deliveryMode) {
       where.deliveryMode = query.deliveryMode;
+    }
+
+    if (query.trainingCategory) {
+      where.trainingCategory = query.trainingCategory;
     }
 
     const [data, total] = await this.prisma.$transaction([
@@ -148,9 +155,69 @@ export class CoursesService {
         courseId,
         title: dto.title,
         summary: dto.summary,
+        content: dto.content,
         order: dto.order,
         videoUrl: dto.videoUrl,
         resourceUrl: dto.resourceUrl,
+        subtitleUrl: dto.subtitleUrl,
+        slideUrl: dto.slideUrl,
+        mapUrl: dto.mapUrl,
+        attachments: dto.attachments ?? [],
+      },
+    });
+  }
+
+  async searchLessonLibrary(query?: string, excludeCourseId?: string) {
+    const where: Prisma.LessonWhereInput = {
+      ...(excludeCourseId ? { courseId: { not: excludeCourseId } } : {}),
+    };
+
+    if (query?.trim()) {
+      const search = query.trim();
+      where.OR = [
+        { title: { contains: search, mode: "insensitive" } },
+        { summary: { contains: search, mode: "insensitive" } },
+        { content: { contains: search, mode: "insensitive" } },
+        { course: { title: { contains: search, mode: "insensitive" } } },
+        { course: { code: { contains: search, mode: "insensitive" } } },
+      ];
+    }
+
+    return this.prisma.lesson.findMany({
+      where,
+      orderBy: [{ course: { title: "asc" } }, { order: "asc" }],
+      take: 50,
+      include: {
+        course: { select: { id: true, code: true, title: true, deliveryMode: true } },
+      },
+    });
+  }
+
+  async importLesson(courseId: string, dto: ImportLessonDto) {
+    await this.findOne(courseId);
+    const source = await this.prisma.lesson.findUnique({
+      where: { id: dto.sourceLessonId },
+    });
+
+    if (!source) {
+      throw new NotFoundException(`Lesson "${dto.sourceLessonId}" not found.`);
+    }
+
+    const nextOrder = dto.order ?? (await this.prisma.lesson.count({ where: { courseId } })) + 1;
+
+    return this.prisma.lesson.create({
+      data: {
+        courseId,
+        title: source.title,
+        summary: source.summary,
+        content: source.content,
+        order: nextOrder,
+        videoUrl: source.videoUrl,
+        resourceUrl: source.resourceUrl,
+        subtitleUrl: source.subtitleUrl,
+        slideUrl: source.slideUrl,
+        mapUrl: source.mapUrl,
+        attachments: source.attachments ?? [],
       },
     });
   }
@@ -164,8 +231,9 @@ export class CoursesService {
     });
   }
 
-  async listLessonsWithProgress(courseId: string, userId: string) {
+  async listLessonsWithProgress(courseId: string, userId: string, canManageLessons = false) {
     await this.findOne(courseId);
+    const lockContext = canManageLessons ? null : await this.getLessonLockContext(courseId, userId);
 
     const lessons = await this.prisma.lesson.findMany({
       where: { courseId },
@@ -181,10 +249,25 @@ export class CoursesService {
     return lessons.map((lesson) => {
       const completedAt = lesson.progress[0]?.completedAt ?? null;
       const { progress: _progress, ...lessonData } = lesson;
+      const isLocked = Boolean(lockContext && !lockContext.unlockedLessonIds.has(lesson.id));
+      const safeLessonData = isLocked
+        ? {
+            ...lessonData,
+            content: null,
+            videoUrl: null,
+            resourceUrl: null,
+            subtitleUrl: null,
+            slideUrl: null,
+            mapUrl: null,
+            attachments: [],
+          }
+        : lessonData;
       return {
-        ...lessonData,
+        ...safeLessonData,
         completed: Boolean(completedAt),
         completedAt,
+        locked: isLocked,
+        lockReason: isLocked ? "trainer_locked" : null,
       };
     });
   }
@@ -202,6 +285,77 @@ export class CoursesService {
     });
   }
 
+  async getLessonCourseId(lessonId: string) {
+    const lesson = await this.prisma.lesson.findUnique({
+      where: { id: lessonId },
+      select: { courseId: true },
+    });
+
+    if (!lesson) {
+      throw new NotFoundException(`Lesson "${lessonId}" not found.`);
+    }
+
+    return lesson.courseId;
+  }
+
+  async listLessonDiscussions(lessonId: string, userId?: string, canManageLessons = false) {
+    const courseId = await this.getLessonCourseId(lessonId);
+    if (!canManageLessons && userId) {
+      await this.ensureLessonUnlocked(courseId, lessonId, userId);
+    }
+
+    return this.prisma.lessonDiscussion.findMany({
+      where: { lessonId },
+      orderBy: { createdAt: "desc" },
+      include: {
+        author: { select: { id: true, fullName: true, role: true } },
+        answeredBy: { select: { id: true, fullName: true, role: true } },
+      },
+    });
+  }
+
+  async createLessonDiscussion(lessonId: string, authorId: string, dto: CreateLessonDiscussionDto, canManageLessons = false) {
+    const courseId = await this.getLessonCourseId(lessonId);
+    if (!canManageLessons) {
+      await this.ensureLessonUnlocked(courseId, lessonId, authorId);
+    }
+
+    return this.prisma.lessonDiscussion.create({
+      data: {
+        lessonId,
+        authorId,
+        question: dto.question.trim(),
+      },
+      include: {
+        author: { select: { id: true, fullName: true, role: true } },
+        answeredBy: { select: { id: true, fullName: true, role: true } },
+      },
+    });
+  }
+
+  async answerLessonDiscussion(discussionId: string, answeredById: string, dto: AnswerLessonDiscussionDto) {
+    const discussion = await this.prisma.lessonDiscussion.findUnique({
+      where: { id: discussionId },
+    });
+
+    if (!discussion) {
+      throw new NotFoundException(`Question "${discussionId}" not found.`);
+    }
+
+    return this.prisma.lessonDiscussion.update({
+      where: { id: discussionId },
+      data: {
+        answer: dto.answer.trim(),
+        answeredById,
+        answeredAt: new Date(),
+      },
+      include: {
+        author: { select: { id: true, fullName: true, role: true } },
+        answeredBy: { select: { id: true, fullName: true, role: true } },
+      },
+    });
+  }
+
   async deleteLesson(id: string) {
     const lesson = await this.prisma.lesson.findUnique({ where: { id } });
 
@@ -215,6 +369,7 @@ export class CoursesService {
   }
 
   async markLessonComplete(courseId: string, lessonId: string, userId: string) {
+    await this.ensureLessonUnlocked(courseId, lessonId, userId);
     const lesson = await this.prisma.lesson.findFirst({
       where: { id: lessonId, courseId },
     });
@@ -297,5 +452,34 @@ export class CoursesService {
     });
 
     return summary;
+  }
+
+  private async getLessonLockContext(courseId: string, userId: string) {
+    const enrollment = await this.prisma.enrollment.findUnique({
+      where: { userId_courseId: { userId, courseId } },
+      include: { class: true },
+    });
+
+    if (!enrollment?.class || enrollment.class.mode !== DeliveryMode.ONSITE) {
+      return null;
+    }
+
+    const unlocked = await this.prisma.classLessonUnlock.findMany({
+      where: { classId: enrollment.classId ?? "" },
+      select: { lessonId: true },
+    });
+
+    return {
+      classId: enrollment.classId,
+      unlockedLessonIds: new Set(unlocked.map((item) => item.lessonId)),
+    };
+  }
+
+  private async ensureLessonUnlocked(courseId: string, lessonId: string, userId: string) {
+    const lockContext = await this.getLessonLockContext(courseId, userId);
+
+    if (lockContext && !lockContext.unlockedLessonIds.has(lessonId)) {
+      throw new NotFoundException("This onsite lesson is locked until your trainer unlocks it.");
+    }
   }
 }

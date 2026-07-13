@@ -39,6 +39,46 @@ export class UpdateProfileDto {
 
   @IsOptional()
   @IsString()
+  ageBand?: string;
+
+  @IsOptional()
+  @IsString()
+  trainingCategory?: string;
+
+  @IsOptional()
+  @IsString()
+  learningGoal?: string;
+
+  @IsOptional()
+  @IsString()
+  fanCategory?: string;
+
+  @IsOptional()
+  @IsString()
+  favorite?: string;
+
+  @IsOptional()
+  @IsString()
+  learningStyle?: string;
+
+  @IsOptional()
+  @IsString()
+  competitionType?: string;
+
+  @IsOptional()
+  @IsString()
+  courseInterest?: string;
+
+  @IsOptional()
+  @IsString()
+  notificationPreference?: string;
+
+  @IsOptional()
+  @IsString()
+  languagePreference?: string;
+
+  @IsOptional()
+  @IsString()
   @MaxLength(500)
   avatarUrl?: string;
 }

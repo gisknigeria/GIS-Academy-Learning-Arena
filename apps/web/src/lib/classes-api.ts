@@ -2,10 +2,15 @@ import { apiRequest } from "./api";
 import type {
   AttendanceRecord,
   Cohort,
+  ClassLessonUnlock,
+  ClassMessage,
   ClassStudent,
   CreateClassPayload,
+  CreateLiveSessionPayload,
+  LiveSession,
   MarkAttendancePayload,
   UpdateClassPayload,
+  UpdateLiveSessionPayload,
 } from "../types/class";
 
 export type ScheduleSummary = {
@@ -77,6 +82,18 @@ export const classesApi = {
     });
   },
 
+  lessonUnlocks(token: string, classId: string): Promise<ClassLessonUnlock[]> {
+    return apiRequest<ClassLessonUnlock[]>(`/classes/${classId}/lesson-unlocks`, { token });
+  },
+
+  setLessonUnlocks(token: string, classId: string, lessonIds: string[]): Promise<ClassLessonUnlock[]> {
+    return apiRequest<ClassLessonUnlock[]>(`/classes/${classId}/lesson-unlocks`, {
+      token,
+      method: "PATCH",
+      body: { lessonIds },
+    });
+  },
+
   // ── Attendance ────────────────────────────────────────────────────────
   attendance(token: string, classId: string, date?: string): Promise<AttendanceRecord[]> {
     const query = date ? `?date=${encodeURIComponent(date)}` : "";
@@ -134,6 +151,42 @@ export const classesApi = {
 
   deleteAnnouncement(token: string, announcementId: string) {
     return apiRequest(`/classes/announcements/${announcementId}`, { token, method: "DELETE" });
+  },
+
+  messages(token: string, classId: string): Promise<ClassMessage[]> {
+    return apiRequest<ClassMessage[]>(`/classes/${classId}/messages`, { token });
+  },
+
+  createMessage(token: string, classId: string, body: string): Promise<ClassMessage> {
+    return apiRequest<ClassMessage>(`/classes/${classId}/messages`, {
+      token,
+      method: "POST",
+      body: { body },
+    });
+  },
+
+  listLiveSessions(token: string, classId: string): Promise<LiveSession[]> {
+    return apiRequest<LiveSession[]>(`/classes/${classId}/live-sessions`, { token });
+  },
+
+  createLiveSession(token: string, classId: string, payload: CreateLiveSessionPayload): Promise<LiveSession> {
+    return apiRequest<LiveSession>(`/classes/${classId}/live-sessions`, {
+      token,
+      method: "POST",
+      body: payload,
+    });
+  },
+
+  getLiveSession(token: string, sessionId: string): Promise<LiveSession> {
+    return apiRequest<LiveSession>(`/classes/live-sessions/${sessionId}`, { token });
+  },
+
+  updateLiveSession(token: string, sessionId: string, payload: UpdateLiveSessionPayload): Promise<LiveSession> {
+    return apiRequest<LiveSession>(`/classes/live-sessions/${sessionId}`, {
+      token,
+      method: "PATCH",
+      body: payload,
+    });
   },
 };
 

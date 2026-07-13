@@ -1,24 +1,30 @@
-import { ArrowLeft, CheckCircle2, ExternalLink, Flame, Loader2, Video } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { ArrowLeft, CheckCircle2, ExternalLink, Flame, Loader2, Lock, MessageSquare, Send, Video } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import { AchievementBadgeToast } from "../components/AchievementBadge";
 import { PaymentGate } from "../components/PaymentGate";
 import { useAuth } from "../context/AuthContext";
 import { usePlayerXP } from "../hooks/usePlayerXP";
 import { coursesApi } from "../lib/courses-api";
+import { isAdminRole, isInstructorRole } from "../lib/roles";
 import { isSoundEnabled, sounds, toggleSound } from "../lib/sound";
-import type { Course, CourseProgress, Lesson } from "../types/course";
+import type { Course, CourseProgress, Lesson, LessonDiscussion } from "../types/course";
 
 export function LessonPlayerPage() {
   const { courseId, lessonId } = useParams();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const { awardXP, awardBadge } = usePlayerXP();
   const [course, setCourse] = useState<Course | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [discussions, setDiscussions] = useState<LessonDiscussion[]>([]);
   const [progress, setProgress] = useState<CourseProgress | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [discussionError, setDiscussionError] = useState("");
+  const [question, setQuestion] = useState("");
+  const [answerDrafts, setAnswerDrafts] = useState<Record<string, string>>({});
+  const [savingDiscussionId, setSavingDiscussionId] = useState<string | null>(null);
   const [badgeToast, setBadgeToast] = useState<string | null>(null);
   const [soundOn, setSoundOn] = useState(isSoundEnabled);
   const [streak, setStreak] = useState(() => {
@@ -33,6 +39,7 @@ export function LessonPlayerPage() {
   const currentLesson = currentIndex >= 0 ? lessons[currentIndex] : null;
   const previousLesson = currentIndex > 0 ? lessons[currentIndex - 1] : null;
   const nextLesson = currentIndex >= 0 && currentIndex < lessons.length - 1 ? lessons[currentIndex + 1] : null;
+  const canAnswerQuestions = Boolean(user && (isAdminRole(user.role) || isInstructorRole(user.role)));
 
   const load = useCallback(async () => {
     if (!token || !courseId) return;
@@ -58,6 +65,27 @@ export function LessonPlayerPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    async function loadDiscussions() {
+      if (!token || !lessonId) return;
+      setDiscussionError("");
+
+      try {
+        const lessonDiscussions = await coursesApi.listLessonDiscussions(token, lessonId);
+        setDiscussions(lessonDiscussions);
+        setAnswerDrafts(
+          Object.fromEntries(
+            lessonDiscussions.map((item) => [item.id, item.answer ?? ""]),
+          ),
+        );
+      } catch {
+        setDiscussionError("Could not load lesson questions.");
+      }
+    }
+
+    void loadDiscussions();
+  }, [lessonId, token]);
 
   async function handleComplete() {
     if (!token || !courseId || !lessonId) return;
@@ -108,6 +136,38 @@ export function LessonPlayerPage() {
     setSoundOn(on);
   }
 
+  async function handleAskQuestion(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!token || !lessonId || !question.trim()) return;
+    setSavingDiscussionId("new");
+    setDiscussionError("");
+
+    try {
+      const created = await coursesApi.createLessonDiscussion(token, lessonId, question.trim());
+      setDiscussions((current) => [created, ...current]);
+      setQuestion("");
+    } catch {
+      setDiscussionError("Could not post your question. Please try again.");
+    } finally {
+      setSavingDiscussionId(null);
+    }
+  }
+
+  async function handleAnswerQuestion(discussionId: string) {
+    if (!token || !answerDrafts[discussionId]?.trim()) return;
+    setSavingDiscussionId(discussionId);
+    setDiscussionError("");
+
+    try {
+      const updated = await coursesApi.answerLessonDiscussion(token, discussionId, answerDrafts[discussionId].trim());
+      setDiscussions((current) => current.map((item) => (item.id === updated.id ? updated : item)));
+    } catch {
+      setDiscussionError("Could not save this answer. Please try again.");
+    } finally {
+      setSavingDiscussionId(null);
+    }
+  }
+
   if (loading) {
     return (
       <div className="page-loading">
@@ -154,7 +214,17 @@ export function LessonPlayerPage() {
           <h1>{currentLesson.title}</h1>
           {currentLesson.summary ? <p>{currentLesson.summary}</p> : null}
 
-          <div className="lesson-resource-panel">
+          {currentLesson.locked ? (
+            <article className="lesson-locked-panel">
+              <Lock size={24} />
+              <div>
+                <h2>This onsite lesson is locked</h2>
+                <p>Your trainer will unlock this lesson when your cohort reaches this part of the course.</p>
+              </div>
+            </article>
+          ) : null}
+
+          {!currentLesson.locked ? <div className="lesson-resource-panel">
             {currentLesson.videoUrl ? (
               <a href={currentLesson.videoUrl} target="_blank" rel="noreferrer">
                 <Video size={18} />
@@ -169,16 +239,55 @@ export function LessonPlayerPage() {
                 Open lesson resource
               </a>
             ) : null}
-          </div>
+            {currentLesson.slideUrl ? (
+              <a href={currentLesson.slideUrl} target="_blank" rel="noreferrer">
+                <ExternalLink size={18} />
+                Open PowerPoint / slides
+              </a>
+            ) : null}
+            {currentLesson.mapUrl ? (
+              <a href={currentLesson.mapUrl} target="_blank" rel="noreferrer">
+                <ExternalLink size={18} />
+                Open map file
+              </a>
+            ) : null}
+            {currentLesson.subtitleUrl ? (
+              <a href={currentLesson.subtitleUrl} target="_blank" rel="noreferrer">
+                <ExternalLink size={18} />
+                Open subtitles
+              </a>
+            ) : null}
+          </div> : null}
+
+          {!currentLesson.locked && currentLesson.content ? (
+            <article className="lesson-content-panel">
+              <h2>Lesson notes</h2>
+              <p>{currentLesson.content}</p>
+            </article>
+          ) : null}
+
+          {!currentLesson.locked && currentLesson.attachments && currentLesson.attachments.length > 0 ? (
+            <article className="lesson-content-panel">
+              <h2>Downloads</h2>
+              <div className="lesson-download-list">
+                {currentLesson.attachments.map((item) => (
+                  <a href={item.url} key={item.url} target="_blank" rel="noreferrer">
+                    <ExternalLink size={16} />
+                    {item.name}
+                  </a>
+                ))}
+              </div>
+            </article>
+          ) : null}
 
           <div className="lesson-player-actions">
             <button
               className="primary-button"
-              disabled={saving || currentLesson.completed}
+              disabled={saving || currentLesson.completed || currentLesson.locked}
               onClick={() => void handleComplete()}
             >
               <CheckCircle2 size={18} />
-              {currentLesson.completed ? "Completed" : saving ? "Saving..." : "Mark complete"}
+              {currentLesson.locked ? "Locked" : currentLesson.completed ? "Completed" : saving ? "Saving..." : "Mark complete"}
             </button>
             <button className="secondary-button" onClick={handleSoundToggle} type="button">
               {soundOn ? "Sound on" : "Sound off"}
@@ -196,6 +305,83 @@ export function LessonPlayerPage() {
               ) : null}
             </div>
           </div>
+
+          {!currentLesson.locked ? <article className="lesson-discussion-panel">
+            <div className="lesson-discussion-header">
+              <div>
+                <span className="eyebrow">Lesson support</span>
+                <h2>Questions and trainer answers</h2>
+              </div>
+              <span className="lesson-discussion-count">
+                <MessageSquare size={16} />
+                {discussions.length}
+              </span>
+            </div>
+
+            <form className="lesson-question-form" onSubmit={handleAskQuestion}>
+              <textarea
+                value={question}
+                onChange={(event) => setQuestion(event.target.value)}
+                placeholder="Ask a question about this lesson..."
+                rows={3}
+              />
+              <button className="primary-button" disabled={savingDiscussionId === "new" || !question.trim()}>
+                <Send size={16} />
+                {savingDiscussionId === "new" ? "Posting..." : "Ask question"}
+              </button>
+            </form>
+
+            {discussionError ? <p className="form-error">{discussionError}</p> : null}
+
+            <div className="lesson-discussion-list">
+              {discussions.length === 0 ? (
+                <div className="empty-state compact">
+                  <strong>No questions yet</strong>
+                  <p>Start the conversation when anything in this lesson needs more explanation.</p>
+                </div>
+              ) : (
+                discussions.map((item) => (
+                  <article className="lesson-discussion-item" key={item.id}>
+                    <div className="lesson-discussion-meta">
+                      <strong>{item.author.fullName}</strong>
+                      <span>{new Date(item.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <p>{item.question}</p>
+                    {item.answer ? (
+                      <div className="lesson-answer-box">
+                        <strong>Trainer answer</strong>
+                        <p>{item.answer}</p>
+                        {item.answeredBy ? <span>Answered by {item.answeredBy.fullName}</span> : null}
+                      </div>
+                    ) : (
+                      <span className="lesson-awaiting-answer">Awaiting trainer answer</span>
+                    )}
+
+                    {canAnswerQuestions ? (
+                      <div className="lesson-answer-form">
+                        <textarea
+                          value={answerDrafts[item.id] ?? ""}
+                          onChange={(event) =>
+                            setAnswerDrafts((current) => ({ ...current, [item.id]: event.target.value }))
+                          }
+                          placeholder="Write trainer answer..."
+                          rows={3}
+                        />
+                        <button
+                          className="secondary-button"
+                          disabled={savingDiscussionId === item.id || !answerDrafts[item.id]?.trim()}
+                          onClick={() => void handleAnswerQuestion(item.id)}
+                          type="button"
+                        >
+                          {savingDiscussionId === item.id ? "Saving..." : item.answer ? "Update answer" : "Answer"}
+                        </button>
+                      </div>
+                    ) : null}
+                  </article>
+                ))
+              )}
+            </div>
+          </article> : null}
         </article>
 
         <aside className="lesson-playlist">
@@ -222,6 +408,7 @@ export function LessonPlayerPage() {
               >
                 <span>{lesson.order}</span>
                 <strong>{lesson.title}</strong>
+                {lesson.locked ? <Lock size={16} /> : null}
                 {lesson.completed ? <CheckCircle2 size={16} /> : null}
               </Link>
             ))}
@@ -237,4 +424,3 @@ export function LessonPlayerPage() {
 }
 
 // Badge toast is rendered outside the main section for correct stacking context
-

@@ -3,8 +3,10 @@ import {
   CheckCircle2,
   ClipboardCheck,
   Edit3,
+  Lock,
   Loader2,
   PlusCircle,
+  Unlock,
   Trash2,
   UserPlus,
   Users,
@@ -17,7 +19,7 @@ import { coursesApi } from "../lib/courses-api";
 import { usersApi, type AdminUser } from "../lib/users-api";
 import type { AttendanceRecord, AttendanceStatus, Cohort, ClassStudent, CreateClassPayload } from "../types/class";
 import { ATTENDANCE_STATUS_LABELS, CLASS_WRITE_ROLES } from "../types/class";
-import type { Course, DeliveryMode } from "../types/course";
+import type { Course, DeliveryMode, Lesson } from "../types/course";
 import { DELIVERY_MODE_LABELS } from "../types/course";
 
 const ATTENDANCE_STATUSES: AttendanceStatus[] = ["PRESENT", "LATE", "ABSENT", "EXCUSED"];
@@ -67,6 +69,8 @@ export function ClassesPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [selectedClassId, setSelectedClassId] = useState("");
   const [students, setStudents] = useState<ClassStudent[]>([]);
+  const [classLessons, setClassLessons] = useState<Lesson[]>([]);
+  const [unlockedLessonIds, setUnlockedLessonIds] = useState<Set<string>>(new Set());
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [attendanceDate, setAttendanceDate] = useState(today);
   const [attendanceDraft, setAttendanceDraft] = useState<Record<string, AttendanceStatus>>({});
@@ -131,17 +135,23 @@ export function ClassesPage() {
     if (!token || !selectedClassId) {
       setStudents([]);
       setAttendance([]);
+      setClassLessons([]);
+      setUnlockedLessonIds(new Set());
       return;
     }
 
     setDetailLoading(true);
     try {
-      const [studentData, attendanceData] = await Promise.all([
+      const [studentData, attendanceData, lessonData, unlockData] = await Promise.all([
         classesApi.students(token, selectedClassId),
         classesApi.attendance(token, selectedClassId, attendanceDate),
+        selectedClass ? coursesApi.listLessons(token, selectedClass.courseId) : Promise.resolve([]),
+        classesApi.lessonUnlocks(token, selectedClassId),
       ]);
       setStudents(studentData);
       setAttendance(attendanceData);
+      setClassLessons(lessonData);
+      setUnlockedLessonIds(new Set(unlockData.map((item) => item.lessonId)));
       const currentByUser = new Map(attendanceData.map((record) => [record.userId, record.status]));
       setAttendanceDraft(
         Object.fromEntries(
@@ -156,7 +166,7 @@ export function ClassesPage() {
     } finally {
       setDetailLoading(false);
     }
-  }, [attendanceDate, selectedClassId, token]);
+  }, [attendanceDate, selectedClass, selectedClassId, token]);
 
   useEffect(() => {
     void loadClassDetails();
@@ -247,6 +257,33 @@ export function ClassesPage() {
       await loadClasses();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not mark attendance.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function toggleLessonUnlock(lessonId: string) {
+    setUnlockedLessonIds((current) => {
+      const next = new Set(current);
+      if (next.has(lessonId)) {
+        next.delete(lessonId);
+      } else {
+        next.add(lessonId);
+      }
+      return next;
+    });
+  }
+
+  async function handleSaveLessonUnlocks() {
+    if (!token || !selectedClassId) return;
+    setSaving(true);
+    setError("");
+
+    try {
+      const updated = await classesApi.setLessonUnlocks(token, selectedClassId, Array.from(unlockedLessonIds));
+      setUnlockedLessonIds(new Set(updated.map((item) => item.lessonId)));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not save lesson unlocks.");
     } finally {
       setSaving(false);
     }
@@ -359,6 +396,53 @@ export function ClassesPage() {
                     <span><CalendarDays size={15} /> {formatDate(selectedClass.startsAt)}</span>
                     <span><CheckCircle2 size={15} /> {attendance.length} marked today</span>
                   </div>
+
+                  {canWrite && selectedClass.mode === "ONSITE" ? (
+                    <section className="lesson-unlock-panel">
+                      <div className="classes-panel-header">
+                        <div>
+                          <span>Onsite access</span>
+                          <h3>Unlock lessons for this cohort</h3>
+                        </div>
+                        <button
+                          className="primary-button small-button"
+                          disabled={saving || classLessons.length === 0}
+                          onClick={() => void handleSaveLessonUnlocks()}
+                        >
+                          <Unlock size={15} />
+                          Save unlocks
+                        </button>
+                      </div>
+                      <p>
+                        Onsite learners only access the lessons you unlock here. E-learning and hybrid learners keep self-paced access.
+                      </p>
+                      {classLessons.length === 0 ? (
+                        <div className="empty-state compact">
+                          <strong>No lessons found</strong>
+                          <p>Add course lessons before setting onsite unlocks.</p>
+                        </div>
+                      ) : (
+                        <div className="lesson-unlock-list">
+                          {classLessons.map((lesson) => {
+                            const unlocked = unlockedLessonIds.has(lesson.id);
+                            return (
+                              <button
+                                type="button"
+                                className={unlocked ? "lesson-unlock-row unlocked" : "lesson-unlock-row"}
+                                key={lesson.id}
+                                onClick={() => toggleLessonUnlock(lesson.id)}
+                              >
+                                {unlocked ? <Unlock size={16} /> : <Lock size={16} />}
+                                <span>{lesson.order}</span>
+                                <strong>{lesson.title}</strong>
+                                <b>{unlocked ? "Unlocked" : "Locked"}</b>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </section>
+                  ) : null}
 
                   {canWrite ? (
                     <div className="class-enroll-row">

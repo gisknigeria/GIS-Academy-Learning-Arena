@@ -60,6 +60,26 @@ export type UpcomingClass = {
   course: { id: string; code: string; title: string };
 };
 
+export type UpcomingLiveSession = {
+  id: string;
+  classId: string;
+  title: string;
+  description?: string | null;
+  startsAt: string;
+  endsAt?: string | null;
+  status: string;
+  meetingUrl?: string | null;
+  presentationUrl?: string | null;
+  bookUrl?: string | null;
+  class: {
+    id: string;
+    name: string;
+    mode: DeliveryMode;
+    course: { id: string; code: string; title: string };
+    trainer?: { id: string; fullName: string } | null;
+  };
+};
+
 export type LearnFeed = {
   continueCourse: EnrolledCourse | null;
   enrollments: EnrolledCourse[];
@@ -72,6 +92,7 @@ export type LearnFeed = {
   pendingAssignments: PendingAssignment[];
   assessments: FeedAssessment[];
   upcomingClasses: UpcomingClass[];
+  upcomingLiveSessions: UpcomingLiveSession[];
 };
 
 export const learnApi = {

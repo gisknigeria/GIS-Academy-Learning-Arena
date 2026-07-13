@@ -81,7 +81,7 @@ export function getVisibleNavPages(role: UserRole): Set<PageId> {
   const byRole: Record<UserRole, PageId[]> = {
     SUPER_ADMIN: ["courses", "learn", "arena", "classes", "assessments", "certificates", "reports", "users"],
     ADMIN: ["courses", "learn", "arena", "classes", "assessments", "certificates", "reports", "users"],
-    TRAINING_MANAGER: ["courses", "learn", "classes", "assessments", "certificates", "reports"],
+    TRAINING_MANAGER: ["courses", "learn", "arena", "classes", "assessments", "certificates", "reports"],
     TRAINER: ["courses", "learn", "classes", "assessments", "certificates"],
     STUDENT: ["courses", "learn", "arena", "assessments", "certificates"],
     CORPORATE_CLIENT: ["courses", "learn", "classes", "reports"],

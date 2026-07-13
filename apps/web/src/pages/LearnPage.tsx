@@ -82,7 +82,15 @@ export function LearnPage() {
     );
   }
 
-  const { continueCourse, enrollments, stats, pendingAssignments, assessments, upcomingClasses } = feed;
+  const {
+    continueCourse,
+    enrollments,
+    stats,
+    pendingAssignments,
+    assessments,
+    upcomingClasses,
+    upcomingLiveSessions = [],
+  } = feed;
 
   return (
     <section className="module-page learn-page">
@@ -333,6 +341,41 @@ export function LearnPage() {
                     )}
                   </article>
                 ))}
+            </div>
+          )}
+        </section>
+
+        {/* Live class sessions */}
+        <section className="learn-feed-section">
+          <SectionHeading eyebrow="Live" title="Upcoming live classes" compact />
+          {upcomingLiveSessions.length === 0 ? (
+            <div className="learn-feed-empty">
+              <PlayCircle size={28} />
+              <p>No live class scheduled.</p>
+            </div>
+          ) : (
+            <div className="learn-class-list">
+              {upcomingLiveSessions.map((session) => (
+                <article key={session.id} className="learn-class-card">
+                  <div className="learn-class-icon">
+                    <PlayCircle size={18} />
+                  </div>
+                  <div className="learn-class-body">
+                    <strong>{session.title}</strong>
+                    <span>{session.class.course.code} - {session.class.name}</span>
+                    <small>{formatClassDate(session.startsAt)}</small>
+                  </div>
+                  {session.meetingUrl ? (
+                    <a className="learn-work-btn" href={session.meetingUrl} target="_blank" rel="noreferrer">
+                      Join <ArrowRight size={12} />
+                    </a>
+                  ) : (
+                    <Link className="learn-work-btn" to={`/live-sessions/${session.id}`}>
+                      Workspace <ArrowRight size={12} />
+                    </Link>
+                  )}
+                </article>
+              ))}
             </div>
           )}
         </section>

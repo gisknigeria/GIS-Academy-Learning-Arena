@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
 import { UserRole } from "@prisma/client";
 import { Roles } from "../auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
@@ -10,6 +10,11 @@ import { MarkAttendanceDto } from "./dto/mark-attendance.dto";
 import { UpdateClassDto } from "./dto/update-class.dto";
 import { BulkEnrollDto } from "./dto/bulk-enroll.dto";
 import { CreateAnnouncementDto } from "./dto/create-announcement.dto";
+import { CreateClassMessageDto } from "./dto/create-class-message.dto";
+import { CreateLiveSessionDto } from "./dto/create-live-session.dto";
+import { SetLessonUnlocksDto } from "./dto/set-lesson-unlocks.dto";
+import { UpdateLiveSessionDto } from "./dto/update-live-session.dto";
+import { AuthenticatedRequest } from "../auth/types/authenticated-request";
 
 const WRITE_ROLES = [
   UserRole.SUPER_ADMIN,
@@ -64,6 +69,17 @@ export class ClassesController {
     return this.classesService.bulkEnroll(id, dto);
   }
 
+  @Get(":id/lesson-unlocks")
+  lessonUnlocks(@Param("id") id: string) {
+    return this.classesService.listLessonUnlocks(id);
+  }
+
+  @Roles(...WRITE_ROLES)
+  @Patch(":id/lesson-unlocks")
+  setLessonUnlocks(@Param("id") id: string, @Body() dto: SetLessonUnlocksDto) {
+    return this.classesService.setLessonUnlocks(id, dto);
+  }
+
   @Get(":id/students")
   students(@Param("id") id: string) {
     return this.classesService.listStudents(id);
@@ -104,6 +120,46 @@ export class ClassesController {
   @Get(":id/announcements")
   listAnnouncements(@Param("id") id: string) {
     return this.classesService.listAnnouncements(id);
+  }
+
+  @Get(":id/messages")
+  listMessages(@Param("id") id: string) {
+    return this.classesService.listMessages(id);
+  }
+
+  @Post(":id/messages")
+  createMessage(
+    @Param("id") id: string,
+    @Body() dto: CreateClassMessageDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.classesService.createMessage(id, req.user.sub, dto);
+  }
+
+  @Get(":id/live-sessions")
+  listLiveSessions(@Param("id") id: string) {
+    return this.classesService.listLiveSessions(id);
+  }
+
+  @Roles(...WRITE_ROLES)
+  @Post(":id/live-sessions")
+  createLiveSession(
+    @Param("id") id: string,
+    @Body() dto: CreateLiveSessionDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.classesService.createLiveSession(id, req.user.sub, dto);
+  }
+
+  @Get("live-sessions/:sessionId")
+  getLiveSession(@Param("sessionId") sessionId: string) {
+    return this.classesService.findLiveSession(sessionId);
+  }
+
+  @Roles(...WRITE_ROLES)
+  @Patch("live-sessions/:sessionId")
+  updateLiveSession(@Param("sessionId") sessionId: string, @Body() dto: UpdateLiveSessionDto) {
+    return this.classesService.updateLiveSession(sessionId, dto);
   }
 
   @Roles(...WRITE_ROLES)

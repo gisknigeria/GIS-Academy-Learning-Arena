@@ -16,12 +16,29 @@ import { PaymentGate } from "../components/PaymentGate";
 import { PaymentStatusBanner } from "../components/PaymentStatusBanner";
 import { SectionHeading } from "../components/SectionHeading";
 import { useAuth } from "../context/AuthContext";
+import { loadKnowledgeHubPreferences, trainingCategories } from "../data/knowledgeHub";
 import { coursesApi } from "../lib/courses-api";
+import { profileApi } from "../lib/profile-api";
 import { getCourseAccess } from "../lib/use-payment-access";
 import { isAdminRole } from "../lib/roles";
 import type { PaymentStatus, UserRole } from "../types/auth";
 import type { Course } from "../types/course";
 import { DELIVERY_MODE_LABELS } from "../types/course";
+
+const TRAINING_CATEGORY_CARDS = [
+  {
+    title: "Academy",
+    body: "Structured cohorts for academy programmes, with courses grouped into modules.",
+  },
+  {
+    title: "Corporate",
+    body: "Company or group training for software use, workflows, and professional upskilling.",
+  },
+  {
+    title: "Geography Green",
+    body: "Primary and secondary school pathways with age-aware levels and competitions.",
+  },
+];
 
 // ─── Delivery mode colour config ─────────────────────────────────────────────
 
@@ -77,6 +94,9 @@ function CourseRow({
       </td>
       <td>
         <DeliveryBadge mode={course.deliveryMode} />
+      </td>
+      <td>
+        <span className="badge-xs badge-green">{course.trainingCategory ?? "Academy"}</span>
       </td>
       <td className="cell-center">
         <span className="count-chip">
@@ -180,6 +200,7 @@ function CourseCard({
           ) : (
             <span className="badge-green badge-xs">Free</span>
           )}
+          <span className="badge-green badge-xs">{course.trainingCategory ?? "Academy"}</span>
         </div>
 
         {/* Title */}
@@ -242,13 +263,17 @@ export function CoursesPage() {
 
   const [search, setSearch] = useState("");
   const [modeFilter, setModeFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState(() => {
+    if (isAdminRole(role)) return "";
+    return loadKnowledgeHubPreferences().trainingCategory;
+  });
   const [showArchived, setShowArchived] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
   const searchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = useCallback(
-    async (opts: { search?: string; mode?: string; archived?: boolean; page?: number } = {}) => {
+    async (opts: { search?: string; mode?: string; category?: string; archived?: boolean; page?: number } = {}) => {
       if (!token) return;
       setLoading(true);
       setError("");
@@ -256,6 +281,7 @@ export function CoursesPage() {
         const res = await coursesApi.list(token, {
           search: opts.search ?? search,
           deliveryMode: (opts.mode ?? modeFilter) || undefined,
+          trainingCategory: (opts.category ?? categoryFilter) || undefined,
           includeArchived: opts.archived ?? showArchived,
           page: opts.page ?? page,
           limit: 20,
@@ -269,12 +295,31 @@ export function CoursesPage() {
         setLoading(false);
       }
     },
-    [token, search, modeFilter, showArchived, page],
+    [token, search, modeFilter, categoryFilter, showArchived, page],
   );
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    async function loadProfileCategory() {
+      if (!token || isAdmin) return;
+      try {
+        const fullUser = await profileApi.getMe(token);
+        const profileCategory = fullUser.profile?.trainingCategory;
+        if (profileCategory && profileCategory !== categoryFilter) {
+          setCategoryFilter(profileCategory);
+          setPage(1);
+          void load({ category: profileCategory, page: 1 });
+        }
+      } catch {
+        // The local onboarding preference already provides a fallback.
+      }
+    }
+
+    void loadProfileCategory();
+  }, [categoryFilter, isAdmin, load, token]);
 
   function handleSearchChange(val: string) {
     setSearch(val);
@@ -289,6 +334,12 @@ export function CoursesPage() {
     setModeFilter(val);
     setPage(1);
     void load({ mode: val, page: 1 });
+  }
+
+  function handleCategoryChange(val: string) {
+    setCategoryFilter(val);
+    setPage(1);
+    void load({ category: val, page: 1 });
   }
 
   function handleArchivedToggle(val: boolean) {
@@ -338,6 +389,21 @@ export function CoursesPage() {
       </div>
 
       {/* Filters */}
+      <div className="training-category-strip" aria-label="Training categories">
+        {TRAINING_CATEGORY_CARDS.map((category) => (
+          <article
+            className={categoryFilter === category.title ? "active" : ""}
+            key={category.title}
+            onClick={() => handleCategoryChange(category.title)}
+            role="button"
+            tabIndex={0}
+          >
+            <strong>{category.title}</strong>
+            <span>{category.body}</span>
+          </article>
+        ))}
+      </div>
+
       <div className="filter-bar">
         <div className="filter-search">
           <Search size={16} />
@@ -351,6 +417,19 @@ export function CoursesPage() {
         <div className="filter-select-wrap">
           <Filter size={15} />
           <select
+            value={categoryFilter}
+            onChange={(e) => handleCategoryChange(e.target.value)}
+            aria-label="Filter by training category"
+          >
+            <option value="">All categories</option>
+            {trainingCategories.map((category) => (
+              <option key={category} value={category}>{category}</option>
+            ))}
+          </select>
+        </div>
+        <div className="filter-select-wrap">
+          <Filter size={15} />
+          <select
             value={modeFilter}
             onChange={(e) => handleModeChange(e.target.value)}
             aria-label="Filter by delivery mode"
@@ -358,7 +437,6 @@ export function CoursesPage() {
             <option value="">All modes</option>
             <option value="E_LEARNING">E-Learning</option>
             <option value="ONSITE">Onsite</option>
-            <option value="LIVE_VIRTUAL">Live Virtual</option>
             <option value="HYBRID">Hybrid</option>
           </select>
         </div>
@@ -411,9 +489,10 @@ export function CoursesPage() {
               <tr>
                 <th>Code</th>
                 <th>Title</th>
-                <th>Level</th>
-                <th>Mode</th>
-                <th className="cell-center">Lessons</th>
+              <th>Level</th>
+              <th>Mode</th>
+              <th>Category</th>
+              <th className="cell-center">Lessons</th>
                 <th className="cell-center">Enrolled</th>
                 <th className="cell-center">Access</th>
                 <th className="cell-actions">Actions</th>

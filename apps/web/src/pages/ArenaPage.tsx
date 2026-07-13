@@ -11,7 +11,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { SectionHeading } from "../components/SectionHeading";
 import { useAuth } from "../context/AuthContext";
 import { competitionsApi } from "../lib/competitions-api";
-import { isAdminRole, isInstructorRole } from "../lib/roles";
+import { isAdminRole } from "../lib/roles";
 import type { Competition, CreateCompetitionPayload, MyParticipation } from "../types/competition";
 import {
   COMPETITION_MODE_LABELS,
@@ -34,7 +34,7 @@ const TEAM_MODES = new Set(["TEAM", "SCHOOL", "CORPORATE", "OLYMPIAD"]);
 export function ArenaPage() {
   const { token, user } = useAuth();
   const navigate = useNavigate();
-  const isStaff = Boolean(user && (isAdminRole(user.role) || isInstructorRole(user.role)));
+  const isStaff = Boolean(user && isAdminRole(user.role));
 
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [mine, setMine] = useState<MyParticipation[]>([]);

@@ -23,9 +23,12 @@ import { QueryCoursesDto } from "./dto/query-courses.dto";
 import { UpdateCourseDto } from "./dto/update-course.dto";
 import { CreateLessonDto } from "./dto/create-lesson.dto";
 import { UpdateLessonDto } from "./dto/update-lesson.dto";
+import { AnswerLessonDiscussionDto } from "./dto/answer-lesson-discussion.dto";
+import { CreateLessonDiscussionDto } from "./dto/create-lesson-discussion.dto";
+import { ImportLessonDto } from "./dto/import-lesson.dto";
 
-const WRITE_ROLES = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TRAINING_MANAGER];
-const LESSON_WRITE_ROLES = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TRAINING_MANAGER, UserRole.TRAINER];
+const WRITE_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TRAINING_MANAGER];
+const LESSON_WRITE_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TRAINING_MANAGER, UserRole.TRAINER];
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller("courses")
@@ -101,9 +104,21 @@ export class CoursesController {
   }
 
   @Roles(...LESSON_WRITE_ROLES)
+  @Get("lessons/library")
+  searchLessonLibrary(@Query("search") search?: string, @Query("excludeCourseId") excludeCourseId?: string) {
+    return this.coursesService.searchLessonLibrary(search, excludeCourseId);
+  }
+
+  @Roles(...LESSON_WRITE_ROLES)
   @Post(":id/lessons")
   createLesson(@Param("id") id: string, @Body() dto: CreateLessonDto) {
     return this.coursesService.createLesson(id, dto);
+  }
+
+  @Roles(...LESSON_WRITE_ROLES)
+  @Post(":id/lessons/import")
+  importLesson(@Param("id") id: string, @Body() dto: ImportLessonDto) {
+    return this.coursesService.importLesson(id, dto);
   }
 
   @Get(":id/lessons")
@@ -114,7 +129,7 @@ export class CoursesController {
       throw new ForbiddenException(access.reason);
     }
 
-    return this.coursesService.listLessonsWithProgress(id, req.user.sub);
+    return this.coursesService.listLessonsWithProgress(id, req.user.sub, LESSON_WRITE_ROLES.includes(req.user.role));
   }
 
   @Get(":id/progress")
@@ -199,6 +214,44 @@ export class CoursesController {
   @Patch("lessons/:lessonId")
   updateLesson(@Param("lessonId") lessonId: string, @Body() dto: UpdateLessonDto) {
     return this.coursesService.updateLesson(lessonId, dto);
+  }
+
+  @Get("lessons/:lessonId/discussions")
+  async listLessonDiscussions(@Param("lessonId") lessonId: string, @Req() req: AuthenticatedRequest) {
+    const courseId = await this.coursesService.getLessonCourseId(lessonId);
+    const access = await this.accessControl.checkCourseAccess(req.user.sub, courseId);
+
+    if (!access.allowed && !LESSON_WRITE_ROLES.includes(req.user.role)) {
+      throw new ForbiddenException(access.reason);
+    }
+
+    return this.coursesService.listLessonDiscussions(lessonId, req.user.sub, LESSON_WRITE_ROLES.includes(req.user.role));
+  }
+
+  @Post("lessons/:lessonId/discussions")
+  async createLessonDiscussion(
+    @Param("lessonId") lessonId: string,
+    @Body() dto: CreateLessonDiscussionDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const courseId = await this.coursesService.getLessonCourseId(lessonId);
+    const access = await this.accessControl.checkCourseAccess(req.user.sub, courseId);
+
+    if (!access.allowed && !LESSON_WRITE_ROLES.includes(req.user.role)) {
+      throw new ForbiddenException(access.reason);
+    }
+
+    return this.coursesService.createLessonDiscussion(lessonId, req.user.sub, dto, LESSON_WRITE_ROLES.includes(req.user.role));
+  }
+
+  @Roles(...LESSON_WRITE_ROLES)
+  @Patch("lesson-discussions/:discussionId/answer")
+  answerLessonDiscussion(
+    @Param("discussionId") discussionId: string,
+    @Body() dto: AnswerLessonDiscussionDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.coursesService.answerLessonDiscussion(discussionId, req.user.sub, dto);
   }
 
   @Roles(...LESSON_WRITE_ROLES)

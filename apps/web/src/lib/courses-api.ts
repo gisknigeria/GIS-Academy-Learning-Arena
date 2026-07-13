@@ -1,11 +1,14 @@
-import { apiRequest } from "./api";
+import { API_BASE_URL, apiRequest } from "./api";
 import type {
   Course,
   CourseListResponse,
   CourseProgress,
   CreateCoursePayload,
   CreateLessonPayload,
+  ImportLessonPayload,
   Lesson,
+  LessonDiscussion,
+  LessonLibraryItem,
   UpdateCoursePayload,
   UpdateLessonPayload,
 } from "../types/course";
@@ -13,6 +16,7 @@ import type {
 type ListCoursesParams = {
   search?: string;
   deliveryMode?: string;
+  trainingCategory?: string;
   page?: number;
   limit?: number;
   includeArchived?: boolean;
@@ -23,6 +27,7 @@ export const coursesApi = {
     const query = new URLSearchParams();
     if (params.search) query.set("search", params.search);
     if (params.deliveryMode) query.set("deliveryMode", params.deliveryMode);
+    if (params.trainingCategory) query.set("trainingCategory", params.trainingCategory);
     if (params.page) query.set("page", String(params.page));
     if (params.limit) query.set("limit", String(params.limit));
     if (params.includeArchived) query.set("includeArchived", "true");
@@ -62,6 +67,22 @@ export const coursesApi = {
     });
   },
 
+  searchLessonLibrary(token: string, params: { search?: string; excludeCourseId?: string } = {}): Promise<LessonLibraryItem[]> {
+    const query = new URLSearchParams();
+    if (params.search) query.set("search", params.search);
+    if (params.excludeCourseId) query.set("excludeCourseId", params.excludeCourseId);
+    const qs = query.toString();
+    return apiRequest<LessonLibraryItem[]>(`/courses/lessons/library${qs ? `?${qs}` : ""}`, { token });
+  },
+
+  importLesson(token: string, courseId: string, payload: ImportLessonPayload): Promise<Lesson> {
+    return apiRequest<Lesson>(`/courses/${courseId}/lessons/import`, {
+      method: "POST",
+      token,
+      body: payload,
+    });
+  },
+
   updateLesson(token: string, lessonId: string, payload: UpdateLessonPayload): Promise<Lesson> {
     return apiRequest<Lesson>(`/courses/lessons/${lessonId}`, {
       method: "PATCH",
@@ -88,11 +109,50 @@ export const coursesApi = {
     });
   },
 
+  listLessonDiscussions(token: string, lessonId: string): Promise<LessonDiscussion[]> {
+    return apiRequest<LessonDiscussion[]>(`/courses/lessons/${lessonId}/discussions`, { token });
+  },
+
+  createLessonDiscussion(token: string, lessonId: string, question: string): Promise<LessonDiscussion> {
+    return apiRequest<LessonDiscussion>(`/courses/lessons/${lessonId}/discussions`, {
+      method: "POST",
+      token,
+      body: { question },
+    });
+  },
+
+  answerLessonDiscussion(token: string, discussionId: string, answer: string): Promise<LessonDiscussion> {
+    return apiRequest<LessonDiscussion>(`/courses/lesson-discussions/${discussionId}/answer`, {
+      method: "PATCH",
+      token,
+      body: { answer },
+    });
+  },
+
   enroll(token: string, courseId: string) {
     return apiRequest(`/courses/${courseId}/enroll`, { method: "POST", token });
   },
 
   isEnrolled(token: string, courseId: string): Promise<{ enrolled: boolean }> {
     return apiRequest<{ enrolled: boolean }>(`/courses/${courseId}/enrollment`, { token });
+  },
+
+  async uploadLessonResource(token: string, file: File, lessonId?: string): Promise<{ url: string; key?: string }> {
+    const form = new FormData();
+    form.append("file", file);
+    if (lessonId) form.append("lessonId", lessonId);
+
+    const response = await fetch(`${API_BASE_URL}/uploads/lesson-resource`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}` },
+      body: form,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || "Upload failed");
+    }
+
+    return response.json() as Promise<{ url: string; key?: string }>;
   },
 };

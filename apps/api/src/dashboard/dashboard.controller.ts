@@ -11,7 +11,7 @@ export class DashboardController {
   /**
    * GET /api/dashboard/stats
    * Role-aware stats:
-   *   - Learners get personal progress, completions, arena points, competition rank
+   *   - Learners get personal progress, completions, challenge points, competition rank
    *   - Admin/staff get platform-wide counters
    */
   @Get("stats")
