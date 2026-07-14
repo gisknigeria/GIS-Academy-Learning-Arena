@@ -1,6 +1,7 @@
 import { NestFactory } from "@nestjs/core";
 import { ValidationPipe } from "@nestjs/common";
 import { NestExpressApplication } from "@nestjs/platform-express";
+import * as fs from "fs";
 import path from "path";
 import { AppModule } from "./app.module";
 import { IoAdapter } from "@nestjs/platform-socket.io";
@@ -31,8 +32,10 @@ async function bootstrap() {
     }),
   );
 
-  app.useStaticAssets(path.join(process.cwd(), "uploads"), {
-    prefix: "/uploads",
+  const uploadsPath = path.join(process.cwd(), "uploads");
+  fs.mkdirSync(uploadsPath, { recursive: true });
+  app.useStaticAssets(uploadsPath, {
+    prefix: "/uploads/",
   });
 
   // Enable WebSocket (Socket.IO) adapter

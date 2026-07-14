@@ -30,6 +30,20 @@ try {
 
 export type UploadResult = { url: string; key?: string };
 
+function getPublicUploadUrl(uploadPath: string): string {
+  const publicApiUrl = (process.env.PUBLIC_API_URL ?? process.env.RENDER_EXTERNAL_URL ?? '').replace(/\/$/, '');
+  if (publicApiUrl) return `${publicApiUrl}${uploadPath}`;
+
+  const localUploadUrl = process.env.LOCAL_UPLOAD_URL?.replace(/\/$/, '');
+  if (localUploadUrl) {
+    return localUploadUrl.endsWith('/uploads')
+      ? `${localUploadUrl}${uploadPath.replace(/^\/uploads/, '')}`
+      : `${localUploadUrl}${uploadPath}`;
+  }
+
+  return uploadPath;
+}
+
 @Injectable()
 export class UploadsService {
   private readonly logger = new Logger(UploadsService.name);
@@ -79,7 +93,7 @@ export class UploadsService {
     if (this.provider === 'cloudinary' && cloudinary) {
       // Cloudinary supports streams; use upload_stream
       return new Promise<UploadResult>((resolve, reject) => {
-        const opts: any = {};
+        const opts: any = { resource_type: 'auto' };
         if (folder) opts.folder = folder;
         const stream = cloudinary.uploader.upload_stream(opts, (err: any, result: any) => {
           if (err) return reject(err);
@@ -95,7 +109,8 @@ export class UploadsService {
     const safeName = `${Date.now()}-${filename.replace(/[^a-zA-Z0-9._-]/g, '')}`;
     const filePath = path.join(uploadsDir, safeName);
     await fs.promises.writeFile(filePath, buffer);
-    const url = process.env.LOCAL_UPLOAD_URL ? `${process.env.LOCAL_UPLOAD_URL}/${folder ?? 'files'}/${safeName}` : `/uploads/${folder ?? 'files'}/${safeName}`;
+    const uploadPath = `/uploads/${folder ?? 'files'}/${safeName}`;
+    const url = getPublicUploadUrl(uploadPath);
     return { url, key: safeName };
   }
 }

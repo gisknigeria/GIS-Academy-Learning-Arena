@@ -39,6 +39,7 @@ DIRECT_DATABASE_URL=postgresql://...
 JWT_SECRET=use-a-long-random-secret
 JWT_EXPIRES_IN=1d
 PORT=4000
+PUBLIC_API_URL=https://your-render-service.onrender.com
 FRONTEND_URL=https://your-vercel-app.vercel.app
 CORS_ORIGINS=https://your-vercel-app.vercel.app
 BREVO_API_KEY=...
@@ -55,6 +56,8 @@ For production course materials, use one persistent upload provider:
 
 Avoid `UPLOAD_PROVIDER=local` on Render for important course files because local Render disk storage is not a reliable long-term file store unless you have configured persistent disks.
 
+If you temporarily keep local uploads, set `PUBLIC_API_URL` to the Render service origin without `/api`. Files that disappeared after a restart or redeploy cannot be recovered from their database URL and must be uploaded again.
+
 ## Production checklist
 
 - Add the deployed Vercel URL to Render `FRONTEND_URL` and `CORS_ORIGINS`.
@@ -65,6 +68,10 @@ Avoid `UPLOAD_PROVIDER=local` on Render for important course files because local
 - Test login, trainer registration approval, course material upload, learner enrollment, lesson discussion, live session external link, and certificate verification.
 
 ## Troubleshooting
+
+### `/uploads/...` returns 404
+
+Confirm `PUBLIC_API_URL` is the Render service origin, redeploy the backend, and upload the lesson material again. Render's local filesystem is temporary, so use Cloudinary, Supabase Storage, or S3 before relying on uploaded materials in production.
 
 ### `/api/courses` returns 500 on Render
 
