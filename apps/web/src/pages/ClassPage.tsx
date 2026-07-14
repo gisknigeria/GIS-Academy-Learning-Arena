@@ -1,3 +1,4 @@
+import { CalendarPlus, ExternalLink, MapPin, MonitorPlay } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -24,6 +25,7 @@ export default function ClassPage() {
     startsAt: "",
     endsAt: "",
     meetingUrl: "",
+    location: "",
     presentationUrl: "",
     bookUrl: "",
   });
@@ -95,11 +97,12 @@ export default function ClassPage() {
         startsAt: new Date(liveForm.startsAt).toISOString(),
         endsAt: liveForm.endsAt ? new Date(liveForm.endsAt).toISOString() : undefined,
         meetingUrl: liveForm.meetingUrl || undefined,
+        location: liveForm.location || undefined,
         presentationUrl: liveForm.presentationUrl || undefined,
         bookUrl: liveForm.bookUrl || undefined,
       });
       setLiveSessions((current) => [...current, created].sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()));
-      setLiveForm({ title: "", description: "", startsAt: "", endsAt: "", meetingUrl: "", presentationUrl: "", bookUrl: "" });
+      setLiveForm({ title: "", description: "", startsAt: "", endsAt: "", meetingUrl: "", location: "", presentationUrl: "", bookUrl: "" });
     } catch (err) {
       setLiveError(err instanceof Error ? err.message : "Could not schedule live class.");
     }
@@ -160,8 +163,8 @@ export default function ClassPage() {
 
           <div className="admin-card admin-card-list">
             <div className="admin-card-header">
-              <h3>Live classes</h3>
-              <small>Schedule external meeting links and supporting workspace</small>
+              <h3>Class sessions</h3>
+              <small>Schedule physical classes or online meetings for enrolled learners</small>
             </div>
             {canWrite ? (
               <form className="live-session-form" onSubmit={handleScheduleLiveSession}>
@@ -195,24 +198,40 @@ export default function ClassPage() {
                     />
                   </label>
                 </div>
+                {schedule?.mode === "ONSITE" || schedule?.mode === "HYBRID" ? (
+                  <label className="live-session-field">
+                    <span><MapPin size={15} /> Physical venue</span>
+                    <input
+                      value={liveForm.location}
+                      onChange={(event) => setLiveForm((current) => ({ ...current, location: event.target.value }))}
+                      placeholder="Training room, school hall, or address"
+                      required={schedule?.mode === "ONSITE"}
+                    />
+                  </label>
+                ) : null}
+                {schedule?.mode !== "ONSITE" ? (
+                  <label className="live-session-field">
+                    <span><MonitorPlay size={15} /> Meeting link</span>
+                    <input
+                      value={liveForm.meetingUrl}
+                      onChange={(event) => setLiveForm((current) => ({ ...current, meetingUrl: event.target.value }))}
+                      placeholder="Google Meet, Zoom, or Teams link"
+                      required
+                    />
+                  </label>
+                ) : null}
                 <input
                   value={liveForm.presentationUrl}
                   onChange={(event) => setLiveForm((current) => ({ ...current, presentationUrl: event.target.value }))}
-                  placeholder="Presentation link"
+                  placeholder="Presentation link (optional)"
                 />
                 <input
                   value={liveForm.bookUrl}
                   onChange={(event) => setLiveForm((current) => ({ ...current, bookUrl: event.target.value }))}
                   placeholder="Book / handout link"
                 />
-                <input
-                  value={liveForm.meetingUrl}
-                  onChange={(event) => setLiveForm((current) => ({ ...current, meetingUrl: event.target.value }))}
-                  placeholder="Google Meet / Zoom / Teams link"
-                  required
-                />
                 {liveError ? <p className="form-error">{liveError}</p> : null}
-                <button className="primary-button" type="submit">Schedule live class</button>
+                <button className="primary-button" type="submit"><CalendarPlus size={17} /> Schedule session</button>
               </form>
             ) : null}
             <div className="live-session-list">
@@ -224,12 +243,13 @@ export default function ClassPage() {
                     <div>
                       <strong>{session.title}</strong>
                       <span>{new Date(session.startsAt).toLocaleString()}</span>
+                      {session.location ? <span className="live-session-location"><MapPin size={14} />{session.location}</span> : null}
                       {session.description ? <p>{session.description}</p> : null}
                     </div>
                     <div className="live-session-actions">
                       {session.meetingUrl ? (
                         <a className="primary-button small-button" href={session.meetingUrl} target="_blank" rel="noreferrer">
-                          Join meeting
+                          Join meeting <ExternalLink size={14} />
                         </a>
                       ) : null}
                       <Link className="secondary-button small-button" to={`/live-sessions/${session.id}`}>

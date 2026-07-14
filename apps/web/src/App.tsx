@@ -44,7 +44,8 @@ function App() {
           <Route element={<DashboardLayout />}>
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/knowledge-hub" element={<KnowledgeHubPage />} />
+            <Route path="/personalize" element={<KnowledgeHubPage />} />
+            <Route path="/knowledge-hub" element={<Navigate to="/personalize" replace />} />
             <Route element={<RoleRoute page="courses" />}>
               <Route path="/courses" element={<CoursesPage />} />
               <Route path="/courses/:id" element={<CourseDetailPage />} />

@@ -175,6 +175,7 @@ model Lesson {
   progress     LessonProgress[]
   discussions  LessonDiscussion[]
   classUnlocks ClassLessonUnlock[]
+  assessments Assessment[]
 }
 
 model ClassLessonUnlock {
@@ -250,6 +251,7 @@ model LiveSession {
   endsAt          DateTime?
   status          String   @default("SCHEDULED")
   meetingUrl      String?
+  location        String?
   presentationUrl String?
   bookUrl         String?
   createdById     String?
@@ -351,10 +353,12 @@ model Submission {
 
 enum QuestionType {
   MCQ
+  MULTIPLE_CHOICE
   TRUE_FALSE
   SHORT_ANSWER
   FILE_UPLOAD
   MAP_TASK
+  NOTE
 }
 
 enum AttemptStatus {
@@ -367,6 +371,7 @@ enum AttemptStatus {
 model Assessment {
   id               String      @id @default(uuid())
   courseId         String?
+  lessonId         String?
   title            String
   description      String?
   durationMin      Int         @default(30)
@@ -375,11 +380,14 @@ model Assessment {
   shuffleQuestions Boolean     @default(false)
   isPublished      Boolean     @default(false)
   course           Course?     @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  lesson           Lesson?     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
   questions        Question[]
   attempts         Attempt[]
   competitions     Competition[]
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
+
+  @@index([lessonId])
 }
 
 model Question {

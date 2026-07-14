@@ -1,5 +1,6 @@
 import {
   CalendarDays,
+  CalendarPlus,
   CheckCircle2,
   ClipboardCheck,
   Edit3,
@@ -12,6 +13,7 @@ import {
   Users,
 } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { SectionHeading } from "../components/SectionHeading";
 import { useAuth } from "../context/AuthContext";
 import { classesApi } from "../lib/classes-api";
@@ -388,7 +390,14 @@ export function ClassesPage() {
                       <span>{selectedClass.course.code}</span>
                       <h3>{selectedClass.name}</h3>
                     </div>
-                    <b>{DELIVERY_MODE_LABELS[selectedClass.mode]}</b>
+                    <div className="class-detail-header-actions">
+                      <b>{DELIVERY_MODE_LABELS[selectedClass.mode]}</b>
+                      {canWrite ? (
+                        <Link className="primary-button small-button" to={`/classes/${selectedClass.id}`}>
+                          <CalendarPlus size={15} /> Schedule session
+                        </Link>
+                      ) : null}
+                    </div>
                   </div>
 
                   <div className="class-detail-stats">

@@ -1,9 +1,10 @@
-import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, Clock, Loader2, Send } from "lucide-react";
+import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, Clock, Lightbulb, Loader2, Send, XCircle } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { assessmentsApi } from "../lib/assessments-api";
-import type { AttemptSession } from "../types/assessment";
+import { sounds } from "../lib/sound";
+import type { AnswerCheckResult, AssessmentAnswer, AttemptSession } from "../types/assessment";
 
 function formatTime(seconds: number) {
   const m = Math.floor(seconds / 60).toString().padStart(2, "0");
@@ -17,7 +18,9 @@ export function AssessmentTakePage() {
   const { token } = useAuth();
 
   const [session, setSession] = useState<AttemptSession | null>(null);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answers, setAnswers] = useState<Record<string, AssessmentAnswer>>({});
+  const [feedback, setFeedback] = useState<Record<string, AnswerCheckResult>>({});
+  const [checkingQuestionId, setCheckingQuestionId] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -92,8 +95,42 @@ export function AssessmentTakePage() {
     }
   }
 
-  function setAnswer(questionId: string, value: string) {
+  function setAnswer(questionId: string, value: AssessmentAnswer) {
     setAnswers((prev) => ({ ...prev, [questionId]: value }));
+    setFeedback((prev) => {
+      const next = { ...prev };
+      delete next[questionId];
+      return next;
+    });
+  }
+
+  async function checkAnswer(questionId: string, answer = answers[questionId]) {
+    if (!token || !session || answer == null || (Array.isArray(answer) ? answer.length === 0 : !answer.trim())) return;
+    setCheckingQuestionId(questionId);
+    setError("");
+    try {
+      const result = await assessmentsApi.checkAnswer(token, session.attemptId, questionId, answer);
+      setFeedback((prev) => ({ ...prev, [questionId]: result }));
+      if (result.correct === true) sounds.tileSuccess();
+      if (result.correct === false) sounds.wrong();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not check this answer.");
+    } finally {
+      setCheckingQuestionId("");
+    }
+  }
+
+  function selectSingleAnswer(questionId: string, value: string) {
+    sounds.click();
+    setAnswer(questionId, value);
+    void checkAnswer(questionId, value);
+  }
+
+  function toggleMultipleAnswer(questionId: string, option: string) {
+    sounds.click();
+    const current = Array.isArray(answers[questionId]) ? answers[questionId] as string[] : [];
+    const next = current.includes(option) ? current.filter((item) => item !== option) : [...current, option];
+    setAnswer(questionId, next);
   }
 
   // ── Render helpers ────────────────────────────────────────────────────────
@@ -116,11 +153,36 @@ export function AssessmentTakePage() {
 
   if (!session) return null;
 
+  if (session.questions.length === 0) {
+    return (
+      <section className="module-page">
+        <Link className="back-link" to="/assessments"><ArrowLeft size={16} />Back to assessments</Link>
+        <div className="empty-state-card">
+          <Lightbulb size={24} />
+          <h1>This practice is being prepared</h1>
+          <p>Your trainer has not added questions yet. Please check again later.</p>
+        </div>
+      </section>
+    );
+  }
+
   const questions = session.questions;
   const currentQ = questions[currentIndex];
-  const totalAnswered = questions.filter((q) => answers[q.id] !== undefined && answers[q.id] !== "").length;
+  const hasAnswer = (questionId: string) => {
+    const answer = answers[questionId];
+    return Array.isArray(answer) ? answer.length > 0 : Boolean(answer?.trim());
+  };
+  const totalAnswered = questions.filter((q) => q.type === "NOTE" || hasAnswer(q.id)).length;
   const isLast = currentIndex === questions.length - 1;
   const isLow = timeLeft !== null && timeLeft <= 60;
+  const currentFeedback = feedback[currentQ.id];
+  const correctAnswers = currentFeedback
+    ? Array.isArray(currentFeedback.correctAnswer)
+      ? currentFeedback.correctAnswer
+      : currentFeedback.correctAnswer
+        ? [currentFeedback.correctAnswer]
+        : []
+    : [];
 
   return (
     <section className="quiz-page">
@@ -153,7 +215,9 @@ export function AssessmentTakePage() {
                 className={[
                   "quiz-nav-btn",
                   i === currentIndex ? "active" : "",
-                  answers[q.id] ? "answered" : "",
+                  q.type === "NOTE" || hasAnswer(q.id) ? "answered" : "",
+                  feedback[q.id]?.correct === true ? "correct" : "",
+                  feedback[q.id]?.correct === false ? "incorrect" : "",
                 ].filter(Boolean).join(" ")}
                 onClick={() => setCurrentIndex(i)}
                 aria-label={`Question ${i + 1}`}
@@ -176,25 +240,32 @@ export function AssessmentTakePage() {
         </aside>
 
         {/* Current question */}
-        <article className="quiz-question-panel">
+        <article className={`quiz-question-panel ${currentFeedback?.correct === true ? "feedback-correct" : currentFeedback?.correct === false ? "feedback-wrong" : ""}`}>
           <div className="quiz-q-meta">
-            <span className="quiz-q-counter">Question {currentIndex + 1} of {questions.length}</span>
-            <span className="quiz-q-points">{currentQ.points} pt{currentQ.points !== 1 ? "s" : ""}</span>
+            <span className="quiz-q-counter">{currentQ.type === "NOTE" ? "Learning note" : `Question ${currentIndex + 1} of ${questions.length}`}</span>
+            {currentQ.type !== "NOTE" ? <span className="quiz-q-points">{currentQ.points} pt{currentQ.points !== 1 ? "s" : ""}</span> : null}
           </div>
 
-          <p className="quiz-q-text">{currentQ.text}</p>
+          {currentQ.type === "NOTE" ? (
+            <div className="quiz-learning-note"><Lightbulb size={28} /><p>{currentQ.text}</p></div>
+          ) : <p className="quiz-q-text">{currentQ.text}</p>}
 
           {/* MCQ */}
           {currentQ.type === "MCQ" && (
             <div className="quiz-options">
               {currentQ.options.map((opt, i) => (
-                <label key={i} className={`quiz-option ${answers[currentQ.id] === opt ? "selected" : ""}`}>
+                <label key={i} className={[
+                  "quiz-option",
+                  answers[currentQ.id] === opt ? "selected" : "",
+                  currentFeedback && correctAnswers.includes(opt) ? "is-correct" : "",
+                  currentFeedback?.correct === false && answers[currentQ.id] === opt && !correctAnswers.includes(opt) ? "is-wrong" : "",
+                ].filter(Boolean).join(" ")}>
                   <input
                     type="radio"
                     name={currentQ.id}
                     value={opt}
                     checked={answers[currentQ.id] === opt}
-                    onChange={() => setAnswer(currentQ.id, opt)}
+                    onChange={() => selectSingleAnswer(currentQ.id, opt)}
                   />
                   <span>{opt}</span>
                 </label>
@@ -202,17 +273,48 @@ export function AssessmentTakePage() {
             </div>
           )}
 
+          {currentQ.type === "MULTIPLE_CHOICE" && (
+            <>
+              <p className="quiz-selection-hint">Select every answer that applies.</p>
+              <div className="quiz-options">
+                {currentQ.options.map((opt, i) => {
+                  const selected = Array.isArray(answers[currentQ.id]) && (answers[currentQ.id] as string[]).includes(opt);
+                  return (
+                    <label key={i} className={[
+                      "quiz-option",
+                      selected ? "selected" : "",
+                      currentFeedback && correctAnswers.includes(opt) ? "is-correct" : "",
+                      currentFeedback?.correct === false && selected && !correctAnswers.includes(opt) ? "is-wrong" : "",
+                    ].filter(Boolean).join(" ")}>
+                      <input type="checkbox" value={opt} checked={selected} onChange={() => toggleMultipleAnswer(currentQ.id, opt)} />
+                      <span>{opt}</span>
+                    </label>
+                  );
+                })}
+              </div>
+              <button type="button" className="primary-button quiz-check-button" disabled={!hasAnswer(currentQ.id) || checkingQuestionId === currentQ.id} onClick={() => void checkAnswer(currentQ.id)}>
+                {checkingQuestionId === currentQ.id ? <Loader2 size={16} className="spin" /> : <CheckCircle2 size={16} />}
+                {checkingQuestionId === currentQ.id ? "Checking..." : "Check answer"}
+              </button>
+            </>
+          )}
+
           {/* True / False */}
           {currentQ.type === "TRUE_FALSE" && (
             <div className="quiz-options">
               {["true", "false"].map((val) => (
-                <label key={val} className={`quiz-option ${answers[currentQ.id] === val ? "selected" : ""}`}>
+                <label key={val} className={[
+                  "quiz-option",
+                  answers[currentQ.id] === val ? "selected" : "",
+                  currentFeedback && correctAnswers.includes(val) ? "is-correct" : "",
+                  currentFeedback?.correct === false && answers[currentQ.id] === val && !correctAnswers.includes(val) ? "is-wrong" : "",
+                ].filter(Boolean).join(" ")}>
                   <input
                     type="radio"
                     name={currentQ.id}
                     value={val}
                     checked={answers[currentQ.id] === val}
-                    onChange={() => setAnswer(currentQ.id, val)}
+                    onChange={() => selectSingleAnswer(currentQ.id, val)}
                   />
                   <span>{val === "true" ? "True" : "False"}</span>
                 </label>
@@ -226,13 +328,41 @@ export function AssessmentTakePage() {
               className="quiz-short-answer"
               rows={4}
               placeholder="Type your answer here…"
-              value={answers[currentQ.id] ?? ""}
+              value={typeof answers[currentQ.id] === "string" ? answers[currentQ.id] as string : ""}
               onChange={(e) => setAnswer(currentQ.id, e.target.value)}
             />
           )}
 
+          {currentQ.type === "SHORT_ANSWER" && (
+            <button type="button" className="primary-button quiz-check-button" disabled={!hasAnswer(currentQ.id) || checkingQuestionId === currentQ.id} onClick={() => void checkAnswer(currentQ.id)}>
+              {checkingQuestionId === currentQ.id ? <Loader2 size={16} className="spin" /> : <CheckCircle2 size={16} />}
+              {checkingQuestionId === currentQ.id ? "Checking..." : "Check answer"}
+            </button>
+          )}
+
+          {(currentQ.type === "FILE_UPLOAD" || currentQ.type === "MAP_TASK") && (
+            <textarea
+              className="quiz-short-answer"
+              rows={4}
+              placeholder="Add your submission link or response here..."
+              value={typeof answers[currentQ.id] === "string" ? answers[currentQ.id] as string : ""}
+              onChange={(e) => setAnswer(currentQ.id, e.target.value)}
+            />
+          )}
+
+          {currentFeedback ? (
+            <div className={`quiz-instant-feedback ${currentFeedback.correct === true ? "is-correct" : currentFeedback.correct === false ? "is-wrong" : "is-review"}`} role="status">
+              {currentFeedback.correct === true ? <CheckCircle2 size={22} /> : currentFeedback.correct === false ? <XCircle size={22} /> : <Lightbulb size={22} />}
+              <div>
+                <strong>{currentFeedback.correct === true ? "Correct!" : currentFeedback.correct === false ? "Not quite yet" : "Trainer review required"}</strong>
+                {currentFeedback.correct === false && correctAnswers.length > 0 ? <p>Correct answer: {correctAnswers.join(", ")}</p> : null}
+                {currentFeedback.explanation ? <p>{currentFeedback.explanation}</p> : null}
+              </div>
+            </div>
+          ) : null}
+
           {/* Unanswered warning */}
-          {!answers[currentQ.id] && (
+          {currentQ.type !== "NOTE" && !hasAnswer(currentQ.id) && (
             <p className="quiz-unanswered">
               <AlertCircle size={14} />Not answered yet
             </p>

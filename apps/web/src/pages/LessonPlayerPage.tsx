@@ -1,4 +1,4 @@
-import { ArrowLeft, CheckCircle2, ExternalLink, FileArchive, FileText, Flame, Image, Loader2, Lock, Map, MessageSquare, Presentation, Send, Video } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ClipboardCheck, ExternalLink, FileArchive, FileText, Flame, Image, Loader2, Lock, Map, MessageSquare, Presentation, Send, Sparkles, Video } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import { AchievementBadgeToast } from "../components/AchievementBadge";
@@ -7,9 +7,11 @@ import { useAuth } from "../context/AuthContext";
 import { usePlayerXP } from "../hooks/usePlayerXP";
 import { API_BASE_URL } from "../lib/api";
 import { coursesApi } from "../lib/courses-api";
+import { assessmentsApi } from "../lib/assessments-api";
 import { isAdminRole, isInstructorRole } from "../lib/roles";
 import { isSoundEnabled, sounds, toggleSound } from "../lib/sound";
 import type { Course, CourseProgress, Lesson, LessonDiscussion } from "../types/course";
+import type { Assessment } from "../types/assessment";
 
 function getMaterialType(nameOrUrl: string, mimeType?: string) {
   const text = `${nameOrUrl} ${mimeType ?? ""}`.toLowerCase();
@@ -53,6 +55,11 @@ function getVideoEmbedUrl(href: string) {
     return href;
   }
   return href;
+}
+
+function getPowerPointEmbedUrl(href: string) {
+  const publicUrl = resolveMediaUrl(href);
+  return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(publicUrl)}`;
 }
 
 function getPrimaryMaterial(lesson: Lesson) {
@@ -124,6 +131,7 @@ function LessonMediaStage({ lesson }: { lesson: Lesson }) {
   const isEmbeddedVideo = type === "Video" && /(youtube\.com|youtu\.be|vimeo\.com)/i.test(src);
   const isImage = type === "Image";
   const isPdf = type === "PDF";
+  const isPowerPoint = type === "PowerPoint";
 
   return (
     <section className="lesson-media-stage" aria-label="Lesson material preview">
@@ -154,6 +162,12 @@ function LessonMediaStage({ lesson }: { lesson: Lesson }) {
           <img src={src} alt={material.title} />
         ) : isPdf ? (
           <iframe src={src} title={material.title} />
+        ) : isPowerPoint ? (
+          <iframe
+            src={getPowerPointEmbedUrl(src)}
+            title={material.title}
+            allowFullScreen
+          />
         ) : (
           <div className="lesson-media-preview-fallback">
             <MaterialIcon type={type} />
@@ -178,6 +192,7 @@ export function LessonPlayerPage() {
   const [course, setCourse] = useState<Course | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [discussions, setDiscussions] = useState<LessonDiscussion[]>([]);
+  const [lessonAssessments, setLessonAssessments] = useState<Assessment[]>([]);
   const [progress, setProgress] = useState<CourseProgress | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -246,6 +261,19 @@ export function LessonPlayerPage() {
     }
 
     void loadDiscussions();
+  }, [lessonId, token]);
+
+  useEffect(() => {
+    async function loadLessonAssessments() {
+      if (!token || !lessonId) return;
+      try {
+        setLessonAssessments(await assessmentsApi.listForLesson(token, lessonId));
+      } catch {
+        setLessonAssessments([]);
+      }
+    }
+
+    void loadLessonAssessments();
   }, [lessonId, token]);
 
   async function handleComplete() {
@@ -369,6 +397,23 @@ export function LessonPlayerPage() {
         Back to course
       </Link>
 
+      <section className="lesson-progress-overview" aria-label="Course progress">
+        <div className="lesson-progress-copy">
+          <span>Course progress</span>
+          <strong>{progress?.progress ?? 0}% complete</strong>
+          <small>{progress?.completedLessons ?? 0} of {progress?.totalLessons ?? lessons.length} lessons completed</small>
+        </div>
+        <div className="lesson-progress-meter">
+          <div className="lesson-streak-pill">
+            <Flame size={16} />
+            {streak} day streak
+          </div>
+          <div className="progress-track" aria-hidden="true">
+            <div style={{ width: `${progress?.progress ?? 0}%` }} />
+          </div>
+        </div>
+      </section>
+
       <div className="lesson-player-grid">
         <article className="lesson-player-main">
           <span className="course-code">{course.code}</span>
@@ -430,6 +475,34 @@ export function LessonPlayerPage() {
                 ))}
               </div>
             </article>
+          ) : null}
+
+          {!currentLesson.locked && lessonAssessments.length > 0 ? (
+            <section className="lesson-practice-panel">
+              <div className="lesson-practice-heading">
+                <span><Sparkles size={16} />Knowledge check</span>
+                <h2>Practice what you just learned</h2>
+                <p>Answer each question and get feedback immediately.</p>
+              </div>
+              <div className="lesson-practice-list">
+                {lessonAssessments.map((assessment) => (
+                  <article key={assessment.id}>
+                    <span className="lesson-practice-icon"><ClipboardCheck size={20} /></span>
+                    <div>
+                      <strong>{assessment.title}</strong>
+                      <small>{assessment._count?.questions ?? 0} items · Pass mark {assessment.passMark}%</small>
+                    </div>
+                    {!assessment.isPublished && canAnswerQuestions ? <span className="assignment-badge draft">Draft</span> : null}
+                    <Link
+                      className="primary-button small-button"
+                      to={canAnswerQuestions ? `/assessments/${assessment.id}/build` : `/assessments/${assessment.id}/take`}
+                    >
+                      {canAnswerQuestions ? "Edit" : "Start practice"}
+                    </Link>
+                  </article>
+                ))}
+              </div>
+            </section>
           ) : null}
 
           <div className="lesson-player-actions">
@@ -552,22 +625,6 @@ export function LessonPlayerPage() {
             ))}
           </div>
         </aside>
-      </div>
-
-      <div className="lesson-bottom-sticky-card">
-        <div className="lesson-progress-card lesson-progress-card--bottom">
-          <strong>{progress?.progress ?? 0}% complete</strong>
-          <span>
-            {progress?.completedLessons ?? 0} of {progress?.totalLessons ?? lessons.length} lessons completed
-          </span>
-          <div className="lesson-streak-pill">
-            <Flame size={16} />
-            {streak} day streak
-          </div>
-          <div className="progress-track">
-            <div style={{ width: `${progress?.progress ?? 0}%` }} />
-          </div>
-        </div>
       </div>
 
       {badgeToast && (

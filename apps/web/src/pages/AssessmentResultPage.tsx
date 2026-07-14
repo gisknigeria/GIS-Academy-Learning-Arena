@@ -6,6 +6,11 @@ import { assessmentsApi } from "../lib/assessments-api";
 import type { AttemptResult } from "../types/assessment";
 import { QUESTION_TYPE_LABELS } from "../types/assessment";
 
+function formatAnswer(answer: string | string[] | null) {
+  if (!answer) return "";
+  return Array.isArray(answer) ? answer.join(", ") : answer;
+}
+
 export function AssessmentResultPage() {
   const { attemptId } = useParams();
   const { token } = useAuth();
@@ -71,7 +76,8 @@ export function AssessmentResultPage() {
         {result.breakdown.map((item, i) => {
           const isCorrect = item.correct === true;
           const isWrong = item.correct === false;
-          const isManual = item.correct === null;
+          const isNote = item.type === "NOTE";
+          const isManual = item.correct === null && !isNote;
 
           return (
             <article
@@ -88,23 +94,23 @@ export function AssessmentResultPage() {
                 </div>
                 <div className="rq-meta">
                   <span className="question-type-badge">{QUESTION_TYPE_LABELS[item.type]}</span>
-                  <span className="rq-points">{item.earnedPoints} / {item.points} pt{item.points !== 1 ? "s" : ""}</span>
+                  {!isNote ? <span className="rq-points">{item.earnedPoints} / {item.points} pt{item.points !== 1 ? "s" : ""}</span> : null}
                 </div>
               </div>
 
               <p className="rq-text">{item.text}</p>
 
-              <div className="rq-answers">
+              {!isNote ? <div className="rq-answers">
                 {item.studentAnswer ? (
                   <div className={`rq-answer rq-student ${isCorrect ? "rq-correct-answer" : isWrong ? "rq-wrong-answer" : ""}`}>
-                    <span>Your answer:</span> {item.studentAnswer}
+                    <span>Your answer:</span> {formatAnswer(item.studentAnswer)}
                   </div>
                 ) : (
                   <div className="rq-answer rq-student rq-unanswered">No answer given</div>
                 )}
                 {item.correctAnswer && item.correct !== true ? (
                   <div className="rq-answer rq-correct-answer">
-                    <CheckCircle2 size={13} /><span>Correct:</span> {item.correctAnswer}
+                    <CheckCircle2 size={13} /><span>Correct:</span> {formatAnswer(item.correctAnswer)}
                   </div>
                 ) : null}
                 {isManual && (
@@ -112,7 +118,7 @@ export function AssessmentResultPage() {
                     <HelpCircle size={13} />Manual grading required
                   </div>
                 )}
-              </div>
+              </div> : null}
 
               {item.explanation ? (
                 <p className="rq-explanation">💡 {item.explanation}</p>

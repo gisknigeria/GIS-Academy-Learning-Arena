@@ -32,7 +32,7 @@ export class CreateQuestionDto {
 
   @IsOptional()
   @IsInt()
-  @Min(1)
+  @Min(0)
   points?: number;
 
   @IsOptional()

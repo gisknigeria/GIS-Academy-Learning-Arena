@@ -11,6 +11,38 @@ import { CreateQuestionDto } from "./dto/create-question.dto";
 import { SubmitAttemptDto } from "./dto/submit-attempt.dto";
 import { UpdateAssessmentDto } from "./dto/update-assessment.dto";
 import { UpdateQuestionDto } from "./dto/update-question.dto";
+import { CheckAnswerDto } from "./dto/check-answer.dto";
+
+type AssessmentAnswer = string | string[];
+
+function parseCorrectAnswers(value: string | null): string[] {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    if (Array.isArray(parsed)) return parsed.map(String);
+  } catch {
+    // Older questions store a single plain-text answer.
+  }
+  return [value];
+}
+
+function normalizeAnswers(value: AssessmentAnswer | null | undefined): string[] {
+  const values = Array.isArray(value) ? value : value == null ? [] : [value];
+  return values.map((item) => item.trim().toLowerCase()).filter(Boolean).sort();
+}
+
+function answersMatch(type: QuestionType, answer: AssessmentAnswer | null | undefined, correctAnswer: string | null) {
+  const submitted = normalizeAnswers(answer);
+  const correct = normalizeAnswers(
+    type === QuestionType.MULTIPLE_CHOICE ? parseCorrectAnswers(correctAnswer) : correctAnswer,
+  );
+  return submitted.length > 0 && submitted.length === correct.length && submitted.every((item, index) => item === correct[index]);
+}
+
+function isAutoScored(type: QuestionType, correctAnswer: string | null) {
+  if (type === QuestionType.NOTE || type === QuestionType.FILE_UPLOAD || type === QuestionType.MAP_TASK) return false;
+  return type !== QuestionType.SHORT_ANSWER || Boolean(correctAnswer?.trim());
+}
 
 @Injectable()
 export class AssessmentsService {
@@ -106,8 +138,18 @@ export class AssessmentsService {
   // ─── Assessments CRUD ────────────────────────────────────────────────────
 
   async create(dto: CreateAssessmentDto) {
-    if (dto.courseId) {
-      const course = await this.prisma.course.findUnique({ where: { id: dto.courseId } });
+    let courseId = dto.courseId;
+    if (dto.lessonId) {
+      const lesson = await this.prisma.lesson.findUnique({ where: { id: dto.lessonId } });
+      if (!lesson) throw new NotFoundException(`Lesson "${dto.lessonId}" not found.`);
+      if (courseId && courseId !== lesson.courseId) {
+        throw new BadRequestException("The selected lesson does not belong to this course.");
+      }
+      courseId = lesson.courseId;
+    }
+
+    if (courseId) {
+      const course = await this.prisma.course.findUnique({ where: { id: courseId } });
       if (!course) throw new NotFoundException(`Course "${dto.courseId}" not found.`);
     }
 
@@ -115,7 +157,8 @@ export class AssessmentsService {
       data: {
         title: dto.title,
         description: dto.description,
-        courseId: dto.courseId,
+        courseId,
+        lessonId: dto.lessonId,
         durationMin: dto.durationMin ?? 30,
         passMark: dto.passMark ?? 50,
         shuffleQuestions: dto.shuffleQuestions ?? false,
@@ -132,6 +175,21 @@ export class AssessmentsService {
       include: {
         _count: { select: { questions: true, attempts: true } },
         course: { select: { id: true, code: true, title: true } },
+        lesson: { select: { id: true, title: true, order: true } },
+      },
+    });
+  }
+
+  async findByLesson(lessonId: string, includeUnpublished = false) {
+    const lesson = await this.prisma.lesson.findUnique({ where: { id: lessonId }, select: { id: true } });
+    if (!lesson) throw new NotFoundException(`Lesson "${lessonId}" not found.`);
+
+    return this.prisma.assessment.findMany({
+      where: { lessonId, ...(includeUnpublished ? {} : { isPublished: true }) },
+      orderBy: { createdAt: "asc" },
+      include: {
+        _count: { select: { questions: true, attempts: true } },
+        lesson: { select: { id: true, title: true, order: true } },
       },
     });
   }
@@ -142,6 +200,7 @@ export class AssessmentsService {
       include: {
         questions: { orderBy: { order: "asc" } },
         course: { select: { id: true, code: true, title: true } },
+        lesson: { select: { id: true, title: true, order: true } },
         _count: { select: { questions: true, attempts: true } },
       },
     });
@@ -151,6 +210,14 @@ export class AssessmentsService {
 
   async update(id: string, dto: UpdateAssessmentDto) {
     await this.findOne(id);
+    if (dto.lessonId) {
+      const lesson = await this.prisma.lesson.findUnique({ where: { id: dto.lessonId } });
+      if (!lesson) throw new NotFoundException(`Lesson "${dto.lessonId}" not found.`);
+      if (dto.courseId && dto.courseId !== lesson.courseId) {
+        throw new BadRequestException("The selected lesson does not belong to this course.");
+      }
+      dto.courseId = lesson.courseId;
+    }
     return this.prisma.assessment.update({
       where: { id },
       data: dto,
@@ -182,7 +249,7 @@ export class AssessmentsService {
         options: dto.options ?? [],
         correctAnswer: dto.correctAnswer,
         explanation: dto.explanation,
-        points: dto.points ?? 1,
+        points: dto.type === QuestionType.NOTE ? 0 : dto.points ?? 1,
         order: dto.order ?? (maxOrder._max.order ?? 0) + 1,
       },
     });
@@ -211,6 +278,35 @@ export class AssessmentsService {
     if (!question) throw new NotFoundException(`Question "${questionId}" not found.`);
     await this.prisma.question.delete({ where: { id: questionId } });
     return { deleted: true };
+  }
+
+  async checkAnswer(attemptId: string, userId: string, dto: CheckAnswerDto) {
+    const attempt = await this.prisma.attempt.findUnique({
+      where: { id: attemptId },
+      include: { assessment: { include: { questions: true } } },
+    });
+    if (!attempt) throw new NotFoundException("Attempt not found.");
+    if (attempt.userId !== userId) throw new ForbiddenException("Not your attempt.");
+    if (attempt.status !== AttemptStatus.IN_PROGRESS) throw new BadRequestException("This attempt is no longer active.");
+
+    const question = attempt.assessment.questions.find((item) => item.id === dto.questionId);
+    if (!question) throw new NotFoundException("Question not found in this assessment.");
+    if (question.type === QuestionType.NOTE) {
+      return { questionId: question.id, correct: null, correctAnswer: null, explanation: question.explanation };
+    }
+
+    const submitted: AssessmentAnswer = dto.answers ?? dto.answer ?? "";
+    const autoScored = isAutoScored(question.type, question.correctAnswer);
+    return {
+      questionId: question.id,
+      correct: autoScored ? answersMatch(question.type, submitted, question.correctAnswer) : null,
+      correctAnswer: autoScored
+        ? question.type === QuestionType.MULTIPLE_CHOICE
+          ? parseCorrectAnswers(question.correctAnswer)
+          : question.correctAnswer
+        : null,
+      explanation: question.explanation,
+    };
   }
 
   // ─── Attempts ────────────────────────────────────────────────────────────
@@ -267,14 +363,11 @@ export class AssessmentsService {
     let maxScore = 0;
 
     for (const question of questions) {
+      if (question.type === QuestionType.NOTE) continue;
       maxScore += question.points;
 
-      if (question.type === QuestionType.SHORT_ANSWER) continue; // skip auto-score
-
-      const studentAnswer = (dto.answers[question.id] ?? "").trim().toLowerCase();
-      const correct = (question.correctAnswer ?? "").trim().toLowerCase();
-
-      if (studentAnswer === correct && studentAnswer !== "") {
+      if (!isAutoScored(question.type, question.correctAnswer)) continue;
+      if (answersMatch(question.type, dto.answers[question.id], question.correctAnswer)) {
         score += question.points;
       }
     }
@@ -306,7 +399,7 @@ export class AssessmentsService {
   }
 
   /** Force-submit a timed-out attempt — same scoring logic. */
-  async timeoutAttempt(attemptId: string, userId: string, answers: Record<string, string>) {
+  async timeoutAttempt(attemptId: string, userId: string, answers: Record<string, AssessmentAnswer>) {
     return this.submitAttempt(attemptId, userId, { answers });
   }
 
@@ -373,7 +466,7 @@ export class AssessmentsService {
       description: assessment.description,
       durationMin: assessment.durationMin,
       startedAt: attempt.startedAt,
-      savedAnswers: attempt.answers as Record<string, string>,
+      savedAnswers: attempt.answers as Record<string, AssessmentAnswer>,
       questions: shuffled,
     };
   }
@@ -406,15 +499,13 @@ export class AssessmentsService {
       }[];
     };
   }) {
-    const answers = attempt.answers as Record<string, string>;
+    const answers = attempt.answers as Record<string, AssessmentAnswer>;
 
 const gradingComments = (attempt as any).gradingComments as Record<string, string> | undefined;
       const breakdown = attempt.assessment.questions.map((q) => {
       const studentAnswer = answers[q.id] ?? null;
-      const isAutoScored = q.type !== QuestionType.SHORT_ANSWER;
-      const correct = isAutoScored
-        ? studentAnswer?.trim().toLowerCase() === q.correctAnswer?.trim().toLowerCase()
-        : null; // null = manually graded
+      const autoScored = isAutoScored(q.type, q.correctAnswer);
+      const correct = autoScored ? answersMatch(q.type, studentAnswer, q.correctAnswer) : null;
 
       return {
         questionId: q.id,
@@ -422,7 +513,7 @@ const gradingComments = (attempt as any).gradingComments as Record<string, strin
         type: q.type,
         options: q.options,
         studentAnswer,
-        correctAnswer: q.correctAnswer,
+        correctAnswer: q.type === QuestionType.MULTIPLE_CHOICE ? parseCorrectAnswers(q.correctAnswer) : q.correctAnswer,
         explanation: q.explanation,
         points: q.points,
         earnedPoints: correct ? q.points : 0,

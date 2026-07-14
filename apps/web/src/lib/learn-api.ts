@@ -69,6 +69,7 @@ export type UpcomingLiveSession = {
   endsAt?: string | null;
   status: string;
   meetingUrl?: string | null;
+  location?: string | null;
   presentationUrl?: string | null;
   bookUrl?: string | null;
   class: {

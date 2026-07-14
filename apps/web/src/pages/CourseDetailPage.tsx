@@ -1,11 +1,12 @@
-import { ArrowLeft, BookOpen, CheckCircle2, Edit3, FileArchive, FileText, Image, Loader2, Map, PlayCircle, PlusCircle, Presentation, Search, Trophy, Trash2, Video } from "lucide-react";
+import { ArrowLeft, BookOpen, CheckCircle2, ClipboardCheck, Edit3, ExternalLink, FileArchive, FileText, Image, Link2, Loader2, Map, PlayCircle, PlusCircle, Presentation, Search, Trophy, Trash2, UploadCloud, Video, X } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { AssignmentSection } from "../components/AssignmentSection";
 import { PaymentGate } from "../components/PaymentGate";
 import { SectionHeading } from "../components/SectionHeading";
 import { useAuth } from "../context/AuthContext";
 import { coursesApi } from "../lib/courses-api";
+import { assessmentsApi } from "../lib/assessments-api";
 import { isAdminRole, isInstructorRole } from "../lib/roles";
 import type { Course, CourseProgress, CreateLessonPayload, Lesson, LessonAttachment, LessonLibraryItem } from "../types/course";
 import { DELIVERY_MODE_LABELS } from "../types/course";
@@ -73,6 +74,16 @@ function MaterialIcon({ type }: { type: string }) {
   return <FileArchive size={14} />;
 }
 
+function getMaterialDisplayName(value: string) {
+  try {
+    const pathname = new URL(value, "https://material.local").pathname;
+    const filename = decodeURIComponent(pathname.split("/").filter(Boolean).pop() ?? "Learning material");
+    return filename.replace(/^\d+-/, "") || "Learning material";
+  } catch {
+    return value;
+  }
+}
+
 function MaterialChip({ href, label, type }: { href: string; label: string; type: string }) {
   return (
     <a className="material-chip" href={href} target="_blank" rel="noreferrer" title={label}>
@@ -83,6 +94,7 @@ function MaterialChip({ href, label, type }: { href: string; label: string; type
 }
 
 function MaterialField({
+  type,
   label,
   value,
   uploading,
@@ -90,7 +102,9 @@ function MaterialField({
   accept,
   onUrlChange,
   onFileChange,
+  onClear,
 }: {
+  type: string;
   label: string;
   value: string;
   uploading: boolean;
@@ -98,16 +112,42 @@ function MaterialField({
   accept?: string;
   onUrlChange: (value: string) => void;
   onFileChange: (file: File) => void;
+  onClear: () => void;
 }) {
   return (
-    <div className="lesson-material-field">
-      <label>
-        {label}
-        <input value={value} onChange={(event) => onUrlChange(event.target.value)} placeholder="Paste URL or upload file" />
+    <div className={value ? "lesson-material-field has-material" : "lesson-material-field"}>
+      <div className="lesson-material-field-heading">
+        <span className="lesson-material-field-icon"><MaterialIcon type={type} /></span>
+        <div>
+          <strong>{label}</strong>
+          <span>{value ? "Material added" : "Optional"}</span>
+        </div>
+        {value ? <CheckCircle2 size={18} className="lesson-material-check" /> : null}
+      </div>
+
+      {value ? (
+        <div className="lesson-material-current">
+          <MaterialIcon type={getMaterialType(value)} />
+          <div>
+            <strong>{getMaterialDisplayName(value)}</strong>
+            <span>{getMaterialType(value)}</span>
+          </div>
+          <a href={value} target="_blank" rel="noreferrer" aria-label={`Open ${label}`} title={`Open ${label}`}>
+            <ExternalLink size={16} />
+          </a>
+          <button type="button" onClick={onClear} aria-label={`Remove ${label}`} title={`Remove ${label}`}>
+            <X size={16} />
+          </button>
+        </div>
+      ) : null}
+
+      <label className="lesson-material-url-input">
+        <span><Link2 size={14} /> Material link</span>
+        <input value={value} onChange={(event) => onUrlChange(event.target.value)} placeholder="Paste a public URL" />
       </label>
-      {hint ? <p className="lesson-material-hint">{hint}</p> : null}
       <label className="lesson-file-picker">
-        Upload file
+        <UploadCloud size={18} />
+        <span>{uploading ? "Uploading material..." : value ? "Replace with another file" : "Choose a file to upload"}</span>
         <input
           type="file"
           accept={accept}
@@ -118,13 +158,14 @@ function MaterialField({
           }}
         />
       </label>
-      {uploading ? <span className="uploading-note">Uploading...</span> : null}
+      {hint ? <p className="lesson-material-hint">{hint}</p> : null}
     </div>
   );
 }
 
 export function CourseDetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { token, user } = useAuth();
   const [course, setCourse] = useState<Course | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -140,6 +181,7 @@ export function CourseDetailPage() {
   const [libraryLoading, setLibraryLoading] = useState(false);
   const [importingLessonId, setImportingLessonId] = useState("");
   const [uploadingMaterial, setUploadingMaterial] = useState("");
+  const [creatingAssessmentLessonId, setCreatingAssessmentLessonId] = useState("");
   const [saving, setSaving] = useState(false);
   const [enrolled, setEnrolled] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
@@ -311,6 +353,27 @@ export function CourseDetailPage() {
     }
   }
 
+  async function handleCreateLessonAssessment(lesson: Lesson) {
+    if (!token || !id) return;
+    setCreatingAssessmentLessonId(lesson.id);
+    setLessonError("");
+    try {
+      const created = await assessmentsApi.create(token, {
+        courseId: id,
+        lessonId: lesson.id,
+        title: `${lesson.title} practice`,
+        description: `Practice and knowledge check for ${lesson.title}.`,
+        durationMin: 15,
+        passMark: 70,
+      });
+      navigate(`/assessments/${created.id}/build`);
+    } catch {
+      setLessonError("Could not create a lesson assessment. Please try again.");
+    } finally {
+      setCreatingAssessmentLessonId("");
+    }
+  }
+
   async function handleImportLesson(sourceLessonId: string) {
     if (!token || !id) return;
     setImportingLessonId(sourceLessonId);
@@ -344,6 +407,19 @@ export function CourseDetailPage() {
       setEnrolling(false);
     }
   }
+
+  const lessonMaterialInventory = [
+    { label: "Video", url: form.videoUrl, type: "Video" },
+    { label: "Main resource", url: form.resourceUrl, type: getMaterialType(form.resourceUrl) },
+    { label: "Subtitles", url: form.subtitleUrl, type: "Subtitle" },
+    { label: "Slides", url: form.slideUrl, type: "PowerPoint" },
+    { label: "Map / GIS file", url: form.mapUrl, type: "GIS / Map" },
+    ...form.attachments.map((item) => ({
+      label: item.name,
+      url: item.url,
+      type: getMaterialType(item.name || item.url, item.type),
+    })),
+  ].filter((item) => Boolean(item.url));
 
   if (loading) {
     return (
@@ -522,6 +598,15 @@ export function CourseDetailPage() {
                   </Link>
                   {canManageLessons ? (
                     <div className="lesson-actions">
+                      <button
+                        className="icon-button"
+                        aria-label={`Add assessment to ${lesson.title}`}
+                        title="Add lesson assessment"
+                        disabled={creatingAssessmentLessonId === lesson.id}
+                        onClick={() => void handleCreateLessonAssessment(lesson)}
+                      >
+                        {creatingAssessmentLessonId === lesson.id ? <Loader2 size={16} className="spin" /> : <ClipboardCheck size={16} />}
+                      </button>
                       <button className="icon-button" aria-label="Edit lesson" onClick={() => startEditLesson(lesson)}>
                         <Edit3 size={16} />
                       </button>
@@ -542,37 +627,86 @@ export function CourseDetailPage() {
 
       {showLessonForm ? (
         <div className="modal-backdrop" role="dialog" aria-modal="true">
-          <section className="modal-panel">
+          <section className="modal-panel modal-panel--lesson">
             <div className="modal-header">
-              <h2>{form.id ? "Edit lesson" : "Add lesson"}</h2>
+              <div>
+                <h2>{form.id ? "Edit lesson" : "Add lesson"}</h2>
+                <p className="modal-subtitle">Build the lesson, attach its learning materials, then review everything before saving.</p>
+              </div>
               <button className="payment-banner-close" onClick={() => setShowLessonForm(false)} aria-label="Close">
-                x
+                <X size={18} />
               </button>
             </div>
-            <form className="modal-form" onSubmit={handleSaveLesson}>
-              <label>
-                Title
-                <input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} required />
-              </label>
-              <label>
-                Summary
-                <textarea value={form.summary} onChange={(event) => setForm({ ...form, summary: event.target.value })} />
-              </label>
-              <label>
-                Lesson content
-                <textarea
-                  value={form.content}
-                  onChange={(event) => setForm({ ...form, content: event.target.value })}
-                  rows={6}
-                  placeholder="Write the lesson notes, instructions, examples, or transcript here..."
-                />
-              </label>
-              <label>
-                Order
-                <input type="number" min={1} value={form.order} onChange={(event) => setForm({ ...form, order: event.target.value })} required />
-              </label>
-              <div className="lesson-material-grid">
+            <form className="modal-form lesson-editor-form" onSubmit={handleSaveLesson}>
+              <section className="lesson-form-section">
+                <div className="lesson-form-section-heading">
+                  <span>1</span>
+                  <div>
+                    <h3>Lesson details</h3>
+                    <p>Give learners a clear title, overview and learning notes.</p>
+                  </div>
+                </div>
+                <div className="lesson-form-basics-grid">
+                  <label>
+                    Lesson title
+                    <input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} placeholder="e.g. Understanding coordinate systems" required />
+                  </label>
+                  <label>
+                    Position
+                    <input type="number" min={1} value={form.order} onChange={(event) => setForm({ ...form, order: event.target.value })} required />
+                  </label>
+                  <label className="lesson-form-full-field">
+                    Short summary
+                    <textarea value={form.summary} onChange={(event) => setForm({ ...form, summary: event.target.value })} rows={2} placeholder="What will learners understand after this lesson?" />
+                  </label>
+                  <label className="lesson-form-full-field">
+                    Lesson notes and instructions
+                    <textarea
+                      value={form.content}
+                      onChange={(event) => setForm({ ...form, content: event.target.value })}
+                      rows={7}
+                      placeholder="Write the lesson explanation, examples, instructions, or transcript..."
+                    />
+                  </label>
+                </div>
+              </section>
+
+              <section className="lesson-form-section">
+                <div className="lesson-form-section-heading">
+                  <span>2</span>
+                  <div>
+                    <h3>Learning materials</h3>
+                    <p>Upload a file or paste a public link. Added materials appear immediately below.</p>
+                  </div>
+                </div>
+
+                <div className="lesson-material-inventory" aria-live="polite">
+                  <div className="lesson-material-inventory-heading">
+                    <div>
+                      <strong>Materials added</strong>
+                      <span>{lessonMaterialInventory.length ? "Review the files currently attached to this lesson." : "No files or links have been added yet."}</span>
+                    </div>
+                    <b>{lessonMaterialInventory.length}</b>
+                  </div>
+                  {lessonMaterialInventory.length ? (
+                    <div className="lesson-material-inventory-list">
+                      {lessonMaterialInventory.map((item) => (
+                        <a href={item.url} target="_blank" rel="noreferrer" key={`${item.label}-${item.url}`}>
+                          <span><MaterialIcon type={item.type} /></span>
+                          <div>
+                            <strong>{item.label}</strong>
+                            <small>{getMaterialDisplayName(item.url)}</small>
+                          </div>
+                          <ExternalLink size={15} />
+                        </a>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+
+                <div className="lesson-material-grid">
                 <MaterialField
+                  type="Video"
                   label="Video file or link"
                   value={form.videoUrl}
                   uploading={uploadingMaterial === "videoUrl"}
@@ -580,8 +714,10 @@ export function CourseDetailPage() {
                   accept="video/*,.mp4,.webm,.mov,.m4v"
                   onUrlChange={(value) => setForm({ ...form, videoUrl: value })}
                   onFileChange={(file) => void uploadMaterial(file, "videoUrl")}
+                  onClear={() => setForm({ ...form, videoUrl: "" })}
                 />
                 <MaterialField
+                  type="Document"
                   label="Resource file or link"
                   value={form.resourceUrl}
                   uploading={uploadingMaterial === "resourceUrl"}
@@ -589,8 +725,10 @@ export function CourseDetailPage() {
                   accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.zip"
                   onUrlChange={(value) => setForm({ ...form, resourceUrl: value })}
                   onFileChange={(file) => void uploadMaterial(file, "resourceUrl")}
+                  onClear={() => setForm({ ...form, resourceUrl: "" })}
                 />
                 <MaterialField
+                  type="Subtitle"
                   label="Subtitle file"
                   value={form.subtitleUrl}
                   uploading={uploadingMaterial === "subtitleUrl"}
@@ -598,8 +736,10 @@ export function CourseDetailPage() {
                   accept=".vtt,.srt"
                   onUrlChange={(value) => setForm({ ...form, subtitleUrl: value })}
                   onFileChange={(file) => void uploadMaterial(file, "subtitleUrl")}
+                  onClear={() => setForm({ ...form, subtitleUrl: "" })}
                 />
                 <MaterialField
+                  type="PowerPoint"
                   label="PowerPoint / slides"
                   value={form.slideUrl}
                   uploading={uploadingMaterial === "slideUrl"}
@@ -607,8 +747,10 @@ export function CourseDetailPage() {
                   accept=".ppt,.pptx,.pdf"
                   onUrlChange={(value) => setForm({ ...form, slideUrl: value })}
                   onFileChange={(file) => void uploadMaterial(file, "slideUrl")}
+                  onClear={() => setForm({ ...form, slideUrl: "" })}
                 />
                 <MaterialField
+                  type="GIS / Map"
                   label="Map file"
                   value={form.mapUrl}
                   uploading={uploadingMaterial === "mapUrl"}
@@ -616,11 +758,23 @@ export function CourseDetailPage() {
                   accept=".zip,.shp,.shx,.dbf,.prj,.geojson,.json,.kml,.kmz,.gpkg,.tif,.tiff"
                   onUrlChange={(value) => setForm({ ...form, mapUrl: value })}
                   onFileChange={(file) => void uploadMaterial(file, "mapUrl")}
+                  onClear={() => setForm({ ...form, mapUrl: "" })}
                 />
               </div>
-              <div className="lesson-attachment-uploader">
-                <label>
-                  Extra attachments
+              </section>
+
+              <section className="lesson-form-section">
+                <div className="lesson-form-section-heading">
+                  <span>3</span>
+                  <div>
+                    <h3>Extra downloads</h3>
+                    <p>Add supporting worksheets, datasets, reference files or zipped shapefiles.</p>
+                  </div>
+                </div>
+                <div className="lesson-attachment-uploader">
+                <label className="lesson-file-picker lesson-file-picker--large">
+                  <UploadCloud size={22} />
+                  <span>{uploadingMaterial === "attachments" ? "Uploading attachment..." : "Choose one or more attachments"}</span>
                   <input
                     type="file"
                     multiple
@@ -631,20 +785,24 @@ export function CourseDetailPage() {
                     }}
                   />
                 </label>
-                {uploadingMaterial === "attachments" ? <span className="uploading-note">Uploading attachment...</span> : null}
                 {form.attachments.length > 0 ? (
                   <div className="lesson-attachment-list">
                     {form.attachments.map((item) => (
-                      <span key={item.url}>
+                      <div key={item.url}>
+                        <span><MaterialIcon type={getMaterialType(item.name || item.url, item.type)} /></span>
                         <a href={item.url} target="_blank" rel="noreferrer">
-                          {getMaterialType(item.name || item.url, item.type)} - {item.name}
+                          <strong>{item.name}</strong>
+                          <small>{getMaterialType(item.name || item.url, item.type)}</small>
                         </a>
-                        <button type="button" onClick={() => removeAttachment(item.url)}>Remove</button>
-                      </span>
+                        <button type="button" onClick={() => removeAttachment(item.url)} aria-label={`Remove ${item.name}`} title={`Remove ${item.name}`}><Trash2 size={16} /></button>
+                      </div>
                     ))}
                   </div>
                 ) : null}
               </div>
+              </section>
+
+              {lessonError ? <p className="form-error">{lessonError}</p> : null}
               <div className="modal-actions">
                 <button type="button" className="secondary-button" onClick={() => setShowLessonForm(false)}>
                   Cancel

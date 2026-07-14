@@ -22,6 +22,10 @@ export class CreateLiveSessionDto {
 
   @IsOptional()
   @IsString()
+  location?: string;
+
+  @IsOptional()
+  @IsString()
   presentationUrl?: string;
 
   @IsOptional()

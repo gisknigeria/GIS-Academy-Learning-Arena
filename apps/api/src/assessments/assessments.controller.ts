@@ -22,6 +22,7 @@ import { CreateQuestionDto } from "./dto/create-question.dto";
 import { SubmitAttemptDto } from "./dto/submit-attempt.dto";
 import { UpdateAssessmentDto } from "./dto/update-assessment.dto";
 import { UpdateQuestionDto } from "./dto/update-question.dto";
+import { CheckAnswerDto } from "./dto/check-answer.dto";
 
 const STAFF_ROLES = [
   UserRole.SUPER_ADMIN,
@@ -56,7 +57,15 @@ export class AssessmentsController {
     return this.assessmentsService.findAll(isStaff && all === "true");
   }
 
+  /** Published lesson practice for learners; staff can also see drafts. */
+  @Get("lesson/:lessonId")
+  findByLesson(@Param("lessonId") lessonId: string, @Req() req: AuthenticatedRequest) {
+    const isStaff = isPaymentExempt(req.user.role);
+    return this.assessmentsService.findByLesson(lessonId, isStaff);
+  }
+
   /** GET /api/assessments/:id — full detail + questions (correct answers stripped for students) */
+  @Roles(...STAFF_ROLES)
   @Get(":id")
   findOne(@Param("id") id: string) {
     return this.assessmentsService.findOne(id);
@@ -142,6 +151,16 @@ export class AssessmentsController {
     @Req() req: AuthenticatedRequest,
   ) {
     return this.assessmentsService.submitAttempt(attemptId, req.user.sub, dto);
+  }
+
+  /** Check one practice answer without exposing the full answer key. */
+  @Post("attempts/:attemptId/check")
+  checkAnswer(
+    @Param("attemptId") attemptId: string,
+    @Body() dto: CheckAnswerDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.assessmentsService.checkAnswer(attemptId, req.user.sub, dto);
   }
 
   @Roles(...STAFF_ROLES)

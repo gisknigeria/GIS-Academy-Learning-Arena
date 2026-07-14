@@ -179,6 +179,7 @@ export class ClassesService {
       name: cohort.name,
       course: cohort.course,
       trainer: cohort.trainer,
+      mode: cohort.mode,
       startsAt: cohort.startsAt,
       endsAt: cohort.endsAt,
     };
@@ -352,6 +353,7 @@ export class ClassesService {
         startsAt: new Date(dto.startsAt),
         endsAt: dto.endsAt ? new Date(dto.endsAt) : undefined,
         meetingUrl: dto.meetingUrl,
+        location: dto.location,
         presentationUrl: dto.presentationUrl,
         bookUrl: dto.bookUrl,
       },
@@ -384,6 +386,7 @@ export class ClassesService {
         endsAt: dto.endsAt ? new Date(dto.endsAt) : dto.endsAt === "" ? null : undefined,
         status: dto.status,
         meetingUrl: dto.meetingUrl,
+        location: dto.location,
         presentationUrl: dto.presentationUrl,
         bookUrl: dto.bookUrl,
       },

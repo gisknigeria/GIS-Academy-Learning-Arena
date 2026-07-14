@@ -1,6 +1,8 @@
 import { apiRequest } from "./api";
 import type {
   Assessment,
+  AssessmentAnswer,
+  AnswerCheckResult,
   AttemptResult,
   AttemptSession,
   AttemptSummary,
@@ -42,6 +44,10 @@ export const assessmentsApi = {
 
   list(token: string, all = false): Promise<Assessment[]> {
     return apiRequest<Assessment[]>(`/assessments${all ? "?all=true" : ""}`, { token });
+  },
+
+  listForLesson(token: string, lessonId: string): Promise<Assessment[]> {
+    return apiRequest<Assessment[]>(`/assessments/lesson/${lessonId}`, { token });
   },
 
   get(token: string, id: string): Promise<Assessment> {
@@ -90,7 +96,15 @@ export const assessmentsApi = {
     });
   },
 
-  submitAttempt(token: string, attemptId: string, answers: Record<string, string>): Promise<AttemptResult> {
+  checkAnswer(token: string, attemptId: string, questionId: string, answer: AssessmentAnswer): Promise<AnswerCheckResult> {
+    return apiRequest<AnswerCheckResult>(`/assessments/attempts/${attemptId}/check`, {
+      method: "POST",
+      token,
+      body: Array.isArray(answer) ? { questionId, answers: answer } : { questionId, answer },
+    });
+  },
+
+  submitAttempt(token: string, attemptId: string, answers: Record<string, AssessmentAnswer>): Promise<AttemptResult> {
     return apiRequest<AttemptResult>(`/assessments/attempts/${attemptId}/submit`, {
       method: "POST",
       token,

@@ -18,6 +18,7 @@ export type ScheduleSummary = {
   name: string;
   course: { id: string; code: string; title: string };
   trainer?: { id: string; fullName: string } | null;
+  mode: "E_LEARNING" | "ONSITE" | "HYBRID" | "LIVE_VIRTUAL";
   startsAt?: string | null;
   endsAt?: string | null;
 };

@@ -150,6 +150,26 @@ export function loadKnowledgeHubPreferences(): KnowledgeHubPreferences {
 export function saveKnowledgeHubPreferences(preferences: KnowledgeHubPreferences) {
   if (typeof window === "undefined") return;
   localStorage.setItem(KNOWLEDGE_HUB_STORAGE_KEY, JSON.stringify(preferences));
+  applyKnowledgeHubPreferences(preferences);
+  window.dispatchEvent(new CustomEvent("knowledge-hub:preferences-updated", { detail: preferences }));
+}
+
+export function applyKnowledgeHubPreferences(preferences: KnowledgeHubPreferences) {
+  if (typeof document === "undefined") return;
+  const accentByCategory: Record<PreferenceCategoryKey, string> = {
+    "football-clubs": "#14804a",
+    "football-players": "#14804a",
+    "basketball-teams": "#d75d16",
+    "basketball-players": "#d75d16",
+    "local-news": "#1769aa",
+    "international-news": "#1769aa",
+    cartoons: "#8b4bb7",
+    games: "#087f8c",
+    music: "#b52b65",
+    career: "#246b45",
+  };
+  document.documentElement.dataset.learningTheme = preferences.fanCategory;
+  document.documentElement.style.setProperty("--personal-accent", accentByCategory[preferences.fanCategory]);
 }
 
 export function getPersonalizedKnowledgeHubPlan(preferences: KnowledgeHubPreferences) {

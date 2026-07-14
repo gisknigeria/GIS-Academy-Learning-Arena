@@ -11,6 +11,14 @@ export class UpdateAssessmentDto {
   description?: string;
 
   @IsOptional()
+  @IsString()
+  courseId?: string;
+
+  @IsOptional()
+  @IsString()
+  lessonId?: string;
+
+  @IsOptional()
   @IsInt()
   @Min(1)
   @Max(600)

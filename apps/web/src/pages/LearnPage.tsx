@@ -9,6 +9,7 @@ import {
   GraduationCap,
   Loader2,
   PlayCircle,
+  MapPin,
   Trophy,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -39,6 +40,14 @@ function formatClassDate(value?: string | null) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function isToday(value: string) {
+  const date = new Date(value);
+  const today = new Date();
+  return date.getFullYear() === today.getFullYear()
+    && date.getMonth() === today.getMonth()
+    && date.getDate() === today.getDate();
 }
 
 export function LearnPage() {
@@ -91,10 +100,36 @@ export function LearnPage() {
     upcomingClasses,
     upcomingLiveSessions = [],
   } = feed;
+  const todaySessions = upcomingLiveSessions.filter((session) => isToday(session.startsAt));
+  const laterSessions = upcomingLiveSessions.filter((session) => !isToday(session.startsAt));
 
   return (
     <section className="module-page learn-page">
       <SectionHeading eyebrow="Learning system" title="Your learning feed" />
+
+      {todaySessions.length > 0 ? (
+        <section className="today-learning-panel">
+          <div className="today-learning-heading">
+            <span>Today</span>
+            <h2>Your classes for today</h2>
+            <p>Everything you need for today’s physical or online session.</p>
+          </div>
+          <div className="today-learning-list">
+            {todaySessions.map((session) => (
+              <article key={session.id}>
+                <div className="today-learning-time">{new Date(session.startsAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</div>
+                <div>
+                  <span>{session.class.course.code} · {session.class.mode === "ONSITE" ? "Physical class" : session.class.mode === "HYBRID" ? "Hybrid" : "Online"}</span>
+                  <strong>{session.title}</strong>
+                  <p>{session.class.course.title}</p>
+                  {session.location ? <small><MapPin size={13} />{session.location}</small> : null}
+                </div>
+                {session.meetingUrl ? <a className="primary-button small-button" href={session.meetingUrl} target="_blank" rel="noreferrer">Join class</a> : <Link className="secondary-button small-button" to={`/courses/${session.class.course.id}`}>View course</Link>}
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {/* ── Stats strip ── */}
       <div className="learn-stats-strip">
@@ -348,14 +383,14 @@ export function LearnPage() {
         {/* Live class sessions */}
         <section className="learn-feed-section">
           <SectionHeading eyebrow="Live" title="Upcoming live classes" compact />
-          {upcomingLiveSessions.length === 0 ? (
+          {laterSessions.length === 0 ? (
             <div className="learn-feed-empty">
               <PlayCircle size={28} />
               <p>No live class scheduled.</p>
             </div>
           ) : (
             <div className="learn-class-list">
-              {upcomingLiveSessions.map((session) => (
+              {laterSessions.map((session) => (
                 <article key={session.id} className="learn-class-card">
                   <div className="learn-class-icon">
                     <PlayCircle size={18} />
@@ -364,6 +399,7 @@ export function LearnPage() {
                     <strong>{session.title}</strong>
                     <span>{session.class.course.code} - {session.class.name}</span>
                     <small>{formatClassDate(session.startsAt)}</small>
+                    {session.location ? <small><MapPin size={12} /> {session.location}</small> : null}
                   </div>
                   {session.meetingUrl ? (
                     <a className="learn-work-btn" href={session.meetingUrl} target="_blank" rel="noreferrer">
@@ -382,11 +418,11 @@ export function LearnPage() {
 
         {/* Upcoming classes */}
         <section className="learn-feed-section">
-          <SectionHeading eyebrow="Schedule" title="Upcoming classes" compact />
+          <SectionHeading eyebrow="Enrolment" title="My cohorts" compact />
           {upcomingClasses.length === 0 ? (
             <div className="learn-feed-empty">
               <CalendarDays size={28} />
-              <p>No upcoming sessions.</p>
+              <p>You are not assigned to a cohort yet.</p>
             </div>
           ) : (
             <div className="learn-class-list">

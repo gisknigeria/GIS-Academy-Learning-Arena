@@ -26,7 +26,7 @@ type QuestionFormState = {
   text: string;
   type: QuestionType;
   options: string[];
-  correctAnswer: string;
+  correctAnswers: string[];
   explanation: string;
   points: string;
 };
@@ -34,24 +34,40 @@ type QuestionFormState = {
 const emptyQ: QuestionFormState = {
   text: "",
   type: "MCQ",
-  options: ["", "", "", ""],
-  correctAnswer: "",
+  options: ["", ""],
+  correctAnswers: [],
   explanation: "",
   points: "1",
 };
 
 function toPayload(f: QuestionFormState): CreateQuestionPayload {
-  const options =
-    f.type === "MCQ" ? f.options.map((o) => o.trim()).filter(Boolean) : [];
+  const isChoice = f.type === "MCQ" || f.type === "MULTIPLE_CHOICE";
+  const options = isChoice ? f.options.map((o) => o.trim()).filter(Boolean) : [];
+  const correctAnswer = f.type === "MULTIPLE_CHOICE"
+    ? JSON.stringify(f.correctAnswers.map((answer) => answer.trim()).filter(Boolean))
+    : f.correctAnswers[0]?.trim() || undefined;
   return {
-    text: f.text,
+    text: f.text.trim(),
     type: f.type,
     options,
-    correctAnswer: f.correctAnswer || undefined,
+    correctAnswer: f.type === "NOTE" ? undefined : correctAnswer,
     explanation: f.explanation || undefined,
-    points: Number(f.points),
+    points: f.type === "NOTE" ? 0 : Number(f.points),
   };
 }
+
+function parseCorrectAnswers(question: Question) {
+  if (!question.correctAnswer) return [];
+  if (question.type !== "MULTIPLE_CHOICE") return [question.correctAnswer];
+  try {
+    const parsed = JSON.parse(question.correctAnswer);
+    return Array.isArray(parsed) ? parsed.map(String) : [];
+  } catch {
+    return [];
+  }
+}
+
+const BUILDER_QUESTION_TYPES: QuestionType[] = ["NOTE", "MCQ", "MULTIPLE_CHOICE", "TRUE_FALSE", "SHORT_ANSWER"];
 
 export function AssessmentBuilderPage() {
   const { id } = useParams();
@@ -128,12 +144,13 @@ export function AssessmentBuilderPage() {
   }
 
   function openEditQuestion(q: Question) {
+    const isChoice = q.type === "MCQ" || q.type === "MULTIPLE_CHOICE";
     setQForm({
       id: q.id,
       text: q.text,
       type: q.type,
-      options: q.type === "MCQ" ? [...q.options, "", "", ""].slice(0, 4) : ["", "", "", ""],
-      correctAnswer: q.correctAnswer ?? "",
+      options: isChoice ? (q.options.length >= 2 ? [...q.options] : [...q.options, "", ""].slice(0, 2)) : ["", ""],
+      correctAnswers: parseCorrectAnswers(q),
       explanation: q.explanation ?? "",
       points: String(q.points),
     });
@@ -146,6 +163,17 @@ export function AssessmentBuilderPage() {
     if (!token || !id) return;
     setSavingQ(true);
     setQError("");
+    const choiceOptions = qForm.options.map((option) => option.trim()).filter(Boolean);
+    if ((qForm.type === "MCQ" || qForm.type === "MULTIPLE_CHOICE") && choiceOptions.length < 2) {
+      setQError("Add at least two answer options.");
+      setSavingQ(false);
+      return;
+    }
+    if (qForm.type !== "NOTE" && qForm.type !== "SHORT_ANSWER" && qForm.correctAnswers.length === 0) {
+      setQError("Select the correct answer before saving.");
+      setSavingQ(false);
+      return;
+    }
     try {
       if (qForm.id) {
         const updated = await assessmentsApi.updateQuestion(token, qForm.id, toPayload(qForm));
@@ -185,8 +213,43 @@ export function AssessmentBuilderPage() {
 
   function updateOption(index: number, value: string) {
     const opts = [...qForm.options];
+    const previousValue = opts[index];
     opts[index] = value;
-    setQForm((prev) => ({ ...prev, options: opts }));
+    setQForm((prev) => ({
+      ...prev,
+      options: opts,
+      correctAnswers: prev.correctAnswers.map((answer) => answer === previousValue ? value : answer),
+    }));
+  }
+
+  function addOption() {
+    setQForm((prev) => ({ ...prev, options: [...prev.options, ""] }));
+  }
+
+  function removeOption(index: number) {
+    setQForm((prev) => {
+      if (prev.options.length <= 2) return prev;
+      const removed = prev.options[index];
+      return {
+        ...prev,
+        options: prev.options.filter((_, optionIndex) => optionIndex !== index),
+        correctAnswers: prev.correctAnswers.filter((answer) => answer !== removed),
+      };
+    });
+  }
+
+  function toggleCorrectAnswer(option: string) {
+    if (!option) return;
+    setQForm((prev) => {
+      if (prev.type === "MCQ") return { ...prev, correctAnswers: [option] };
+      const selected = prev.correctAnswers.includes(option);
+      return {
+        ...prev,
+        correctAnswers: selected
+          ? prev.correctAnswers.filter((answer) => answer !== option)
+          : [...prev.correctAnswers, option],
+      };
+    });
   }
 
   if (loading) {
@@ -302,22 +365,25 @@ export function AssessmentBuilderPage() {
       ) : (
         <div className="question-bank">
           {questions.map((q, i) => (
-            <article key={q.id} className="question-bank-item">
+            <article key={q.id} className={q.type === "NOTE" ? "question-bank-item question-bank-item--note" : "question-bank-item"}>
               <div className="question-number">{i + 1}</div>
               <div className="question-body">
                 <div className="question-header-row">
                   <span className="question-type-badge">{QUESTION_TYPE_LABELS[q.type]}</span>
-                  <span className="question-points">{q.points} pt{q.points !== 1 ? "s" : ""}</span>
+                  {q.type !== "NOTE" ? <span className="question-points">{q.points} pt{q.points !== 1 ? "s" : ""}</span> : null}
                 </div>
                 <p className="question-text">{q.text}</p>
-                {q.type === "MCQ" && q.options.length > 0 ? (
+                {(q.type === "MCQ" || q.type === "MULTIPLE_CHOICE") && q.options.length > 0 ? (
                   <ul className="question-options-preview">
-                    {q.options.map((opt, oi) => (
-                      <li key={oi} className={opt === q.correctAnswer ? "correct-option" : ""}>
-                        {opt === q.correctAnswer ? <CheckCircle2 size={12} /> : null}
-                        {opt}
-                      </li>
-                    ))}
+                    {q.options.map((opt, oi) => {
+                      const isCorrect = parseCorrectAnswers(q).includes(opt);
+                      return (
+                        <li key={oi} className={isCorrect ? "correct-option" : ""}>
+                          {isCorrect ? <CheckCircle2 size={12} /> : null}
+                          {opt}
+                        </li>
+                      );
+                    })}
                   </ul>
                 ) : null}
                 {q.type === "TRUE_FALSE" ? (
@@ -353,38 +419,47 @@ export function AssessmentBuilderPage() {
       {/* ── Question form modal ── */}
       {showQForm ? (
         <div className="modal-backdrop" role="dialog" aria-modal="true">
-          <section className="modal-panel">
+          <section className="modal-panel modal-panel--wide">
             <div className="modal-header">
               <h2>{qForm.id ? "Edit question" : "Add question"}</h2>
               <button className="payment-banner-close" aria-label="Close" onClick={() => setShowQForm(false)}>×</button>
             </div>
             <form className="modal-form" onSubmit={(e) => void saveQuestion(e)}>
               <label>
-                Question text
+                {qForm.type === "NOTE" ? "Note or instruction" : "Question text"}
                 <textarea rows={3} value={qForm.text} required
+                  placeholder={qForm.type === "NOTE" ? "Add an explanation, worked example, or instruction between questions..." : "Write the question learners will answer..."}
                   onChange={(e) => setQForm({ ...qForm, text: e.target.value })} />
               </label>
 
               <label>
                 Type
                 <select value={qForm.type}
-                  onChange={(e) => setQForm({ ...qForm, type: e.target.value as QuestionType, correctAnswer: "" })}>
-                  {(Object.keys(QUESTION_TYPE_LABELS) as QuestionType[]).map((t) => (
+                  onChange={(e) => setQForm({ ...qForm, type: e.target.value as QuestionType, correctAnswers: [] })}>
+                  {BUILDER_QUESTION_TYPES.map((t) => (
                     <option key={t} value={t}>{QUESTION_TYPE_LABELS[t]}</option>
                   ))}
                 </select>
               </label>
 
-              {qForm.type === "MCQ" && (
+              {(qForm.type === "MCQ" || qForm.type === "MULTIPLE_CHOICE") && (
                 <div className="q-options-grid">
-                  <label>Options (mark the correct one)</label>
+                  <div className="q-options-heading">
+                    <div>
+                      <strong>Answer options</strong>
+                      <span>{qForm.type === "MCQ" ? "Select one correct answer." : "Select every correct answer."}</span>
+                    </div>
+                    <button type="button" className="secondary-button small-button" onClick={addOption}>
+                      <PlusCircle size={14} />Add option
+                    </button>
+                  </div>
                   {qForm.options.map((opt, i) => (
                     <div key={i} className="q-option-row">
                       <input
-                        type="radio"
+                        type={qForm.type === "MCQ" ? "radio" : "checkbox"}
                         name="correctAnswer"
-                        checked={qForm.correctAnswer === opt && opt !== ""}
-                        onChange={() => setQForm({ ...qForm, correctAnswer: opt })}
+                        checked={qForm.correctAnswers.includes(opt) && opt !== ""}
+                        onChange={() => toggleCorrectAnswer(opt)}
                         disabled={opt === ""}
                         aria-label={`Mark option ${i + 1} as correct`}
                       />
@@ -393,6 +468,15 @@ export function AssessmentBuilderPage() {
                         value={opt}
                         onChange={(e) => updateOption(i, e.target.value)}
                       />
+                      <button
+                        type="button"
+                        className="icon-button danger"
+                        onClick={() => removeOption(i)}
+                        disabled={qForm.options.length <= 2}
+                        aria-label={`Remove option ${i + 1}`}
+                      >
+                        <Trash2 size={15} />
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -401,8 +485,8 @@ export function AssessmentBuilderPage() {
               {qForm.type === "TRUE_FALSE" && (
                 <label>
                   Correct answer
-                  <select value={qForm.correctAnswer}
-                    onChange={(e) => setQForm({ ...qForm, correctAnswer: e.target.value })}>
+                  <select value={qForm.correctAnswers[0] ?? ""}
+                    onChange={(e) => setQForm({ ...qForm, correctAnswers: e.target.value ? [e.target.value] : [] })}>
                     <option value="">Select…</option>
                     <option value="true">True</option>
                     <option value="false">False</option>
@@ -412,24 +496,25 @@ export function AssessmentBuilderPage() {
 
               {qForm.type === "SHORT_ANSWER" && (
                 <label>
-                  Expected answer (keyword match, optional)
-                  <input value={qForm.correctAnswer}
-                    onChange={(e) => setQForm({ ...qForm, correctAnswer: e.target.value })}
-                    placeholder="Leave blank for manual grading" />
+                  Expected answer (optional)
+                  <input value={qForm.correctAnswers[0] ?? ""}
+                    onChange={(e) => setQForm({ ...qForm, correctAnswers: e.target.value ? [e.target.value] : [] })}
+                    placeholder="Add an exact answer for instant checking, or leave blank for trainer grading" />
                 </label>
               )}
 
-              <label>
-                Explanation (shown after submission)
+              {qForm.type !== "NOTE" ? <label>
+                Answer explanation
                 <textarea rows={2} value={qForm.explanation}
+                  placeholder="Explain why the answer is correct. Learners see this immediately after checking."
                   onChange={(e) => setQForm({ ...qForm, explanation: e.target.value })} />
-              </label>
+              </label> : null}
 
-              <label>
+              {qForm.type !== "NOTE" ? <label>
                 Points
                 <input type="number" min={1} value={qForm.points}
                   onChange={(e) => setQForm({ ...qForm, points: e.target.value })} required />
-              </label>
+              </label> : null}
 
               {qError ? <p className="form-error">{qError}</p> : null}
               <div className="modal-actions">

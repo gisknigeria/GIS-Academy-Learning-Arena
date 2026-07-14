@@ -67,6 +67,7 @@ export type LiveSession = {
   endsAt?: string | null;
   status: string;
   meetingUrl?: string | null;
+  location?: string | null;
   presentationUrl?: string | null;
   bookUrl?: string | null;
   createdAt: string;
@@ -100,6 +101,7 @@ export type CreateLiveSessionPayload = {
   startsAt: string;
   endsAt?: string;
   meetingUrl?: string;
+  location?: string;
   presentationUrl?: string;
   bookUrl?: string;
 };

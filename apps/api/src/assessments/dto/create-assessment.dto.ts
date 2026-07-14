@@ -14,6 +14,10 @@ export class CreateAssessmentDto {
   courseId?: string;
 
   @IsOptional()
+  @IsString()
+  lessonId?: string;
+
+  @IsOptional()
   @IsInt()
   @Min(1)
   @Max(600)

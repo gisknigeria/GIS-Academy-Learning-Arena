@@ -28,6 +28,10 @@ export class UpdateLiveSessionDto {
 
   @IsOptional()
   @IsString()
+  location?: string;
+
+  @IsOptional()
+  @IsString()
   presentationUrl?: string;
 
   @IsOptional()

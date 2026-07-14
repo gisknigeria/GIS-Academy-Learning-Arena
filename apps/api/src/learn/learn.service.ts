@@ -229,7 +229,10 @@ export class LearnService {
 
     return this.prisma.liveSession.findMany({
       where: {
-        startsAt: { gte: now },
+        OR: [
+          { startsAt: { gte: now } },
+          { endsAt: { gte: now } },
+        ],
         class: {
           students: { some: { userId } },
         },

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { CalendarDays, MapPin, Sparkles } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArenaLobby } from "../components/ArenaLobby";
 import { GameQuestPanel } from "../components/GameQuestPanel";
@@ -20,8 +21,10 @@ import {
 } from "../data/dashboardData";
 import { dashboardApi, type DashboardPublicStats } from "../lib/dashboard-api";
 import { competitionsApi } from "../lib/competitions-api";
-import { isAdminRole, isInstructorRole } from "../lib/roles";
+import { learnApi, type LearnFeed } from "../lib/learn-api";
+import { isAdminRole } from "../lib/roles";
 import type { Competition } from "../types/competition";
+import { getPersonalizedKnowledgeHubPlan, loadKnowledgeHubPreferences, type KnowledgeHubPreferences } from "../data/knowledgeHub";
 
 export function DashboardPage() {
   const { user, token } = useAuth();
@@ -32,6 +35,8 @@ export function DashboardPage() {
 
   // Live competitions for the challenge lobby
   const [liveCompetitions, setLiveCompetitions] = useState<Competition[]>([]);
+  const [learningFeed, setLearningFeed] = useState<LearnFeed | null>(null);
+  const [preferences, setPreferences] = useState<KnowledgeHubPreferences>(() => loadKnowledgeHubPreferences());
 
   const staticStats = getStatsByRole(role);
   const missions = getMissionsByRole(role);
@@ -45,6 +50,9 @@ export function DashboardPage() {
     role === "CORPORATE_CLIENT" ||
     role === "OLYMPIAD_COORDINATOR" ||
     role === "JUDGE";
+  const isLearner = role === "STUDENT" || role === "ALUMNI" || role === "GUEST";
+  const showManagementLayout = showStaffLayout || isCoord;
+  const personalPlan = useMemo(() => getPersonalizedKnowledgeHubPlan(preferences), [preferences]);
 
   const loadLiveData = useCallback(async () => {
     if (!token) return;
@@ -60,6 +68,19 @@ export function DashboardPage() {
   useEffect(() => {
     void loadLiveData();
   }, [loadLiveData]);
+
+  useEffect(() => {
+    if (!token || !isLearner) return;
+    void learnApi.getFeed(token).then(setLearningFeed).catch(() => undefined);
+  }, [isLearner, token]);
+
+  useEffect(() => {
+    const updatePreferences = (event: Event) => {
+      setPreferences((event as CustomEvent<KnowledgeHubPreferences>).detail ?? loadKnowledgeHubPreferences());
+    };
+    window.addEventListener("knowledge-hub:preferences-updated", updatePreferences);
+    return () => window.removeEventListener("knowledge-hub:preferences-updated", updatePreferences);
+  }, []);
 
   useEffect(() => {
     const handleRewardRefresh = () => {
@@ -82,7 +103,7 @@ export function DashboardPage() {
       )}
 
       {/* Quick actions panel — admin / instructor roles */}
-      {showStaffLayout && quickActions.length > 0 && (
+      {showManagementLayout && quickActions.length > 0 && (
         <>
           <SectionHeading eyebrow="Shortcuts" title="Quick actions" />
           <QuickActionsGrid actions={quickActions} />
@@ -107,12 +128,13 @@ export function DashboardPage() {
 
       <section className="content-grid">
         <div className="workstream">
-          <SectionHeading eyebrow="Next actions" title="Daily mission path" action="See all" />
-          <GameQuestPanel />
+          <SectionHeading eyebrow={isLearner ? "Today" : "Priority work"} title={isLearner ? "Your learning plan" : "What needs your attention"} />
+          {isLearner ? <LearnerTodayPanel feed={learningFeed} alert={personalPlan.alert} /> : null}
+          {isLearner ? <GameQuestPanel /> : null}
           <MissionList missions={missions} />
 
           {/* Student dashboard panels */}
-          {(role === "STUDENT" || role === "ALUMNI" || role === "GUEST") && (
+          {isLearner && (
             <>
               <SectionHeading eyebrow="My learning" title="Student dashboard" />
               <StudentDashboardPanels liveStats={liveStats} />
@@ -159,6 +181,49 @@ export function DashboardPage() {
 }
 
 // ─── Admin insight panel (live data) ─────────────────────────────────────────
+
+function LearnerTodayPanel({ feed, alert }: { feed: LearnFeed | null; alert: string }) {
+  const today = new Date();
+  const session = feed?.upcomingLiveSessions.find((item) => {
+    const startsAt = new Date(item.startsAt);
+    return startsAt.getFullYear() === today.getFullYear()
+      && startsAt.getMonth() === today.getMonth()
+      && startsAt.getDate() === today.getDate();
+  });
+
+  return (
+    <section className="dashboard-today-panel">
+      <div className="dashboard-today-personal">
+        <span><Sparkles size={16} />Personalized for you</span>
+        <strong>{alert}</strong>
+        <Link to="/personalize">Change preferences</Link>
+      </div>
+      {session ? (
+        <div className="dashboard-today-class">
+          <span><CalendarDays size={16} />Class today</span>
+          <strong>{session.title}</strong>
+          <p>{session.class.course.code} · {new Date(session.startsAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</p>
+          {session.location ? <small><MapPin size={13} />{session.location}</small> : null}
+          {session.meetingUrl ? <a href={session.meetingUrl} target="_blank" rel="noreferrer">Join class</a> : <Link to="/learn">View schedule</Link>}
+        </div>
+      ) : feed?.continueCourse ? (
+        <div className="dashboard-today-class">
+          <span><CalendarDays size={16} />Continue learning</span>
+          <strong>{feed.continueCourse.title}</strong>
+          <p>{feed.continueCourse.progress}% complete</p>
+          <Link to="/learn">Open learning feed</Link>
+        </div>
+      ) : (
+        <div className="dashboard-today-class">
+          <span><CalendarDays size={16} />Today</span>
+          <strong>No class scheduled</strong>
+          <p>Browse courses or choose a short learning mission.</p>
+          <Link to="/courses">Browse courses</Link>
+        </div>
+      )}
+    </section>
+  );
+}
 
 function AdminInsightPanel({
   role,
@@ -431,6 +496,7 @@ function TrainerDashboardPanels({ liveStats }: { liveStats: DashboardPublicStats
                 <div className="admin-badges">
                   <span>{cohort.students} students</span>
                   <span>{cohort.attendanceRecords} records</span>
+                  <Link to={`/classes/${cohort.id}`}>Schedule</Link>
                 </div>
               </li>
             ))
@@ -601,7 +667,7 @@ function StudentDashboardPanels({ liveStats }: { liveStats: DashboardPublicStats
               <small>Course lesson #{nextLesson.order}</small>
             </div>
             <div style={{ marginTop: 8 }}>
-              <Link to={`/learn/lesson/${nextLesson.id}`}>Continue lesson →</Link>
+              <Link to={`/courses/${nextLesson.courseId}/lessons/${nextLesson.id}`}>Continue lesson →</Link>
             </div>
           </div>
         ) : (

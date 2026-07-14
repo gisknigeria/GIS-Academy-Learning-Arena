@@ -22,7 +22,7 @@ export type NavigationItem = {
 
 export const navItems: NavigationItem[] = [
   { id: "dashboard", label: "Dashboard", icon: Activity, path: "/dashboard" },
-  { id: "knowledge", label: "Knowledge Hub", icon: Sparkles, path: "/knowledge-hub" },
+  { id: "knowledge", label: "Personalize", icon: Sparkles, path: "/personalize" },
   { id: "courses", label: "Courses", icon: GraduationCap, path: "/courses" },
   { id: "learn", label: "Learn", icon: BookOpenCheck, path: "/learn" },
   { id: "arena", label: "Challenges", icon: Trophy, path: "/competitions" },
