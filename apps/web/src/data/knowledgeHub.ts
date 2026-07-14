@@ -23,6 +23,8 @@ export type KnowledgeHubPreferences = {
   courseInterest: string;
   notificationPreference: string;
   languagePreference: string;
+  fontPreference: string;
+  appearanceMode: "Light" | "Dark" | "System";
 };
 
 export type PreferenceCategory = {
@@ -115,6 +117,8 @@ export const competitionTypes = ["Live quiz", "Map challenge", "Coding sprint", 
 export const courseInterests = ["GIS and Mapping", "Artificial Intelligence", "Cybersecurity", "Agriculture Technology", "Fintech", "Media", "Climate", "Entrepreneurship", "Software Development"];
 export const notificationPreferences = ["Daily motivation", "Competition alerts", "Trainer feedback", "Weekly digest", "Certificates and badges", "Minimal notifications"];
 export const languagePreferences = ["English", "Pidgin", "Yoruba", "Hausa", "Igbo", "French"];
+export const fontPreferences = ["Inter", "Poppins", "Nunito", "Atkinson Hyperlegible", "Merriweather"];
+export const appearanceModes = ["Light", "Dark", "System"] as const;
 
 export const platformModules = [
   ["User Profile", "Stores learner data, school, cohort, age band, goals, and status"],
@@ -142,6 +146,8 @@ export const defaultKnowledgeHubPreferences: KnowledgeHubPreferences = {
   courseInterest: "GIS and Mapping",
   notificationPreference: "Daily motivation",
   languagePreference: "English",
+  fontPreference: "Inter",
+  appearanceMode: "Light",
 };
 
 export function getPreferenceCategory(key: PreferenceCategoryKey) {
@@ -174,6 +180,8 @@ export function mergeKnowledgeHubPreferences(
     courseInterest: string | null;
     notificationPreference: string | null;
     languagePreference: string | null;
+    fontPreference: string | null;
+    appearanceMode: string | null;
   }> | null,
 ) {
   if (!profile) return preferences;
@@ -196,6 +204,8 @@ export function mergeKnowledgeHubPreferences(
     courseInterest: profile.courseInterest || preferences.courseInterest,
     notificationPreference: profile.notificationPreference || preferences.notificationPreference,
     languagePreference: profile.languagePreference || preferences.languagePreference,
+    fontPreference: profile.fontPreference || preferences.fontPreference,
+    appearanceMode: (profile.appearanceMode as KnowledgeHubPreferences["appearanceMode"]) || preferences.appearanceMode,
   };
 }
 
@@ -268,10 +278,21 @@ export function applyKnowledgeHubPreferences(preferences: KnowledgeHubPreference
   root.setProperty("--theme-secondary", theme.secondary);
   root.setProperty("--theme-accent", theme.accent);
   root.setProperty("--theme-highlight", theme.highlight);
-  root.setProperty("--theme-surface", theme.surface);
+  root.setProperty("--favorite-surface", theme.surface);
   root.setProperty("--theme-on-primary", theme.onPrimary);
   root.setProperty("--theme-on-highlight", theme.onHighlight);
   root.setProperty("--theme-symbol", JSON.stringify(theme.emblem));
+  const fontFamilies: Record<string, string> = {
+    Inter: '"Inter", ui-sans-serif, system-ui, sans-serif',
+    Poppins: '"Poppins", ui-sans-serif, system-ui, sans-serif',
+    Nunito: '"Nunito", ui-sans-serif, system-ui, sans-serif',
+    "Atkinson Hyperlegible": '"Atkinson Hyperlegible", ui-sans-serif, system-ui, sans-serif',
+    Merriweather: '"Merriweather", Georgia, serif',
+  };
+  root.setProperty("--app-font", fontFamilies[preferences.fontPreference] || fontFamilies.Inter);
+  document.documentElement.dataset.appearance = preferences.appearanceMode.toLowerCase();
+  const languageCodes: Record<string, string> = { English: "en", Pidgin: "pcm", Yoruba: "yo", Hausa: "ha", Igbo: "ig", French: "fr" };
+  document.documentElement.lang = languageCodes[preferences.languagePreference] || "en";
 }
 
 export function getPersonalizedKnowledgeHubPlan(preferences: KnowledgeHubPreferences) {

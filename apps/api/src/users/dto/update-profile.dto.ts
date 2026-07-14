@@ -79,6 +79,14 @@ export class UpdateProfileDto {
 
   @IsOptional()
   @IsString()
+  fontPreference?: string;
+
+  @IsOptional()
+  @IsString()
+  appearanceMode?: string;
+
+  @IsOptional()
+  @IsString()
   @MaxLength(500)
   avatarUrl?: string;
 }

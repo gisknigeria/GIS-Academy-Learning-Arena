@@ -74,25 +74,25 @@ export class AssessmentsController {
   // ─── Question banks & random selection ──────────────────────────────────
 
   @Roles(...STAFF_ROLES)
-  @Post("banks")
+  @Post("library/banks")
   createBank(@Body() body: { title: string; description?: string }) {
     return this.assessmentsService.createQuestionBank(body.title, body.description);
   }
 
   @Roles(...STAFF_ROLES)
-  @Get("banks")
+  @Get("library/banks")
   listBanks() {
     return this.assessmentsService.listQuestionBanks();
   }
 
   @Roles(...STAFF_ROLES)
-  @Post("banks/:bankId/questions")
+  @Post("library/banks/:bankId/questions/link")
   addQuestionToBank(@Param("bankId") bankId: string, @Body() body: { questionId: string }) {
     return this.assessmentsService.addQuestionToBank(bankId, body.questionId);
   }
 
   @Roles(...STAFF_ROLES)
-  @Get("banks/:bankId/draw")
+  @Get("library/banks/:bankId/draw")
   drawFromBank(@Param("bankId") bankId: string, @Query("n") n?: string) {
     const count = n ? parseInt(n, 10) : 10;
     return this.assessmentsService.drawFromBank(bankId, count);
@@ -151,6 +151,24 @@ export class AssessmentsController {
     @Req() req: AuthenticatedRequest,
   ) {
     return this.assessmentsService.submitAttempt(attemptId, req.user.sub, dto);
+  }
+
+  @Roles(...STAFF_ROLES)
+  @Post("library/banks/:bankId/questions")
+  createBankQuestion(@Param("bankId") bankId: string, @Body() dto: CreateQuestionDto) {
+    return this.assessmentsService.createBankQuestion(bankId, dto);
+  }
+
+  @Roles(...STAFF_ROLES)
+  @Post("library/banks/:bankId/questions/:questionId/duplicate")
+  duplicateBankQuestion(@Param("bankId") bankId: string, @Param("questionId") questionId: string) {
+    return this.assessmentsService.duplicateBankQuestion(bankId, questionId);
+  }
+
+  @Roles(...STAFF_ROLES)
+  @Post(":id/questions/import")
+  importQuestions(@Param("id") id: string, @Body() body: { questionIds: string[] }) {
+    return this.assessmentsService.importQuestions(id, body.questionIds ?? []);
   }
 
   /** Check one practice answer without exposing the full answer key. */

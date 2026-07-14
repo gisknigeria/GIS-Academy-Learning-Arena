@@ -2,6 +2,7 @@ import { X } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import logoMark from "../assets/gis-academy-logo.svg";
 import { useAuth } from "../context/AuthContext";
+import { useLocalization } from "../context/LocalizationContext";
 import { navItems } from "../data/navigation";
 import { getVisibleNavPages } from "../lib/roles";
 import type { PageId } from "../types/navigation";
@@ -16,6 +17,7 @@ type AppSidebarProps = {
 
 export function AppSidebar({ activePage, isOpen, onClose }: AppSidebarProps) {
   const { user } = useAuth();
+  const { t } = useLocalization();
   const role = user?.role ?? "GUEST";
   const visiblePages = getVisibleNavPages(role);
 
@@ -57,7 +59,7 @@ export function AppSidebar({ activePage, isOpen, onClose }: AppSidebarProps) {
               onClick={onClose}
             >
               <Icon size={18} aria-hidden="true" />
-              <span>{item.label}</span>
+              <span>{t(`nav.${item.id}` as Parameters<typeof t>[0], item.label)}</span>
             </NavLink>
           );
         })}

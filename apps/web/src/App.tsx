@@ -1,39 +1,42 @@
+import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { RoleRoute } from "./components/RoleRoute";
 import { DashboardLayout } from "./layouts/DashboardLayout";
-import { ArenaPage } from "./pages/ArenaPage";
-import { AssessmentsPage } from "./pages/AssessmentsPage";
-import { AssessmentBuilderPage } from "./pages/AssessmentBuilderPage";
-import { AssessmentTakePage } from "./pages/AssessmentTakePage";
-import { AssessmentResultPage } from "./pages/AssessmentResultPage";
-import { AssessmentAttemptsPage } from "./pages/AssessmentAttemptsPage";
-import { CertificatesPage } from "./pages/CertificatesPage";
-import { ClassesPage } from "./pages/ClassesPage";
-import ClassPage from "./pages/ClassPage";
-import QuestionBankPage from "./pages/QuestionBankPage";
-import GradingPage from "./pages/GradingPage";
-import { CoursesPage } from "./pages/CoursesPage";
-import { CourseDetailPage } from "./pages/CourseDetailPage";
-import { LessonPlayerPage } from "./pages/LessonPlayerPage";
-import { LiveSessionPage } from "./pages/LiveSessionPage";
-import { CompetitionDetailPage } from "./pages/CompetitionDetailPage";
-import { CompetitionChallengePage } from "./pages/CompetitionChallengePage";
-import { DashboardPage } from "./pages/DashboardPage";
-import { KnowledgeHubPage } from "./pages/KnowledgeHubPage";
-import { LearnPage } from "./pages/LearnPage";
-import { LoginPage } from "./pages/LoginPage";
-import { NotFoundPage } from "./pages/NotFoundPage";
-import { RegisterPage } from "./pages/RegisterPage";
-import { ReportsPage } from "./pages/ReportsPage";
-import { UsersPage } from "./pages/UsersPage";
-import { ProfilePage } from "./pages/ProfilePage";
-import { VerifyPage } from "./pages/VerifyPage";
+
+const ArenaPage = lazy(() => import("./pages/ArenaPage").then((module) => ({ default: module.ArenaPage })));
+const AssessmentsPage = lazy(() => import("./pages/AssessmentsPage").then((module) => ({ default: module.AssessmentsPage })));
+const AssessmentBuilderPage = lazy(() => import("./pages/AssessmentBuilderPage").then((module) => ({ default: module.AssessmentBuilderPage })));
+const AssessmentTakePage = lazy(() => import("./pages/AssessmentTakePage").then((module) => ({ default: module.AssessmentTakePage })));
+const AssessmentResultPage = lazy(() => import("./pages/AssessmentResultPage").then((module) => ({ default: module.AssessmentResultPage })));
+const AssessmentAttemptsPage = lazy(() => import("./pages/AssessmentAttemptsPage").then((module) => ({ default: module.AssessmentAttemptsPage })));
+const CertificatesPage = lazy(() => import("./pages/CertificatesPage").then((module) => ({ default: module.CertificatesPage })));
+const ClassesPage = lazy(() => import("./pages/ClassesPage").then((module) => ({ default: module.ClassesPage })));
+const ClassPage = lazy(() => import("./pages/ClassPage"));
+const QuestionBankPage = lazy(() => import("./pages/QuestionBankPage"));
+const GradingPage = lazy(() => import("./pages/GradingPage"));
+const CoursesPage = lazy(() => import("./pages/CoursesPage").then((module) => ({ default: module.CoursesPage })));
+const CourseDetailPage = lazy(() => import("./pages/CourseDetailPage").then((module) => ({ default: module.CourseDetailPage })));
+const LessonPlayerPage = lazy(() => import("./pages/LessonPlayerPage").then((module) => ({ default: module.LessonPlayerPage })));
+const LiveSessionPage = lazy(() => import("./pages/LiveSessionPage").then((module) => ({ default: module.LiveSessionPage })));
+const CompetitionDetailPage = lazy(() => import("./pages/CompetitionDetailPage").then((module) => ({ default: module.CompetitionDetailPage })));
+const CompetitionChallengePage = lazy(() => import("./pages/CompetitionChallengePage").then((module) => ({ default: module.CompetitionChallengePage })));
+const DashboardPage = lazy(() => import("./pages/DashboardPage").then((module) => ({ default: module.DashboardPage })));
+const KnowledgeHubPage = lazy(() => import("./pages/KnowledgeHubPage").then((module) => ({ default: module.KnowledgeHubPage })));
+const LearnPage = lazy(() => import("./pages/LearnPage").then((module) => ({ default: module.LearnPage })));
+const LoginPage = lazy(() => import("./pages/LoginPage").then((module) => ({ default: module.LoginPage })));
+const NotFoundPage = lazy(() => import("./pages/NotFoundPage").then((module) => ({ default: module.NotFoundPage })));
+const RegisterPage = lazy(() => import("./pages/RegisterPage").then((module) => ({ default: module.RegisterPage })));
+const ReportsPage = lazy(() => import("./pages/ReportsPage").then((module) => ({ default: module.ReportsPage })));
+const UsersPage = lazy(() => import("./pages/UsersPage").then((module) => ({ default: module.UsersPage })));
+const ProfilePage = lazy(() => import("./pages/ProfilePage").then((module) => ({ default: module.ProfilePage })));
+const VerifyPage = lazy(() => import("./pages/VerifyPage").then((module) => ({ default: module.VerifyPage })));
 
 function App() {
   return (
     <ErrorBoundary>
+      <Suspense fallback={<div className="route-loading" role="status">Loading page...</div>}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
@@ -95,6 +98,7 @@ function App() {
         {/* Public 404 */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
+      </Suspense>
     </ErrorBoundary>
   );
 }

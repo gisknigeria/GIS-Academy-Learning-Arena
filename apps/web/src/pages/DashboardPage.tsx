@@ -7,14 +7,12 @@ import { HeroArena } from "../components/HeroArena";
 import { LeaderboardCard } from "../components/LeaderboardCard";
 import { LiveStatsGrid } from "../components/LiveStatsGrid";
 import { MissionList } from "../components/MissionList";
-import { QuickActionsGrid } from "../components/QuickActionsGrid";
 import { SectionHeading } from "../components/SectionHeading";
 import { StatsGrid } from "../components/StatsGrid";
 import { TrainerReviewCard } from "../components/TrainerReviewCard";
 import { useAuth } from "../context/AuthContext";
 import {
   competitions as staticCompetitions,
-  getQuickActions,
   getMissionsByRole,
   getStatsByRole,
   leaderboard,
@@ -40,7 +38,6 @@ export function DashboardPage() {
 
   const staticStats = getStatsByRole(role);
   const missions = getMissionsByRole(role);
-  const quickActions = getQuickActions(role);
 
   const showTrainerLayout = role === "TRAINER" || role === "EXAMINER";
   const showAdminLayout = isAdminRole(role);
@@ -51,7 +48,6 @@ export function DashboardPage() {
     role === "OLYMPIAD_COORDINATOR" ||
     role === "JUDGE";
   const isLearner = role === "STUDENT" || role === "ALUMNI" || role === "GUEST";
-  const showManagementLayout = showStaffLayout || isCoord;
   const personalPlan = useMemo(() => getPersonalizedKnowledgeHubPlan(preferences), [preferences]);
 
   const loadLiveData = useCallback(async () => {
@@ -103,13 +99,6 @@ export function DashboardPage() {
       )}
 
       {/* Quick actions panel — admin / instructor roles */}
-      {showManagementLayout && quickActions.length > 0 && (
-        <>
-          <SectionHeading eyebrow="Shortcuts" title="Quick actions" />
-          <QuickActionsGrid actions={quickActions} />
-        </>
-      )}
-
       {showStaffLayout && (
         <>
           {showTrainerLayout ? (

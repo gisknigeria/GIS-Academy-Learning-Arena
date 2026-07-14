@@ -292,6 +292,8 @@ export class UsersService {
     courseInterest?: string;
     notificationPreference?: string;
     languagePreference?: string;
+    fontPreference?: string;
+    appearanceMode?: string;
     avatarUrl?: string;
   }) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });

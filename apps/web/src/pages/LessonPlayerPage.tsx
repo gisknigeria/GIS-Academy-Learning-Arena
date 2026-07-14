@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react
 import { Link, useParams } from "react-router-dom";
 import { AchievementBadgeToast } from "../components/AchievementBadge";
 import { PaymentGate } from "../components/PaymentGate";
+import { PowerPointViewer } from "../components/PowerPointViewer";
 import { useAuth } from "../context/AuthContext";
 import { usePlayerXP } from "../hooks/usePlayerXP";
 import { API_BASE_URL } from "../lib/api";
@@ -67,7 +68,7 @@ function getPrimaryMaterial(lesson: Lesson) {
     return { url: lesson.videoUrl, type: "Video", title: "Video lesson" };
   }
   if (lesson.slideUrl) {
-    return { url: lesson.slideUrl, type: "PowerPoint", title: "PowerPoint / slides" };
+    return { url: lesson.slideUrl, type: getMaterialType(lesson.slideUrl), title: "PowerPoint / slides" };
   }
   if (lesson.resourceUrl) {
     return { url: lesson.resourceUrl, type: getMaterialType(lesson.resourceUrl), title: "Lesson resource" };
@@ -162,6 +163,8 @@ function LessonMediaStage({ lesson }: { lesson: Lesson }) {
           <img src={src} alt={material.title} />
         ) : isPdf ? (
           <iframe src={src} title={material.title} />
+        ) : isPowerPoint && /\.pptx(\?|#|$)/i.test(src) ? (
+          <PowerPointViewer src={src} title={material.title} />
         ) : isPowerPoint ? (
           <iframe
             src={getPowerPointEmbedUrl(src)}

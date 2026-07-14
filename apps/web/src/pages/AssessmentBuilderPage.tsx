@@ -3,6 +3,7 @@ import {
   CheckCircle2,
   Edit3,
   Loader2,
+  Library,
   PlusCircle,
   Save,
   Trash2,
@@ -349,9 +350,14 @@ export function AssessmentBuilderPage() {
         title={`${questions.length} question${questions.length !== 1 ? "s" : ""}`}
         compact
         action={
-          <button className="primary-button small-button" onClick={openAddQuestion}>
-            <PlusCircle size={14} />Add question
-          </button>
+          <div className="question-library-actions">
+            <Link className="secondary-button small-button" to={`/assessments/banks?assessmentId=${assessment.id}`}>
+              <Library size={14} />Question Library
+            </Link>
+            <button className="primary-button small-button" onClick={openAddQuestion}>
+              <PlusCircle size={14} />Add question
+            </button>
+          </div>
         }
       />
 

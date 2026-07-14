@@ -4,7 +4,7 @@ export type AssessmentAnswer = string | string[];
 
 export type Question = {
   id: string;
-  assessmentId: string;
+  assessmentId?: string | null;
   text: string;
   type: QuestionType;
   options: string[];
@@ -12,6 +12,13 @@ export type Question = {
   explanation?: string | null;
   points: number;
   order: number;
+  tags: string[];
+  difficulty: "EASY" | "MEDIUM" | "HARD";
+  subject?: string | null;
+  courseId?: string | null;
+  lessonId?: string | null;
+  course?: { id: string; title: string } | null;
+  lesson?: { id: string; title: string } | null;
 };
 
 /** Question as returned to a student mid-attempt — no correct answer */
@@ -111,6 +118,11 @@ export type CreateQuestionPayload = {
   explanation?: string;
   points?: number;
   order?: number;
+  tags?: string[];
+  difficulty?: "EASY" | "MEDIUM" | "HARD";
+  subject?: string;
+  courseId?: string;
+  lessonId?: string;
 };
 
 export type UpdateQuestionPayload = Partial<CreateQuestionPayload>;

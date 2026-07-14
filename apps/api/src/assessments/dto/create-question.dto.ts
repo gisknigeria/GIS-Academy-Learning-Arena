@@ -39,4 +39,25 @@ export class CreateQuestionDto {
   @IsInt()
   @Min(0)
   order?: number;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tags?: string[];
+
+  @IsOptional()
+  @IsString()
+  difficulty?: string;
+
+  @IsOptional()
+  @IsString()
+  subject?: string;
+
+  @IsOptional()
+  @IsString()
+  courseId?: string;
+
+  @IsOptional()
+  @IsString()
+  lessonId?: string;
 }

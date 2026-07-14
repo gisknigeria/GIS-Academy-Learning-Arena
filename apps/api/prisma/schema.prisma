@@ -123,6 +123,8 @@ model UserProfile {
   courseInterest       String?
   notificationPreference String?
   languagePreference  String?
+  fontPreference      String?
+  appearanceMode      String?
   avatarUrl            String?
   user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -153,6 +155,7 @@ model Course {
   enrollments     Enrollment[]
   assignments     Assignment[]
   assessments     Assessment[]
+  libraryQuestions Question[]   @relation("QuestionCourse")
   certificates    Certificate[]
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
@@ -176,6 +179,7 @@ model Lesson {
   discussions  LessonDiscussion[]
   classUnlocks ClassLessonUnlock[]
   assessments Assessment[]
+  libraryQuestions Question[] @relation("QuestionLesson")
 }
 
 model ClassLessonUnlock {
@@ -392,7 +396,7 @@ model Assessment {
 
 model Question {
   id            String       @id @default(uuid())
-  assessmentId  String
+  assessmentId  String?
   text          String
   type          QuestionType @default(MCQ)
   /// JSON array of strings for MCQ options; empty for TRUE_FALSE / SHORT_ANSWER
@@ -402,10 +406,21 @@ model Question {
   points        Int          @default(1)
   order         Int          @default(0)
   explanation   String?
-  assessment    Assessment   @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  tags          String[]     @default([])
+  difficulty    String       @default("MEDIUM")
+  subject       String?
+  courseId      String?
+  lessonId      String?
+  assessment    Assessment?  @relation(fields: [assessmentId], references: [id], onDelete: SetNull)
+  course        Course?      @relation("QuestionCourse", fields: [courseId], references: [id], onDelete: SetNull)
+  lesson        Lesson?      @relation("QuestionLesson", fields: [lessonId], references: [id], onDelete: SetNull)
   questionBanks QuestionBank[] @relation("QuestionBankQuestions")
 
   @@index([assessmentId, order])
+  @@index([courseId])
+  @@index([lessonId])
+  @@index([difficulty])
+  @@index([subject])
 }
 
 model Attempt {

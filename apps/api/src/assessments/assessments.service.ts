@@ -57,7 +57,84 @@ export class AssessmentsService {
   async listQuestionBanks() {
     return this.prisma.questionBank.findMany({
       orderBy: { createdAt: "desc" },
-      include: { questions: { select: { id: true, text: true, type: true } } },
+      include: { questions: { orderBy: { text: "asc" }, include: { course: { select: { id: true, title: true } }, lesson: { select: { id: true, title: true } } } } },
+    });
+  }
+
+  async createBankQuestion(bankId: string, dto: CreateQuestionDto) {
+    const bank = await this.prisma.questionBank.findUnique({ where: { id: bankId } });
+    if (!bank) throw new NotFoundException(`Question bank "${bankId}" not found.`);
+
+    return this.prisma.question.create({
+      data: {
+        text: dto.text,
+        type: dto.type,
+        options: dto.options ?? [],
+        correctAnswer: dto.correctAnswer,
+        explanation: dto.explanation,
+        points: dto.type === QuestionType.NOTE ? 0 : dto.points ?? 1,
+        order: dto.order ?? 0,
+        tags: dto.tags ?? [],
+        difficulty: dto.difficulty ?? "MEDIUM",
+        subject: dto.subject,
+        courseId: dto.courseId || null,
+        lessonId: dto.lessonId || null,
+        questionBanks: { connect: { id: bankId } },
+      },
+    });
+  }
+
+  async importQuestions(assessmentId: string, questionIds: string[]) {
+    const assessment = await this.prisma.assessment.findUnique({ where: { id: assessmentId } });
+    if (!assessment) throw new NotFoundException(`Assessment "${assessmentId}" not found.`);
+    const templates = await this.prisma.question.findMany({ where: { id: { in: questionIds } } });
+    if (templates.length === 0) throw new BadRequestException("Select at least one valid question.");
+    const last = await this.prisma.question.findFirst({ where: { assessmentId }, orderBy: { order: "desc" } });
+    const startOrder = (last?.order ?? -1) + 1;
+
+    return this.prisma.$transaction(
+      templates.map((question, index) => this.prisma.question.create({
+        data: {
+          assessmentId,
+          text: question.text,
+          type: question.type,
+          options: question.options as any,
+          correctAnswer: question.correctAnswer,
+          explanation: question.explanation,
+          points: question.points,
+          order: startOrder + index,
+          tags: question.tags,
+          difficulty: question.difficulty,
+          subject: question.subject,
+          courseId: question.courseId,
+          lessonId: question.lessonId,
+        },
+      })),
+    );
+  }
+
+  async duplicateBankQuestion(bankId: string, questionId: string) {
+    const bank = await this.prisma.questionBank.findUnique({ where: { id: bankId } });
+    if (!bank) throw new NotFoundException(`Question bank "${bankId}" not found.`);
+    const question = await this.prisma.question.findUnique({ where: { id: questionId } });
+    if (!question) throw new NotFoundException(`Question "${questionId}" not found.`);
+
+    return this.prisma.question.create({
+      data: {
+        text: `${question.text} (copy)`,
+        type: question.type,
+        options: question.options as any,
+        correctAnswer: question.correctAnswer,
+        explanation: question.explanation,
+        points: question.points,
+        order: question.order,
+        tags: question.tags,
+        difficulty: question.difficulty,
+        subject: question.subject,
+        courseId: question.courseId,
+        lessonId: question.lessonId,
+        questionBanks: { connect: { id: bankId } },
+      },
     });
   }
 
@@ -251,6 +328,11 @@ export class AssessmentsService {
         explanation: dto.explanation,
         points: dto.type === QuestionType.NOTE ? 0 : dto.points ?? 1,
         order: dto.order ?? (maxOrder._max.order ?? 0) + 1,
+        tags: dto.tags ?? [],
+        difficulty: dto.difficulty ?? "MEDIUM",
+        subject: dto.subject,
+        courseId: dto.courseId || null,
+        lessonId: dto.lessonId || null,
       },
     });
   }
@@ -269,6 +351,11 @@ export class AssessmentsService {
         explanation: dto.explanation,
         points: dto.points,
         order: dto.order,
+        tags: dto.tags,
+        difficulty: dto.difficulty,
+        subject: dto.subject,
+        courseId: dto.courseId === "" ? null : dto.courseId,
+        lessonId: dto.lessonId === "" ? null : dto.lessonId,
       },
     });
   }

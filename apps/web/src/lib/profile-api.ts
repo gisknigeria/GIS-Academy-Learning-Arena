@@ -23,6 +23,8 @@ export type UserProfile = {
   courseInterest?: string | null;
   notificationPreference?: string | null;
   languagePreference?: string | null;
+  fontPreference?: string | null;
+  appearanceMode?: string | null;
   avatarUrl?: string | null;
 };
 

@@ -1,4 +1,4 @@
-import { CheckCircle2, Clock, ClipboardList, Loader2, PlusCircle, Users } from "lucide-react";
+import { CheckCircle2, Clock, ClipboardList, Library, Loader2, PlusCircle, Users } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { SectionHeading } from "../components/SectionHeading";
@@ -80,9 +80,12 @@ export function AssessmentsPage() {
         title="Tests and quizzes"
         action={
           isStaff ? (
-            <button className="primary-button small-button" onClick={() => setShowCreate(true)}>
-              <PlusCircle size={15} />New assessment
-            </button>
+            <div className="question-library-actions">
+              <Link className="secondary-button small-button" to="/assessments/banks"><Library size={15} />Question Library</Link>
+              <button className="primary-button small-button" onClick={() => setShowCreate(true)}>
+                <PlusCircle size={15} />New assessment
+              </button>
+            </div>
           ) : undefined
         }
       />

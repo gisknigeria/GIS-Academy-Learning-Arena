@@ -15,19 +15,19 @@ import type {
 
 export const assessmentsApi = {
   createBank(token: string, title: string, description?: string) {
-    return apiRequest(`/assessments/banks`, { token, method: "POST", body: { title, description } });
+    return apiRequest(`/assessments/library/banks`, { token, method: "POST", body: { title, description } });
   },
 
   listBanks(token: string) {
-    return apiRequest<any[]>(`/assessments/banks`, { token });
+    return apiRequest<any[]>(`/assessments/library/banks`, { token });
   },
 
   addQuestionToBank(token: string, bankId: string, questionId: string) {
-    return apiRequest(`/assessments/banks/${bankId}/questions`, { token, method: "POST", body: { questionId } });
+    return apiRequest(`/assessments/library/banks/${bankId}/questions/link`, { token, method: "POST", body: { questionId } });
   },
 
   drawFromBank(token: string, bankId: string, n = 10) {
-    return apiRequest(`/assessments/banks/${bankId}/draw?n=${n}`, { token });
+    return apiRequest(`/assessments/library/banks/${bankId}/draw?n=${n}`, { token });
   },
 
   gradeAttempt(token: string, attemptId: string, grades: Record<string, number>, comments?: Record<string, string>) {
@@ -44,6 +44,25 @@ export const assessmentsApi = {
 
   list(token: string, all = false): Promise<Assessment[]> {
     return apiRequest<Assessment[]>(`/assessments${all ? "?all=true" : ""}`, { token });
+  },
+
+  createBankQuestion(token: string, bankId: string, payload: CreateQuestionPayload): Promise<Question> {
+    return apiRequest<Question>(`/assessments/library/banks/${bankId}/questions`, { token, method: "POST", body: payload });
+  },
+
+  duplicateBankQuestion(token: string, bankId: string, questionId: string): Promise<Question> {
+    return apiRequest<Question>(`/assessments/library/banks/${bankId}/questions/${questionId}/duplicate`, {
+      token,
+      method: "POST",
+    });
+  },
+
+  importQuestions(token: string, assessmentId: string, questionIds: string[]): Promise<Question[]> {
+    return apiRequest<Question[]>(`/assessments/${assessmentId}/questions/import`, {
+      token,
+      method: "POST",
+      body: { questionIds },
+    });
   },
 
   listForLesson(token: string, lessonId: string): Promise<Assessment[]> {
