@@ -2,7 +2,7 @@ import { NestFactory } from "@nestjs/core";
 import { ValidationPipe } from "@nestjs/common";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import * as fs from "fs";
-import path from "path";
+import * as path from "path";
 import { AppModule } from "./app.module";
 import { IoAdapter } from "@nestjs/platform-socket.io";
 

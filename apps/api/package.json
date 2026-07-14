@@ -2,6 +2,9 @@
   "name": "@gis-academy/api",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "22.x"
+  },
   "type": "commonjs",
   "scripts": {
     "dev": "nest start --watch",
