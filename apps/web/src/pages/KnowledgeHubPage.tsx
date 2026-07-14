@@ -1,4 +1,4 @@
-import { Bell, CheckCircle2, Loader2, Palette, Save, Sparkles, Trophy } from "lucide-react";
+import { Bell, CheckCircle2, Loader2, Palette, Save, Trophy } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { SectionHeading } from "../components/SectionHeading";
 import { useAuth } from "../context/AuthContext";
@@ -7,12 +7,14 @@ import {
   competitionTypes,
   courseInterests,
   getPersonalizedKnowledgeHubPlan,
+  getKnowledgeHubTheme,
   getPreferenceCategory,
   knowledgeLearningModes,
   languagePreferences,
   learningGoals,
   learningStyles,
   loadKnowledgeHubPreferences,
+  mergeKnowledgeHubPreferences,
   notificationPreferences,
   preferenceCategories,
   saveKnowledgeHubPreferences,
@@ -22,41 +24,18 @@ import {
 } from "../data/knowledgeHub";
 import { profileApi } from "../lib/profile-api";
 
-function mergeProfile(preferences: KnowledgeHubPreferences, profile: Awaited<ReturnType<typeof profileApi.getMe>>["profile"]) {
-  if (!profile) return preferences;
-  const fanCategory = preferenceCategories.some((item) => item.key === profile.fanCategory)
-    ? profile.fanCategory as PreferenceCategoryKey
-    : preferences.fanCategory;
-  const category = getPreferenceCategory(fanCategory);
-
-  return {
-    ...preferences,
-    ageBand: profile.ageBand || preferences.ageBand,
-    organisation: profile.institution || preferences.organisation,
-    trainingCategory: profile.trainingCategory || preferences.trainingCategory,
-    learningMode: (profile.preferredMode as KnowledgeHubPreferences["learningMode"]) || preferences.learningMode,
-    learningGoal: profile.learningGoal || preferences.learningGoal,
-    fanCategory,
-    favorite: category.options.includes(profile.favorite || "") ? profile.favorite! : category.options[0],
-    learningStyle: profile.learningStyle || preferences.learningStyle,
-    competitionType: profile.competitionType || preferences.competitionType,
-    courseInterest: profile.courseInterest || preferences.courseInterest,
-    notificationPreference: profile.notificationPreference || preferences.notificationPreference,
-    languagePreference: profile.languagePreference || preferences.languagePreference,
-  };
-}
-
 export function KnowledgeHubPage() {
   const { token, refreshUser } = useAuth();
   const [preferences, setPreferences] = useState<KnowledgeHubPreferences>(() => loadKnowledgeHubPreferences());
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const selectedCategory = getPreferenceCategory(preferences.fanCategory);
   const plan = useMemo(() => getPersonalizedKnowledgeHubPlan(preferences), [preferences]);
+  const theme = useMemo(() => getKnowledgeHubTheme(preferences), [preferences]);
 
   useEffect(() => {
     if (!token) return;
     void profileApi.getMe(token).then((user) => {
-      const next = mergeProfile(loadKnowledgeHubPreferences(), user.profile);
+      const next = mergeKnowledgeHubPreferences(loadKnowledgeHubPreferences(), user.profile);
       setPreferences(next);
       saveKnowledgeHubPreferences(next);
     }).catch(() => undefined);
@@ -109,7 +88,7 @@ export function KnowledgeHubPage() {
           <p>Set your learning pathway, interests, pace, and notifications. These choices shape what the platform shows you.</p>
         </div>
         <div className="personalize-current">
-          <Sparkles size={20} />
+          <b className="personalize-emblem">{theme.emblem}</b>
           <span>{selectedCategory.label}</span>
           <strong>{preferences.favorite}</strong>
         </div>
@@ -143,6 +122,16 @@ export function KnowledgeHubPage() {
 
         <aside className="knowledge-panel knowledge-preview-panel">
           <SectionHeading eyebrow="Live preview" title={plan.themeName} compact />
+          <div className="personalize-theme-preview">
+            <span className="personalize-theme-emblem">{theme.emblem}</span>
+            <div>
+              <strong>{theme.name}</strong>
+              <small>Your app palette</small>
+              <div className="personalize-swatches" aria-label="Selected theme colours">
+                {[theme.primary, theme.secondary, theme.accent, theme.highlight].map((colour) => <i key={colour} style={{ background: colour }} />)}
+              </div>
+            </div>
+          </div>
           <div className="knowledge-theme-card"><div className="knowledge-theme-orb"><Palette size={24} /></div><div><span>Achievement style</span><strong>{plan.badge}</strong></div></div>
           <div className="knowledge-theme-card"><div className="knowledge-theme-orb alt"><Trophy size={24} /></div><div><span>Suggested challenge</span><strong>{plan.challenge}</strong></div></div>
           <div className="knowledge-alert-card"><Bell size={18} /><p>{plan.alert}</p></div>

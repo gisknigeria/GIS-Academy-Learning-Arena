@@ -1,5 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { apiRequest } from "../lib/api";
+import { profileApi } from "../lib/profile-api";
+import { loadKnowledgeHubPreferences, mergeKnowledgeHubPreferences, saveKnowledgeHubPreferences } from "../data/knowledgeHub";
 import type { AuthResponse, AuthUser, UserRole } from "../types/auth";
 
 type LoginPayload = {
@@ -45,6 +47,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(Boolean(token));
 
+  async function syncPersonalization(accessToken: string) {
+    try {
+      const fullUser = await profileApi.getMe(accessToken);
+      const preferences = mergeKnowledgeHubPreferences(loadKnowledgeHubPreferences(), fullUser.profile);
+      saveKnowledgeHubPreferences(preferences);
+    } catch {
+      // Authentication should still succeed if profile personalization is temporarily unavailable.
+    }
+  }
+
   useEffect(() => {
     let isMounted = true;
 
@@ -58,6 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const currentUser = await apiRequest<AuthUser>("/auth/me", { token });
         if (isMounted) {
           setUser(currentUser);
+          void syncPersonalization(token);
         }
       } catch (err) {
         // Only clear the session on a 401 (invalid/expired token).
@@ -103,6 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const currentUser = await apiRequest<AuthUser>("/auth/me", { token });
     setUser(currentUser);
+    await syncPersonalization(token);
   }
 
   const value = useMemo<AuthContextValue>(
@@ -119,6 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem(TOKEN_KEY, response.accessToken);
         setToken(response.accessToken);
         setUser(response.user);
+        await syncPersonalization(response.accessToken);
       },
       async register(payload) {
         const response = await apiRequest<AuthResponse>("/auth/register", {
@@ -128,6 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem(TOKEN_KEY, response.accessToken);
         setToken(response.accessToken);
         setUser(response.user);
+        await syncPersonalization(response.accessToken);
       },
       async redeemPromo(code) {
         if (!token) {
