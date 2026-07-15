@@ -46,10 +46,10 @@ function App() {
         <Route path="/verify" element={<VerifyPage />} />
         <Route path="/verify/:verificationId" element={<VerifyPage />} />
         <Route element={<ProtectedRoute />}>
+          <Route path="/onboarding" element={<OnboardingPage />} />
           <Route element={<DashboardLayout />}>
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/onboarding" element={<OnboardingPage />} />
             <Route path="/personalize" element={<KnowledgeHubPage />} />
             <Route path="/knowledge-hub" element={<Navigate to="/personalize" replace />} />
             <Route element={<RoleRoute page="courses" />}>

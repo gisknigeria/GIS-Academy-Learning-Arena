@@ -125,6 +125,7 @@ model UserProfile {
   languagePreference  String?
   fontPreference      String?
   appearanceMode      String?
+  onboardingCompletedAt DateTime?
   avatarUrl            String?
   user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

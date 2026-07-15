@@ -5,7 +5,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { QueryUsersDto } from "./dto/query-users.dto";
 
-export type SafeUser = Omit<User, "passwordHash">;
+export type SafeUser = Omit<User, "passwordHash"> & { onboardingCompleted?: boolean };
 
 /** Roles that cannot be assigned by an ADMIN (only SUPER_ADMIN may grant them). */
 const SUPER_ADMIN_ONLY_ROLES: UserRole[] = [UserRole.SUPER_ADMIN];
@@ -66,11 +66,12 @@ export class UsersService {
   async findByEmail(email: string) {
     return this.prisma.user.findUnique({
       where: { email: email.toLowerCase() },
+      include: { profile: true },
     });
   }
 
-  async findSafeById(id: string): Promise<SafeUser> {
-    const user = await this.prisma.user.findUnique({ where: { id } });
+  async findSafeById(id: string) {
+    const user = await this.prisma.user.findUnique({ where: { id }, include: { profile: true } });
 
     if (!user) {
       throw new NotFoundException("User not found.");
@@ -294,15 +295,18 @@ export class UsersService {
     languagePreference?: string;
     fontPreference?: string;
     appearanceMode?: string;
+    onboardingCompleted?: boolean;
     avatarUrl?: string;
   }) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException("User not found.");
 
+    const { onboardingCompleted, ...profileFields } = dto;
+    const completion = onboardingCompleted ? { onboardingCompletedAt: new Date() } : {};
     const profile = await this.prisma.userProfile.upsert({
       where: { userId },
-      update: dto,
-      create: { userId, ...dto },
+      update: { ...profileFields, ...completion },
+      create: { userId, ...profileFields, ...completion },
     });
 
     return profile;
@@ -323,8 +327,9 @@ export class UsersService {
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
 
-  toSafeUser(user: User): SafeUser {
-    const { passwordHash: _passwordHash, ...safeUser } = user;
-    return safeUser;
+  toSafeUser(user: User & { profile?: { onboardingCompletedAt?: Date | null; ageBand?: string | null; trainingCategory?: string | null; preferredMode?: string | null; learningGoal?: string | null } | null }) {
+    const { passwordHash: _passwordHash, profile, ...safeUser } = user;
+    const hasLegacyOnboarding = Boolean(profile?.ageBand && profile?.trainingCategory && profile?.preferredMode && profile?.learningGoal);
+    return { ...safeUser, onboardingCompleted: Boolean(profile?.onboardingCompletedAt || hasLegacyOnboarding) };
   }
 }

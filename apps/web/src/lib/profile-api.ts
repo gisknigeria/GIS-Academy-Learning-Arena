@@ -25,6 +25,7 @@ export type UserProfile = {
   languagePreference?: string | null;
   fontPreference?: string | null;
   appearanceMode?: string | null;
+  onboardingCompletedAt?: string | null;
   avatarUrl?: string | null;
 };
 
@@ -39,7 +40,9 @@ export type UpdateMePayload = {
   phone?: string;
 };
 
-export type UpdateProfilePayload = Partial<Omit<UserProfile, "id" | "userId">>;
+export type UpdateProfilePayload = Partial<Omit<UserProfile, "id" | "userId" | "onboardingCompletedAt">> & {
+  onboardingCompleted?: boolean;
+};
 
 export const profileApi = {
   getMe(token: string): Promise<FullUser> {

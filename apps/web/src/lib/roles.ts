@@ -61,7 +61,7 @@ export function isLearnerRole(role: UserRole): boolean {
 }
 
 export function getVisibleNavPages(role: UserRole): Set<PageId> {
-  const always: PageId[] = ["dashboard", "knowledge", "onboarding"];
+  const always: PageId[] = ["dashboard", "knowledge"];
   const byRole: Record<UserRole, PageId[]> = {
     SUPER_ADMIN: ["courses", "arena", "classes", "assessments", "certificates", "reports", "users"],
     ADMIN: ["courses", "arena", "classes", "assessments", "certificates", "reports", "users"],

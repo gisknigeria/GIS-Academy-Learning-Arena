@@ -22,6 +22,7 @@ export type AuthUser = {
   role: UserRole;
   status: "ACTIVE" | "PENDING" | "SUSPENDED";
   paymentStatus: PaymentStatus;
+  onboardingCompleted?: boolean;
 };
 
 export type AuthResponse = {

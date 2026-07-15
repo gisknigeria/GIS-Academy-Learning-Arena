@@ -6,13 +6,6 @@ import { useAuth } from "../context/AuthContext";
 import { profileApi, type FullUser, type UpdateProfilePayload } from "../lib/profile-api";
 import { getRoleLabel } from "../lib/roles";
 
-const DELIVERY_MODE_OPTIONS = [
-  { value: "", label: "No preference" },
-  { value: "E_LEARNING", label: "E-Learning" },
-  { value: "ONSITE", label: "Onsite" },
-  { value: "HYBRID", label: "Hybrid" },
-];
-
 const PAYMENT_STATUS_LABELS: Record<string, string> = {
   NOT_REQUIRED: "Not required",
   PENDING: "Pending",
@@ -55,10 +48,8 @@ export function ProfilePage() {
         state: data.profile?.state ?? "",
         lga: data.profile?.lga ?? "",
         community: data.profile?.community ?? "",
-        institution: data.profile?.institution ?? "",
         profession: data.profile?.profession ?? "",
         highestQualification: data.profile?.highestQualification ?? "",
-        preferredMode: data.profile?.preferredMode ?? "",
       });
     } catch {
       setError("Could not load your profile.");
@@ -249,14 +240,6 @@ export function ProfilePage() {
             <form className="profile-form" onSubmit={(e) => void handleSaveProfile(e)}>
               <div className="profile-form-grid">
                 <label>
-                  Institution / School
-                  <input
-                    value={profileForm.institution ?? ""}
-                    onChange={(e) => setProfileForm({ ...profileForm, institution: e.target.value })}
-                    placeholder="University / company name"
-                  />
-                </label>
-                <label>
                   Profession
                   <input
                     value={profileForm.profession ?? ""}
@@ -314,17 +297,6 @@ export function ProfilePage() {
                     <option value="Other">Other</option>
                   </select>
                 </label>
-                <label>
-                  Preferred learning mode
-                  <select
-                    value={profileForm.preferredMode ?? ""}
-                    onChange={(e) => setProfileForm({ ...profileForm, preferredMode: e.target.value })}
-                  >
-                    {DELIVERY_MODE_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
-                </label>
               </div>
               {profileError ? <p className="form-error">{profileError}</p> : null}
               <div className="profile-form-actions">
@@ -340,7 +312,6 @@ export function ProfilePage() {
           ) : (
             <dl className="profile-dl">
               {[
-                ["Institution", fullUser.profile?.institution],
                 ["Profession", fullUser.profile?.profession],
                 ["Qualification", fullUser.profile?.highestQualification],
                 ["Country", fullUser.profile?.country],
@@ -348,7 +319,6 @@ export function ProfilePage() {
                 ["LGA", fullUser.profile?.lga],
                 ["Community", fullUser.profile?.community],
                 ["Gender", fullUser.profile?.gender],
-                ["Preferred mode", fullUser.profile?.preferredMode],
               ].map(([label, value]) => (
                 <div key={label as string}>
                   <dt>{label}</dt>

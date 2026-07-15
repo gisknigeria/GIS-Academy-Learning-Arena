@@ -35,5 +35,13 @@ export function ProtectedRoute() {
     );
   }
 
+  if (user && user.onboardingCompleted === false && location.pathname !== "/onboarding") {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  if (user?.onboardingCompleted && location.pathname === "/onboarding") {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return <Outlet />;
 }
