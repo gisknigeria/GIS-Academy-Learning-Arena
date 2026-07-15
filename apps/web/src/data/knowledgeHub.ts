@@ -117,7 +117,26 @@ export const competitionTypes = ["Live quiz", "Map challenge", "Coding sprint", 
 export const courseInterests = ["GIS and Mapping", "Artificial Intelligence", "Cybersecurity", "Agriculture Technology", "Fintech", "Media", "Climate", "Entrepreneurship", "Software Development"];
 export const notificationPreferences = ["Daily motivation", "Competition alerts", "Trainer feedback", "Weekly digest", "Certificates and badges", "Minimal notifications"];
 export const languagePreferences = ["English", "Pidgin", "Yoruba", "Hausa", "Igbo", "French"];
-export const fontPreferences = ["Inter", "Poppins", "Nunito", "Atkinson Hyperlegible", "Merriweather", "DM Sans", "Manrope", "Lexend", "Roboto Serif", "Lora", "Source Sans 3", "Space Grotesk"];
+export const fontPreferences = [
+  "Inter",
+  "Poppins",
+  "Nunito",
+  "Atkinson Hyperlegible",
+  "Merriweather",
+  "DM Sans",
+  "Manrope",
+  "Lexend",
+  "Roboto Serif",
+  "Lora",
+  "Source Sans 3",
+  "Space Grotesk",
+  "Playfair Display",
+  "Montserrat",
+  "Cormorant Garamond",
+  "Outfit",
+  "Sora",
+  "Fraunces",
+];
 export const appearanceModes = ["Light", "Dark", "System"] as const;
 
 export const platformModules = [
@@ -295,9 +314,17 @@ export function applyKnowledgeHubPreferences(preferences: KnowledgeHubPreference
     Lora: '"Lora", Georgia, serif',
     "Source Sans 3": '"Source Sans 3", "Inter", ui-sans-serif, system-ui, sans-serif',
     "Space Grotesk": '"Space Grotesk", "Inter", ui-sans-serif, system-ui, sans-serif',
+    "Playfair Display": '"Playfair Display", Georgia, serif',
+    Montserrat: '"Montserrat", "Inter", ui-sans-serif, system-ui, sans-serif',
+    "Cormorant Garamond": '"Cormorant Garamond", Georgia, serif',
+    Outfit: '"Outfit", "Inter", ui-sans-serif, system-ui, sans-serif',
+    Sora: '"Sora", "Inter", ui-sans-serif, system-ui, sans-serif',
+    Fraunces: '"Fraunces", Georgia, serif',
   };
   root.setProperty("--app-font", fontFamilies[preferences.fontPreference] || fontFamilies.Inter);
   document.documentElement.dataset.appearance = preferences.appearanceMode.toLowerCase();
+  document.documentElement.dataset.languagePreference = preferences.languagePreference;
+  document.documentElement.dataset.fontPreference = preferences.fontPreference.toLowerCase().replace(/[^a-z0-9]+/g, "-");
   const languageCodes: Record<string, string> = { English: "en", Pidgin: "pcm", Yoruba: "yo", Hausa: "ha", Igbo: "ig", French: "fr" };
   document.documentElement.lang = languageCodes[preferences.languagePreference] || "en";
 }

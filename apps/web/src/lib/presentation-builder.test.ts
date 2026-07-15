@@ -12,6 +12,9 @@ describe("presentation deck helpers", () => {
         templateId: "title",
         accent: "#2563eb",
         notes: "Introduce the theme.",
+        backgroundColor: "#f7fbff",
+        textColor: "#102a43",
+        fontFamily: "Playfair Display",
       },
     ];
 

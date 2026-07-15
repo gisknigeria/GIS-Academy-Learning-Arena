@@ -6,6 +6,7 @@ describe("knowledge hub preferences", () => {
   beforeEach(() => {
     localStorage.clear();
     document.documentElement.removeAttribute("data-appearance");
+    document.documentElement.removeAttribute("data-language-preference");
     document.documentElement.style.cssText = "";
   });
 
@@ -24,6 +25,19 @@ describe("knowledge hub preferences", () => {
     expect(document.documentElement.dataset.favoriteTheme).toBe("arsenal");
     expect(document.documentElement.lang).toBe("yo");
     expect(document.documentElement.style.getPropertyValue("--app-font")).toContain("DM Sans");
+  });
+
+  it("exposes richer font families and localized metadata", () => {
+    const preferences = {
+      ...defaultKnowledgeHubPreferences,
+      fontPreference: "Playfair Display",
+      languagePreference: "French",
+    };
+
+    applyKnowledgeHubPreferences(preferences);
+
+    expect(document.documentElement.dataset.languagePreference).toBe("French");
+    expect(document.documentElement.style.getPropertyValue("--app-font")).toContain("Playfair Display");
   });
 
   it("persists preferences and emits the live-update event", () => {

@@ -1,0 +1,26 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animated learning landscape">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f9fefb" />
+      <stop offset="100%" stop-color="#dceff2" />
+    </linearGradient>
+    <linearGradient id="hill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7fd0b3" />
+      <stop offset="100%" stop-color="#176b4d" />
+    </linearGradient>
+    <linearGradient id="water" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#5ed0ff" />
+      <stop offset="100%" stop-color="#2563eb" />
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#sky)" />
+  <circle cx="1220" cy="220" r="118" fill="#fff7c7" fill-opacity="0.8" />
+  <path d="M0 640 C220 560 420 560 580 620 C760 690 1000 710 1160 646 C1310 590 1470 566 1600 622 L1600 900 L0 900 Z" fill="#9cd8bf" fill-opacity="0.9" />
+  <path d="M0 688 C210 630 350 638 520 708 C690 774 1000 790 1220 720 C1380 672 1500 652 1600 676 L1600 900 L0 900 Z" fill="url(#hill)" fill-opacity="0.95" />
+  <path d="M0 740 C180 708 360 716 580 768 C750 808 1040 836 1280 792 C1420 764 1510 756 1600 772 L1600 900 L0 900 Z" fill="url(#water)" fill-opacity="0.9" />
+  <path d="M296 478 C332 402 424 350 486 364 C558 380 590 480 560 520 C530 562 450 590 396 566 C330 538 294 520 296 478 Z" fill="#3b82f6" fill-opacity="0.28" />
+  <path d="M1140 434 C1188 394 1270 372 1324 394 C1370 414 1388 466 1358 500 C1322 542 1244 560 1188 544 C1128 528 1088 486 1140 434 Z" fill="#0f766e" fill-opacity="0.24" />
+  <path d="M160 184 L230 136 L310 194 L244 238 Z" fill="#ffffff" fill-opacity="0.8" />
+  <path d="M1100 126 L1188 82 L1280 138 L1202 188 Z" fill="#ffffff" fill-opacity="0.65" />
+  <path d="M780 218 C820 180 880 174 918 196 C956 220 960 274 924 300 C888 326 828 332 790 306 C752 280 742 250 780 218 Z" fill="#f59e0b" fill-opacity="0.22" />
+</svg>

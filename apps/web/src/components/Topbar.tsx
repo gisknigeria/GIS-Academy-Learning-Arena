@@ -12,6 +12,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
   const { t } = useLocalization();
   const initials = user?.fullName.split(" ").filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase() ?? "GA";
   const displayRole = user?.role ? user.role.replaceAll("_", " ") : "Member";
+  const profileLabel = t("common.profile", "My profile");
 
   return (
     <header className="topbar" role="banner">
@@ -25,7 +26,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
       <button className="icon-button" aria-label={t("common.notifications")} type="button">
         <Bell size={20} aria-hidden="true" />
       </button>
-      <Link to="/profile" className="profile topbar-profile-link" aria-label={`My profile - ${user?.fullName ?? "GIS User"}`}>
+      <Link to="/profile" className="profile topbar-profile-link" aria-label={`${profileLabel} - ${user?.fullName ?? "GIS User"}`}>
         <span aria-hidden="true">{initials}</span>
         <div><strong>{user?.fullName ?? "GIS User"}</strong><small>{displayRole}</small></div>
       </Link>

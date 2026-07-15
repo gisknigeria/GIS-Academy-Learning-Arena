@@ -32,6 +32,12 @@ export type PresentationSlide = {
   statValue?: string;
   /** Optional label for the stat */
   statLabel?: string;
+  /** Optional slide background colour */
+  backgroundColor?: string;
+  /** Optional slide text colour */
+  textColor?: string;
+  /** Optional slide font family */
+  fontFamily?: string;
 };
 
 export type PresentationDeck = {
@@ -171,6 +177,9 @@ export function createDefaultDeck(): PresentationDeck {
         templateId: "title",
         accent: "#2563eb",
         notes: "Welcome learners, share the session goals.",
+        backgroundColor: "#ffffff",
+        textColor: "#102a43",
+        fontFamily: "Inter",
       },
     ],
   };

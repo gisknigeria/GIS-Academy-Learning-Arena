@@ -30,6 +30,9 @@ function newSlide(index: number, templateId: PresentationTemplateId = "title"): 
     templateId,
     accent: "#2563eb",
     notes: "",
+    backgroundColor: "#ffffff",
+    textColor: "#102a43",
+    fontFamily: "Inter",
   };
 }
 
@@ -76,7 +79,15 @@ function SlidePreview({ slide, template }: { slide: PresentationSlide; template:
   const items = slide.items?.filter(Boolean) ?? [];
 
   return (
-    <div className={`pb-preview pb-preview--${template.layout}`} style={{ "--slide-accent": slide.accent } as React.CSSProperties}>
+    <div
+      className={`pb-preview pb-preview--${template.layout}`}
+      style={{
+        "--slide-accent": slide.accent,
+        background: slide.backgroundColor || "#ffffff",
+        color: slide.textColor || "#102a43",
+        fontFamily: slide.fontFamily || "Inter",
+      } as React.CSSProperties}
+    >
       <div className="pb-preview__accent-bar" />
       <div className="pb-preview__content">
         {/* eyebrow / subtitle */}
@@ -208,6 +219,69 @@ function SlideEditor({
         </div>
       </div>
 
+      <div className="pb-field-row">
+        <label className="pb-field">
+          Background
+          <div className="pb-color-control">
+            <input
+              type="color"
+              value={slide.backgroundColor || "#ffffff"}
+              onChange={(e) => onUpdate({ ...slide, backgroundColor: e.target.value })}
+              className="pb-accent-custom"
+              aria-label="Slide background colour"
+            />
+            <input
+              value={slide.backgroundColor || "#ffffff"}
+              onChange={(e) => onUpdate({ ...slide, backgroundColor: e.target.value })}
+              placeholder="#ffffff"
+            />
+          </div>
+        </label>
+        <label className="pb-field">
+          Text colour
+          <div className="pb-color-control">
+            <input
+              type="color"
+              value={slide.textColor || "#102a43"}
+              onChange={(e) => onUpdate({ ...slide, textColor: e.target.value })}
+              className="pb-accent-custom"
+              aria-label="Slide text colour"
+            />
+            <input
+              value={slide.textColor || "#102a43"}
+              onChange={(e) => onUpdate({ ...slide, textColor: e.target.value })}
+              placeholder="#102a43"
+            />
+          </div>
+        </label>
+      </div>
+
+      <label className="pb-field">
+        Font family
+        <select
+          value={slide.fontFamily || "Inter"}
+          onChange={(e) => onUpdate({ ...slide, fontFamily: e.target.value })}
+        >
+          {[
+            "Inter",
+            "Poppins",
+            "Nunito",
+            "Playfair Display",
+            "Montserrat",
+            "Merriweather",
+            "Lora",
+            "Manrope",
+            "DM Sans",
+            "Space Grotesk",
+            "Roboto Serif",
+            "Source Sans 3",
+            "Sora",
+            "Fraunces",
+            "Cormorant Garamond",
+          ].map((font) => <option key={font} value={font}>{font}</option>)}
+        </select>
+      </label>
+
       {hasSubtitle && (
         <label className="pb-field">
           Subtitle / eyebrow
@@ -299,6 +373,13 @@ export function PresentationDeckBuilder({ value, onChange, onClear }: Props) {
           description: typeof parsed.description === "string" ? parsed.description : "",
           slides: parsed.slides as PresentationSlide[],
         };
+        const currentSerialized = serializePresentationDeck(deck);
+        const incomingSerialized = serializePresentationDeck(next);
+        if (incomingSerialized === currentSerialized) {
+          if (activeSlideId && next.slides.some((slide) => slide.id === activeSlideId)) return;
+          setActiveSlideId(next.slides[0]?.id ?? "");
+          return;
+        }
         setDeck(next);
         setActiveSlideId(next.slides[0]?.id ?? "");
         return;

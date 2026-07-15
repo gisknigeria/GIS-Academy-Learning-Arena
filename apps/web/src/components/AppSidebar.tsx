@@ -20,6 +20,8 @@ export function AppSidebar({ activePage, isOpen, onClose }: AppSidebarProps) {
   const { t } = useLocalization();
   const role = user?.role ?? "GUEST";
   const visiblePages = getVisibleNavPages(role);
+  const brandTitle = t("app.brand", "Knowledge Hub");
+  const brandTagline = t("app.tagline", "Personalised learning");
 
   const visibleNavItems = navItems.filter((item) => visiblePages.has(item.id));
 
@@ -31,8 +33,8 @@ export function AppSidebar({ activePage, isOpen, onClose }: AppSidebarProps) {
           <img src={logoMark} alt="Knowledge Hub logo" />
         </div>
         <div>
-          <strong>Knowledge Hub</strong>
-          <span>Personalised Learning</span>
+          <strong>{brandTitle}</strong>
+          <span>{brandTagline}</span>
         </div>
 
         {/* Close button — visible on mobile only */}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState, type CSSProperties, type MouseEvent } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { AppSidebar } from "../components/AppSidebar";
 import { Topbar } from "../components/Topbar";
@@ -23,6 +23,17 @@ export function DashboardLayout() {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { preferences } = useTheme();
+
+  useEffect(() => {
+    const handlePointerMove = (event: MouseEvent) => {
+      const x = event.clientX / window.innerWidth;
+      const y = event.clientY / window.innerHeight;
+      document.documentElement.style.setProperty("--pointer-x", `${(x * 100).toFixed(2)}%`);
+      document.documentElement.style.setProperty("--pointer-y", `${(y * 100).toFixed(2)}%`);
+    };
+    window.addEventListener("mousemove", handlePointerMove as EventListener);
+    return () => window.removeEventListener("mousemove", handlePointerMove as EventListener);
+  }, []);
 
   const activePage =
     (Object.entries(routeToPage).find(([path]) =>

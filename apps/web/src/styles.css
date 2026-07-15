@@ -9,7 +9,7 @@
    1. VARIABLES — DESIGN TOKENS
    ============================================================================= */
 
-@import url("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=DM+Sans:wght@400;500;700&family=Inter:wght@400;500;600;700;800;900&family=Lexend:wght@400;500;600;700&family=Lora:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Merriweather:wght@400;700&family=Nunito:wght@400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800&family=Roboto+Serif:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@400;500;700&family=Fraunces:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800;900&family=Lexend:wght@400;500;600;700&family=Lora:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Merriweather:wght@400;700&family=Montserrat:wght@400;500;600;700;800&family=Nunito:wght@400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800&family=Roboto+Serif:wght@400;500;600;700&family=Sora:wght@400;500;600;700;800&family=Source+Sans+3:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;700&display=swap");
 
 :root {
   /* ── Font ── */
@@ -90,6 +90,35 @@ body {
   color: var(--color-text);
   font-size: 15px;
   line-height: 1.5;
+  position: relative;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: -12%;
+  z-index: -2;
+  background:
+    linear-gradient(120deg, rgba(31, 166, 106, 0.16), transparent 32%),
+    radial-gradient(circle at var(--pointer-x, 50%) var(--pointer-y, 50%), rgba(37, 99, 235, 0.16), transparent 30%),
+    url("/ambient-illustration.svg");
+  background-size: cover;
+  background-position: center;
+  opacity: 0.24;
+  pointer-events: none;
+  animation: ambient-float 24s ease-in-out infinite;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(circle at top left, rgba(216, 255, 120, 0.18), transparent 22%),
+    radial-gradient(circle at bottom right, rgba(15, 118, 110, 0.14), transparent 24%);
+  pointer-events: none;
+  animation: ambient-shift 20s ease-in-out infinite alternate;
 }
 
 a {
@@ -7479,6 +7508,16 @@ body {
     linear-gradient(135deg, #f6fbf7 0%, #edf8f1 50%, #f8fbff 100%);
 }
 
+@keyframes ambient-float {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-2%, 2%, 0) scale(1.04); }
+}
+
+@keyframes ambient-shift {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(1.5%, -1.2%, 0); }
+}
+
 /* =============================================================================
    END OF styles.css
    ============================================================================= */
@@ -8720,6 +8759,26 @@ html[data-learning-style="mentorship-track"] .ambient-token {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+}
+
+.pb-color-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pb-color-control input[type="color"] {
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.pb-color-control input[type="text"],
+.pb-color-control input:not([type="color"]) {
+  flex: 1;
 }
 
 /* Items editor (steps, agenda, etc.) */
