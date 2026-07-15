@@ -1,5 +1,6 @@
-import { Bell, BookOpen, CheckCircle2, Loader2, Palette, Save, Sparkles, Trophy } from "lucide-react";
+import { Bell, CheckCircle2, Loader2, MapPin, Palette, Save, Sparkles, Trophy } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { SectionHeading } from "../components/SectionHeading";
 import { useAuth } from "../context/AuthContext";
 import { useLocalization } from "../context/LocalizationContext";
@@ -100,49 +101,39 @@ export function KnowledgeHubPage() {
         </div>
       </header>
 
+      {/* Nudge towards onboarding for users who haven't set up their profile */}
+      <div className="personalize-onboarding-nudge">
+        <MapPin size={16} />
+        <span>
+          First time here? Complete the{" "}
+          <Link to="/onboarding">
+            <Sparkles size={13} /> Onboarding wizard
+          </Link>{" "}
+          to set up your learner profile step by step.
+        </span>
+      </div>
+
       <section className="knowledge-grid">
         <article className="knowledge-panel">
-          <SectionHeading eyebrow={t("nav.knowledge")} title={t("personalize.setup")} compact />
+          <SectionHeading eyebrow={t("nav.knowledge")} title="Fine-tune your preferences" compact />
 
-          <div className="knowledge-onboarding-layout">
-            <div className="knowledge-onboarding-card">
-              <div className="knowledge-onboarding-card__header">
-                <span className="knowledge-onboarding-step">1</span>
-                <div>
-                  <strong>Onboarding basics</strong>
-                  <p>Set your learner profile so your first path feels familiar and relevant.</p>
-                </div>
-              </div>
-              <div className="knowledge-form-grid">
-                <label>{t("personalize.age")}<select value={preferences.ageBand} onChange={(event) => updatePreference("ageBand", event.target.value)}>{ageBands.map((option) => <option key={option}>{option}</option>)}</select></label>
-                <label>{t("personalize.organisation")}<input value={preferences.organisation} onChange={(event) => updatePreference("organisation", event.target.value)} placeholder="School, academy, or company" /></label>
-                <label>{t("personalize.category")}<select value={preferences.trainingCategory} onChange={(event) => updatePreference("trainingCategory", event.target.value)}>{trainingCategories.map((option) => <option key={option}>{option}</option>)}</select></label>
-                <label>{t("personalize.mode")}<select value={preferences.learningMode} onChange={(event) => updatePreference("learningMode", event.target.value as KnowledgeHubPreferences["learningMode"])}>{knowledgeLearningModes.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
-                <label>{t("personalize.goal")}<select value={preferences.learningGoal} onChange={(event) => updatePreference("learningGoal", event.target.value)}>{learningGoals.map((option) => <option key={option}>{option}</option>)}</select></label>
-              </div>
-            </div>
-
-            <div className="knowledge-onboarding-card">
-              <div className="knowledge-onboarding-card__header">
-                <span className="knowledge-onboarding-step step-accent">2</span>
-                <div>
-                  <strong>Personalise your experience</strong>
-                  <p>Fine-tune interests, style and the look of the app.</p>
-                </div>
-              </div>
-              <div className="knowledge-form-grid">
-                <label>{t("personalize.interest")}<select value={preferences.fanCategory} onChange={(event) => updateCategory(event.target.value as PreferenceCategoryKey)}>{preferenceCategories.map((category) => <option key={category.key} value={category.key}>{category.label}</option>)}</select></label>
-                <label>{t("personalize.favorite")}<select value={preferences.favorite} onChange={(event) => updatePreference("favorite", event.target.value)}>{selectedCategory.options.map((option) => <option key={option}>{option}</option>)}</select></label>
-                <label>{t("personalize.style")}<select value={preferences.learningStyle} onChange={(event) => updatePreference("learningStyle", event.target.value)}>{learningStyles.map((option) => <option key={option}>{option}</option>)}</select></label>
-                <label>{t("personalize.challenge")}<select value={preferences.competitionType} onChange={(event) => updatePreference("competitionType", event.target.value)}>{competitionTypes.map((option) => <option key={option}>{option}</option>)}</select></label>
-                <label>{t("personalize.course")}<select value={preferences.courseInterest} onChange={(event) => updatePreference("courseInterest", event.target.value)}>{courseInterests.map((option) => <option key={option}>{option}</option>)}</select></label>
-                <label>{t("personalize.notifications")}<select value={preferences.notificationPreference} onChange={(event) => updatePreference("notificationPreference", event.target.value)}>{notificationPreferences.map((option) => <option key={option}>{option}</option>)}</select></label>
-                <label>{t("personalize.language")}<select value={preferences.languagePreference} onChange={(event) => updatePreference("languagePreference", event.target.value)}>{languagePreferences.map((option) => <option key={option}>{option}</option>)}</select></label>
-                <label>{t("personalize.font")}<select value={preferences.fontPreference} onChange={(event) => updatePreference("fontPreference", event.target.value)}>{fontPreferences.map((option) => <option key={option}>{option}</option>)}</select></label>
-                <label>{t("personalize.appearance")}<select value={preferences.appearanceMode} onChange={(event) => updatePreference("appearanceMode", event.target.value as KnowledgeHubPreferences["appearanceMode"])}>{appearanceModes.map((option) => <option key={option}>{option}</option>)}</select></label>
-              </div>
-            </div>
+          <div className="knowledge-form-grid" style={{ marginTop: 16 }}>
+            <label>{t("personalize.age")}<select value={preferences.ageBand} onChange={(e) => updatePreference("ageBand", e.target.value)}>{ageBands.map((o) => <option key={o}>{o}</option>)}</select></label>
+            <label>{t("personalize.organisation")}<input value={preferences.organisation} onChange={(e) => updatePreference("organisation", e.target.value)} placeholder="School, academy, or company" /></label>
+            <label>{t("personalize.category")}<select value={preferences.trainingCategory} onChange={(e) => updatePreference("trainingCategory", e.target.value)}>{trainingCategories.map((o) => <option key={o}>{o}</option>)}</select></label>
+            <label>{t("personalize.mode")}<select value={preferences.learningMode} onChange={(e) => updatePreference("learningMode", e.target.value as KnowledgeHubPreferences["learningMode"])}>{knowledgeLearningModes.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select></label>
+            <label>{t("personalize.goal")}<select value={preferences.learningGoal} onChange={(e) => updatePreference("learningGoal", e.target.value)}>{learningGoals.map((o) => <option key={o}>{o}</option>)}</select></label>
+            <label>{t("personalize.interest")}<select value={preferences.fanCategory} onChange={(e) => updateCategory(e.target.value as PreferenceCategoryKey)}>{preferenceCategories.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}</select></label>
+            <label>{t("personalize.favorite")}<select value={preferences.favorite} onChange={(e) => updatePreference("favorite", e.target.value)}>{selectedCategory.options.map((o) => <option key={o}>{o}</option>)}</select></label>
+            <label>{t("personalize.style")}<select value={preferences.learningStyle} onChange={(e) => updatePreference("learningStyle", e.target.value)}>{learningStyles.map((o) => <option key={o}>{o}</option>)}</select></label>
+            <label>{t("personalize.challenge")}<select value={preferences.competitionType} onChange={(e) => updatePreference("competitionType", e.target.value)}>{competitionTypes.map((o) => <option key={o}>{o}</option>)}</select></label>
+            <label>{t("personalize.course")}<select value={preferences.courseInterest} onChange={(e) => updatePreference("courseInterest", e.target.value)}>{courseInterests.map((o) => <option key={o}>{o}</option>)}</select></label>
+            <label>{t("personalize.notifications")}<select value={preferences.notificationPreference} onChange={(e) => updatePreference("notificationPreference", e.target.value)}>{notificationPreferences.map((o) => <option key={o}>{o}</option>)}</select></label>
+            <label>{t("personalize.language")}<select value={preferences.languagePreference} onChange={(e) => updatePreference("languagePreference", e.target.value)}>{languagePreferences.map((o) => <option key={o}>{o}</option>)}</select></label>
+            <label>{t("personalize.font")}<select value={preferences.fontPreference} onChange={(e) => updatePreference("fontPreference", e.target.value)}>{fontPreferences.map((o) => <option key={o}>{o}</option>)}</select></label>
+            <label>{t("personalize.appearance")}<select value={preferences.appearanceMode} onChange={(e) => updatePreference("appearanceMode", e.target.value as KnowledgeHubPreferences["appearanceMode"])}>{appearanceModes.map((o) => <option key={o}>{o}</option>)}</select></label>
           </div>
+
           <div className="personalize-save-row">
             <button className="primary-button knowledge-save-button" disabled={status === "saving"} onClick={() => void handleSave()} type="button">
               {status === "saving" ? <Loader2 className="spin" size={18} /> : status === "saved" ? <CheckCircle2 size={18} /> : <Save size={18} />}

@@ -6,6 +6,7 @@ import type { PageId } from "../types/navigation";
 
 const routeToPage: Record<string, PageId> = {
   "/dashboard": "dashboard",
+  "/onboarding": "onboarding",
   "/personalize": "knowledge",
   "/courses": "courses",
   "/learn": "learn",

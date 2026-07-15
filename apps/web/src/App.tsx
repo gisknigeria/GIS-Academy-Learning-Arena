@@ -24,6 +24,7 @@ const CompetitionDetailPage = lazy(() => import("./pages/CompetitionDetailPage")
 const CompetitionChallengePage = lazy(() => import("./pages/CompetitionChallengePage").then((module) => ({ default: module.CompetitionChallengePage })));
 const DashboardPage = lazy(() => import("./pages/DashboardPage").then((module) => ({ default: module.DashboardPage })));
 const KnowledgeHubPage = lazy(() => import("./pages/KnowledgeHubPage").then((module) => ({ default: module.KnowledgeHubPage })));
+const OnboardingPage = lazy(() => import("./pages/OnboardingPage").then((module) => ({ default: module.OnboardingPage })));
 const LearnPage = lazy(() => import("./pages/LearnPage").then((module) => ({ default: module.LearnPage })));
 const LoginPage = lazy(() => import("./pages/LoginPage").then((module) => ({ default: module.LoginPage })));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage").then((module) => ({ default: module.NotFoundPage })));
@@ -48,6 +49,7 @@ function App() {
           <Route element={<DashboardLayout />}>
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/onboarding" element={<OnboardingPage />} />
             <Route path="/personalize" element={<KnowledgeHubPage />} />
             <Route path="/knowledge-hub" element={<Navigate to="/personalize" replace />} />
             <Route element={<RoleRoute page="courses" />}>

@@ -5,6 +5,7 @@ import {
   BookOpenCheck,
   ClipboardList,
   GraduationCap,
+  MapPin,
   Presentation,
   Sparkles,
   Trophy,
@@ -23,6 +24,7 @@ export type NavigationItem = {
 
 export const navItems: NavigationItem[] = [
   { id: "dashboard", label: "Dashboard", icon: Activity, path: "/dashboard" },
+  { id: "onboarding", label: "Onboarding", icon: MapPin, path: "/onboarding" },
   { id: "knowledge", label: "Personalize", icon: Sparkles, path: "/personalize" },
   { id: "courses", label: "Courses", icon: GraduationCap, path: "/courses" },
   { id: "teachspace", label: "TeachSpace", icon: Presentation, path: "/teachspace" },
