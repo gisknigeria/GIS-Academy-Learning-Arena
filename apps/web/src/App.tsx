@@ -30,6 +30,7 @@ const NotFoundPage = lazy(() => import("./pages/NotFoundPage").then((module) => 
 const RegisterPage = lazy(() => import("./pages/RegisterPage").then((module) => ({ default: module.RegisterPage })));
 const ReportsPage = lazy(() => import("./pages/ReportsPage").then((module) => ({ default: module.ReportsPage })));
 const UsersPage = lazy(() => import("./pages/UsersPage").then((module) => ({ default: module.UsersPage })));
+const TeachSpacePage = lazy(() => import("./pages/TeachSpacePage").then((module) => ({ default: module.TeachSpacePage })));
 const ProfilePage = lazy(() => import("./pages/ProfilePage").then((module) => ({ default: module.ProfilePage })));
 const VerifyPage = lazy(() => import("./pages/VerifyPage").then((module) => ({ default: module.VerifyPage })));
 
@@ -54,6 +55,7 @@ function App() {
               <Route path="/courses/:id" element={<CourseDetailPage />} />
               <Route path="/courses/:courseId/lessons/:lessonId" element={<LessonPlayerPage />} />
             </Route>
+            <Route path="/teachspace" element={<TeachSpacePage />} />
             <Route element={<RoleRoute page="learn" />}>
               <Route path="/learn" element={<LearnPage />} />
               <Route path="/live-sessions/:sessionId" element={<LiveSessionPage />} />

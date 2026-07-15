@@ -8,4 +8,5 @@ export type PageId =
   | "certificates"
   | "reports"
   | "courses"
+  | "teachspace"
   | "users";

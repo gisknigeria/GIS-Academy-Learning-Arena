@@ -3,6 +3,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { AssignmentSection } from "../components/AssignmentSection";
 import { PaymentGate } from "../components/PaymentGate";
+import { PresentationDeckBuilder } from "../components/PresentationDeckBuilder";
 import { SectionHeading } from "../components/SectionHeading";
 import { useAuth } from "../context/AuthContext";
 import { coursesApi } from "../lib/courses-api";
@@ -738,17 +739,20 @@ export function CourseDetailPage() {
                   onFileChange={(file) => void uploadMaterial(file, "subtitleUrl")}
                   onClear={() => setForm({ ...form, subtitleUrl: "" })}
                 />
-                <MaterialField
-                  type="PowerPoint"
-                  label="PowerPoint / slides"
-                  value={form.slideUrl}
-                  uploading={uploadingMaterial === "slideUrl"}
-                  hint="Upload PowerPoint, PDF, or slide deck material."
-                  accept=".ppt,.pptx,.pdf"
-                  onUrlChange={(value) => setForm({ ...form, slideUrl: value })}
-                  onFileChange={(file) => void uploadMaterial(file, "slideUrl")}
-                  onClear={() => setForm({ ...form, slideUrl: "" })}
-                />
+                <div className="lesson-material-field lesson-material-field--builder">
+                  <div className="lesson-material-field-heading">
+                    <span className="lesson-material-field-icon"><Presentation size={14} /></span>
+                    <div>
+                      <strong>Editable slide deck</strong>
+                      <span>Build a lesson presentation without uploading a PowerPoint file.</span>
+                    </div>
+                  </div>
+                  <PresentationDeckBuilder
+                    value={form.slideUrl}
+                    onChange={(value) => setForm({ ...form, slideUrl: value })}
+                    onClear={() => setForm({ ...form, slideUrl: "" })}
+                  />
+                </div>
                 <MaterialField
                   type="GIS / Map"
                   label="Map file"

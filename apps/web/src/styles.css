@@ -2301,6 +2301,93 @@ textarea {
   gap: 14px;
 }
 
+.teachspace-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 16px 18px;
+  border: 1px solid #d7efdf;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f5fbf7, #ebf7ee);
+}
+
+.teachspace-hero strong {
+  display: block;
+  color: var(--green-900);
+  font-size: 1rem;
+}
+
+.teachspace-hero p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.teachspace-hero__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--green-700);
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.teachspace-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.teachspace-card {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  padding: 14px;
+}
+
+.teachspace-card--full {
+  gap: 12px;
+}
+
+.teachspace-card__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--green-900);
+  font-size: 0.84rem;
+  font-weight: 900;
+}
+
+.teachspace-card__header span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.teachspace-card select {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  padding: 0 10px;
+  font: inherit;
+}
+
+.teachspace-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .lesson-form-full-field {
   grid-column: 1 / -1;
 }
@@ -2415,6 +2502,221 @@ textarea {
   border-radius: 8px;
   background: #fbfdfc;
   padding: 14px;
+}
+
+.lesson-material-field--builder {
+  grid-column: 1 / -1;
+}
+
+.presentation-builder {
+  display: grid;
+  gap: 12px;
+}
+
+.presentation-builder__header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.presentation-builder__header strong {
+  display: block;
+  color: var(--green-900);
+  font-size: 0.92rem;
+}
+
+.presentation-builder__header span {
+  color: var(--muted);
+  font-size: 0.74rem;
+  line-height: 1.45;
+}
+
+.presentation-builder__meta {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.presentation-builder__meta label,
+.presentation-builder__slide-editor label {
+  display: grid;
+  gap: 6px;
+  color: var(--ink);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.presentation-builder__meta input,
+.presentation-builder__slide-editor input,
+.presentation-builder__slide-editor textarea,
+.presentation-builder__slide-editor select {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  padding: 9px 10px;
+  font: inherit;
+}
+
+.presentation-builder__editor {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+}
+
+.presentation-builder__slide-list {
+  display: grid;
+  gap: 8px;
+}
+
+.presentation-builder__slide-card,
+.presentation-builder__add-slide {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  padding: 10px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.presentation-builder__slide-card span {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: #e8f6ed;
+  color: var(--green-700);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.presentation-builder__slide-card div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.presentation-builder__slide-card strong,
+.presentation-builder__slide-card small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.presentation-builder__slide-card small {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.presentation-builder__slide-card.is-active {
+  border-color: #9fd3b3;
+  background: #f5fbf7;
+}
+
+.presentation-builder__add-slide {
+  justify-content: center;
+  color: var(--green-700);
+  font-weight: 800;
+}
+
+.presentation-builder__slide-editor {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  padding: 12px;
+}
+
+.presentation-builder__template-row {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) 110px;
+}
+
+.presentation-builder__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.presentation-builder__preview {
+  display: grid;
+  gap: 8px;
+}
+
+.presentation-builder__preview-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.presentation-builder__preview-title strong {
+  color: var(--green-900);
+  font-size: 0.84rem;
+}
+
+.presentation-builder__preview-title span {
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
+.presentation-preview {
+  display: grid;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.presentation-preview__accent {
+  height: 6px;
+}
+
+.presentation-preview__body {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+}
+
+.presentation-preview__pill {
+  justify-self: start;
+  border-radius: 999px;
+  background: #edf7f1;
+  color: var(--green-700);
+  padding: 5px 8px;
+  font-size: 0.7rem;
+  font-weight: 900;
+}
+
+.presentation-preview__body h4 {
+  margin: 0;
+  color: var(--green-900);
+  font-size: 1rem;
+}
+
+.presentation-preview__body p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.presentation-preview__body ul {
+  margin: 0;
+  padding-left: 16px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  display: grid;
+  gap: 4px;
 }
 
 .lesson-material-field.has-material {
