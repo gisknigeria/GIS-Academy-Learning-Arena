@@ -8638,6 +8638,11 @@ html[data-learning-style="mentorship-track"] .ambient-token {
   border-radius: 10px;
   overflow: hidden;
   box-shadow: var(--shadow);
+  min-height: 80vh;
+}
+
+.pb-main__live-preview .pb-preview {
+  min-height: 80vh;
 }
 
 /* Slide editor form */
@@ -9127,7 +9132,7 @@ html[data-learning-style="mentorship-track"] .ambient-token {
 }
 
 .pb-preview-mode__stage .pb-preview {
-  min-height: 320px;
+  min-height: 80vh;
 }
 
 .pb-preview-mode__notes {
