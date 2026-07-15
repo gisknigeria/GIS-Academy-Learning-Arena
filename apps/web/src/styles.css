@@ -1673,58 +1673,418 @@ textarea {
    17. AUTH PAGES
    ============================================================================= */
 
+/* =============================================================================
+   AUTH PAGES — Login & Register — full redesign
+   ============================================================================= */
+
 .auth-page {
   display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(380px, 0.95fr);
+  grid-template-columns: 1fr minmax(420px, 520px);
   min-height: 100vh;
-  background: var(--color-bg);
+  background: #0c3326;
 }
 
+/* ── Left visual panel ── */
 .auth-visual {
+  position: relative;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: space-between;
   min-height: 100vh;
-  padding: clamp(28px, 6vw, 80px);
+  padding: clamp(32px, 6vw, 72px);
   color: #fff;
+  overflow: hidden;
+  /* Dark green overlay on top of a real photo — overlay keeps text readable */
   background:
-    linear-gradient(135deg, rgba(12,51,38,0.96), rgba(20,107,74,0.84)),
-    url("https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=1600&q=80");
-  background-position: center;
-  background-size: cover;
+    linear-gradient(160deg,
+      rgba(12, 51, 38, 0.88) 0%,
+      rgba(20, 107, 74, 0.78) 45%,
+      rgba(8,  42, 28, 0.92) 100%
+    ),
+    url("https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=1400&q=80")
+      center center / cover no-repeat;
+  /* Fallback colour while image loads */
+  background-color: #0c3326;
 }
 
-.auth-visual img {
-  width: 72px;
-  height: 72px;
-  border-radius: var(--radius-xl);
-  margin-bottom: 28px;
+/* Register page gets a different photo */
+.auth-page--register .auth-visual {
+  background:
+    linear-gradient(160deg,
+      rgba(12, 51, 38, 0.85) 0%,
+      rgba(20, 107, 74, 0.75) 45%,
+      rgba(8,  42, 28, 0.92) 100%
+    ),
+    url("https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1400&q=80")
+      center center / cover no-repeat;
+  background-color: #0c3326;
 }
 
-.auth-visual h1 {
-  max-width: 700px;
-  margin: 12px 0;
-  font-size: clamp(1.9rem, 4vw, 3.5rem);
-  line-height: 1.05;
-  letter-spacing: -0.02em;
+/* SVG decorative overlay — sits above the photo, below content */
+.auth-visual__bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
 }
 
-.auth-visual p {
-  max-width: 560px;
-  color: rgba(255,255,255,0.78);
-  font-size: 1.06rem;
+.auth-bg-svg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* All content sits above the bg */
+.auth-visual__content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 640px;
+}
+
+.auth-visual__logo-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.auth-visual__logo-wrap img {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.12);
+  padding: 4px;
+}
+
+.auth-visual__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: rgba(216,255,120,0.15);
+  border: 1px solid rgba(216,255,120,0.3);
+  color: #d8ff78;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  width: fit-content;
+}
+
+.auth-visual__headline {
+  font-size: clamp(2.4rem, 5vw, 4rem);
+  font-weight: 900;
+  line-height: 1.0;
+  letter-spacing: -0.03em;
+  margin: 0;
+}
+
+.auth-visual__accent {
+  color: #d8ff78;
+  display: block;
+}
+
+.auth-visual__sub {
+  margin: 0;
+  max-width: 520px;
+  color: rgba(255,255,255,0.75);
+  font-size: clamp(0.95rem, 1.4vw, 1.08rem);
   line-height: 1.65;
 }
 
+.auth-visual__tagline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #d8ff78;
+  font-size: 0.96rem;
+  font-weight: 700;
+  width: fit-content;
+}
+
+/* Feature pills */
+.auth-visual__features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.auth-visual__feature-pill {
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.09);
+  border: 1px solid rgba(255,255,255,0.14);
+  color: rgba(255,255,255,0.85);
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+/* Stats strip */
+.auth-visual__stats {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  padding: 18px 20px;
+  border-radius: 12px;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.08);
+  width: fit-content;
+}
+
+.auth-visual__stats > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.auth-visual__stats strong {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #d8ff78;
+  line-height: 1;
+}
+
+.auth-visual__stats span {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Journey steps (register page) */
+.auth-visual__journey {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.auth-journey-step {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+}
+
+.auth-journey-step__num {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #d8ff78;
+  color: #0c3326;
+  font-size: 0.85rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.auth-journey-step strong {
+  display: block;
+  font-size: 0.92rem;
+  color: #fff;
+}
+
+.auth-journey-step small {
+  color: rgba(255,255,255,0.6);
+  font-size: 0.78rem;
+}
+
+.auth-journey-step__connector {
+  width: 2px;
+  height: 16px;
+  background: rgba(216,255,120,0.3);
+  margin-left: 15px;
+}
+
+/* Floating illustration cards */
+.auth-visual__cards {
+  position: absolute;
+  bottom: 40px;
+  right: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 2;
+}
+
+.auth-float-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #fff;
+  min-width: 200px;
+  animation: floatCard 6s ease-in-out infinite;
+}
+
+.auth-float-card--a { animation-delay: 0s; }
+.auth-float-card--b { animation-delay: 2s; }
+.auth-float-card--c { animation-delay: 4s; }
+
+.auth-float-card > span { font-size: 1.4rem; flex-shrink: 0; }
+
+.auth-float-card strong {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.auth-float-card small {
+  display: block;
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.65);
+}
+
+@keyframes floatCard {
+  0%, 100% { transform: translateY(0px);  }
+  50%       { transform: translateY(-6px); }
+}
+
+/* ── Right form panel ── */
 .auth-panel {
-  align-self: center;
-  justify-self: center;
-  width: min(440px, calc(100% - 32px));
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: #fff;
-  box-shadow: var(--shadow-lg);
-  padding: 32px;
+  min-height: 100vh;
+  padding: 32px 24px;
+}
+
+.auth-panel--register {
+  align-items: flex-start;
+  padding-top: 48px;
+  padding-bottom: 48px;
+  overflow-y: auto;
+}
+
+.auth-panel__inner {
+  width: 100%;
+  max-width: 400px;
+  display: grid;
+  gap: 20px;
+}
+
+.auth-panel__header {
+  display: grid;
+  gap: 6px;
+}
+
+.auth-panel__eyebrow {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--green-700);
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--lime-soft);
+  width: fit-content;
+}
+
+.auth-panel__header h2 {
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: var(--green-900);
+  margin: 8px 0 0;
+}
+
+.auth-panel__header p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* Submit button */
+.auth-submit-btn {
+  width: 100%;
+  height: 50px;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: 12px;
+  margin-top: 4px;
+}
+
+/* Divider */
+.auth-panel__divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.auth-panel__divider::before,
+.auth-panel__divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+/* Auth switch */
+.auth-switch {
+  text-align: center;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.auth-switch__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  color: var(--green-700);
+  text-decoration: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  background: var(--lime-soft);
+  border: 1.5px solid rgba(216,255,120,0.4);
+  transition: all var(--transition);
+}
+
+.auth-switch__cta:hover {
+  background: var(--lime);
+  color: var(--green-900);
+}
+
+/* Trust strip */
+.auth-panel__trust {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  flex-wrap: wrap;
+}
+
+/* Optional label */
+.auth-optional {
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+/* Role picker icons */
+.auth-role-icon {
+  display: block;
+  font-size: 1.4rem;
+  margin-bottom: 4px;
 }
 
 .auth-panel h2 { margin: 8px 0 24px; font-size: 2rem; letter-spacing: -0.01em; }
@@ -5719,13 +6079,30 @@ textarea {
   }
 
   .auth-visual {
-    min-height: auto;
-    padding-bottom: 120px;
+    min-height: 420px;
+    padding: 40px 24px 120px;
+  }
+
+  .auth-visual__cards {
+    display: none;
+  }
+
+  .auth-visual__stats {
+    gap: 16px;
   }
 
   .auth-panel {
-    margin-top: -82px;
-    margin-bottom: 28px;
+    margin-top: -72px;
+    border-radius: 20px 20px 0 0;
+    min-height: auto;
+    padding: 32px 20px 40px;
+  }
+
+  .auth-panel--register {
+    margin-top: -72px;
+    border-radius: 20px 20px 0 0;
+    padding-top: 32px;
+  }
   }
 
   .admin-dashboard-grid,
@@ -5908,8 +6285,8 @@ textarea {
   .module-grid,
   .mode-grid { grid-template-columns: 1fr; }
 
-  .auth-visual { padding: 24px; }
-  .auth-panel  { padding: 20px; }
+  .auth-visual { padding: 28px 20px 100px; }
+  .auth-panel  { padding: 24px 16px 32px; }
 
   .page-header {
     flex-direction: column;
@@ -9104,4 +9481,1185 @@ html[data-learning-style="mentorship-track"] .ambient-token {
   .onboarding-content {
     padding: 24px 16px 48px;
   }
+}
+
+/* =============================================================================
+   CLASS PAGE — tabbed layout
+   ============================================================================= */
+
+.class-page {
+  display: grid;
+  gap: 0;
+}
+
+.class-page__header {
+  padding: 24px 24px 0;
+  display: grid;
+  gap: 8px;
+}
+
+.class-page__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-bottom: 4px;
+}
+
+.class-page__course-chip,
+.class-page__mode-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.class-page__course-chip {
+  background: var(--lime-soft);
+  color: var(--green-700);
+}
+
+.class-page__mode-chip {
+  background: var(--line);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.7rem;
+}
+
+/* ── Tab bar ── */
+.class-tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 24px;
+  border-bottom: 1.5px solid var(--line);
+  margin-top: 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.class-tabs::-webkit-scrollbar { display: none; }
+
+.class-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border: none;
+  border-bottom: 2.5px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  margin-bottom: -1.5px;
+  transition: color var(--transition), border-color var(--transition);
+}
+
+.class-tab:hover {
+  color: var(--green-700);
+}
+
+.class-tab.is-active {
+  color: var(--green-900);
+  border-bottom-color: var(--green-700);
+  font-weight: 600;
+}
+
+.class-tab__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--lime-soft);
+  color: var(--green-700);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Tab panel container ── */
+.class-tab-panel {
+  padding: 24px;
+}
+
+/* ── Overview grid ── */
+.class-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+/* ── Sessions layout ── */
+.class-sessions-layout {
+  display: grid;
+  gap: 16px;
+}
+
+/* ── Announcements ── */
+.class-announcements-layout {
+  display: grid;
+  gap: 16px;
+  max-width: 680px;
+}
+
+/* ── Messages ── */
+.class-messages-layout {
+  display: grid;
+  gap: 16px;
+  max-width: 720px;
+}
+
+/* ── Students ── */
+.class-students-layout {
+  display: grid;
+  gap: 16px;
+  max-width: 600px;
+}
+
+/* =============================================================================
+   CLASS STUDIO — per-class slide builder
+   ============================================================================= */
+
+.class-studio {
+  display: grid;
+  gap: 16px;
+}
+
+.class-studio--locked,
+.class-studio--empty {
+  display: grid;
+  place-items: center;
+  justify-items: center;
+  gap: 10px;
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--muted);
+  border: 2px dashed var(--line);
+  border-radius: 12px;
+}
+
+.class-studio--locked strong,
+.class-studio--empty strong {
+  color: var(--green-900);
+  font-size: 1rem;
+}
+
+.class-studio--locked p,
+.class-studio--empty p {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+/* Toolbar */
+.class-studio__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  flex-wrap: wrap;
+}
+
+.class-studio__toolbar-left,
+.class-studio__toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.class-studio__course-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--lime-soft);
+  color: var(--green-700);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.class-studio__loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.84rem;
+  color: var(--muted);
+}
+
+.class-studio__lesson-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.class-studio__lesson-picker label {
+  font-size: 0.82rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.class-studio__lesson-picker select {
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fff;
+  font-size: 0.88rem;
+  color: var(--ink);
+  max-width: 280px;
+}
+
+.class-studio__empty-lessons {
+  display: grid;
+  place-items: center;
+  justify-items: center;
+  gap: 10px;
+  padding: 40px;
+  text-align: center;
+  color: var(--muted);
+  border: 2px dashed var(--line);
+  border-radius: 12px;
+}
+
+.class-studio__empty-lessons strong {
+  color: var(--green-900);
+  font-size: 1rem;
+}
+
+.class-studio__empty-lessons p {
+  margin: 0;
+  font-size: 0.88rem;
+  max-width: 340px;
+}
+
+
+/* =============================================================================
+   GLOBAL THEME ENGINE — data-favorite-theme / data-learning-theme
+   All colors driven purely by CSS custom properties — no images, no legal risk.
+   ============================================================================= */
+
+/* ── Make every button, card, link consume theme vars ── */
+.primary-button {
+  background: var(--theme-highlight);
+  color: var(--theme-on-highlight);
+  border-color: var(--theme-highlight);
+}
+.primary-button:hover {
+  background: var(--theme-accent);
+  border-color: var(--theme-accent);
+}
+.nav-item.active {
+  background: var(--theme-highlight);
+  color: var(--theme-on-highlight);
+  border-left-color: var(--theme-on-highlight);
+}
+.sidebar { background: linear-gradient(180deg, var(--theme-primary) 0%, var(--theme-secondary) 100%); }
+.brand-mark { background: var(--theme-highlight); }
+.hero-stat-card { border-top: 3px solid var(--theme-accent); }
+.stat-card { border-top: 3px solid var(--theme-secondary); }
+.progress-track > div { background: linear-gradient(90deg, var(--theme-secondary), var(--theme-accent)); }
+.module-page > h1, .section-heading h2 { color: var(--theme-primary); }
+.course-code { background: var(--theme-highlight); color: var(--theme-on-highlight); }
+.eyebrow { color: var(--theme-secondary); }
+.assignment-badge.score { background: var(--theme-highlight); color: var(--theme-on-highlight); }
+
+/* ── Ambient background — base (overridden per theme) ── */
+.ambient-game-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Generic token animation */
+.ambient-token {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0;
+  animation: floatToken 14s ease-in-out infinite;
+}
+.token-a { width:180px; height:180px; top:-40px;  left:-60px;  background: var(--theme-highlight); opacity:.07; animation-delay:0s; }
+.token-b { width:260px; height:260px; bottom:-80px; right:-80px; background: var(--theme-secondary); opacity:.06; animation-delay:3s; }
+.token-c { width:120px; height:120px; top:40%;  left:55%;  background: var(--theme-accent); opacity:.05; animation-delay:6s; }
+.token-d { width: 80px; height: 80px; top:60%;  left:20%;  background: var(--theme-highlight); opacity:.06; animation-delay:9s; }
+.token-e { width:200px; height:200px; top:20%;  right:5%;  background: var(--theme-primary); opacity:.04; animation-delay:2s; }
+.token-f { width: 60px; height: 60px; bottom:15%; left:45%; background: var(--theme-accent); opacity:.07; animation-delay:11s; }
+
+@keyframes floatToken {
+  0%   { transform: translateY(0px) scale(1)    rotate(0deg);   opacity: inherit; }
+  40%  { transform: translateY(-30px) scale(1.06) rotate(8deg);  }
+  70%  { transform: translateY(15px) scale(0.96) rotate(-5deg); }
+  100% { transform: translateY(0px) scale(1)    rotate(0deg);   }
+}
+
+/* =============================================================================
+   PER-FAVOURITE THEME OVERRIDES + BACKGROUND VIBES
+   Using pure CSS shapes — no external images, no legal issues.
+   ============================================================================= */
+
+/* ── FOOTBALL CLUBS ── */
+
+/* Arsenal — red & white with cannon-like diagonal stripes */
+[data-favorite-theme="arsenal"] .ambient-game-bg::before,
+[data-favorite-theme="arsenal"] .ambient-game-bg::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+[data-favorite-theme="arsenal"] .ambient-game-bg::before {
+  inset: 0;
+  background: repeating-linear-gradient(
+    -55deg,
+    rgba(219,22,35,0.04) 0px, rgba(219,22,35,0.04) 8px,
+    transparent 8px, transparent 40px
+  );
+}
+[data-favorite-theme="arsenal"] .ambient-game-bg::after {
+  width: 320px; height: 320px;
+  border-radius: 50%;
+  top: -60px; right: -60px;
+  background: radial-gradient(circle, rgba(219,22,35,0.12) 0%, transparent 70%);
+  animation: pulseGlow 6s ease-in-out infinite;
+}
+[data-favorite-theme="arsenal"] .token-a { background: #db1623; }
+[data-favorite-theme="arsenal"] .token-b { background: #ffffff; }
+[data-favorite-theme="arsenal"] .token-c { background: #d4a017; }
+
+/* Real Madrid — white & gold with royal rays */
+[data-favorite-theme="real-madrid"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 500px 300px at 80% 10%, rgba(212,175,55,0.08) 0%, transparent 70%),
+    radial-gradient(ellipse 400px 400px at 10% 80%, rgba(92,95,199,0.06) 0%, transparent 70%);
+}
+[data-favorite-theme="real-madrid"] .token-a { background: #d4af37; }
+[data-favorite-theme="real-madrid"] .token-b { background: #5b5fc7; }
+
+/* Barcelona — vertical blue & red stripes + star burst */
+[data-favorite-theme="barcelona"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(165,0,68,0.04) 0px, rgba(165,0,68,0.04) 12px,
+    rgba(24,36,90,0.04) 12px, rgba(24,36,90,0.04) 24px
+  );
+}
+[data-favorite-theme="barcelona"] .token-a { background: #a50044; }
+[data-favorite-theme="barcelona"] .token-b { background: #18245a; }
+[data-favorite-theme="barcelona"] .token-c { background: #edbb00; }
+
+/* Manchester City — sky-blue radial waves */
+[data-favorite-theme="manchester-city"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 600px 400px at 50% -10%, rgba(108,171,221,0.1) 0%, transparent 70%);
+}
+[data-favorite-theme="manchester-city"] .token-a { background: #6cabdd; }
+[data-favorite-theme="manchester-city"] .token-b { background: #1a3c6e; }
+
+/* Manchester United — red devil diagonal */
+[data-favorite-theme="manchester-united"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(218,41,28,0.04) 0px, rgba(218,41,28,0.04) 6px,
+    transparent 6px, transparent 28px
+  );
+}
+[data-favorite-theme="manchester-united"] .token-a { background: #da291c; }
+[data-favorite-theme="manchester-united"] .token-b { background: #fbe122; }
+
+/* Liverpool — red wave */
+[data-favorite-theme="liverpool"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 700px 350px at 100% 50%, rgba(200,16,46,0.08) 0%, transparent 65%);
+}
+[data-favorite-theme="liverpool"] .token-a { background: #c8102e; }
+[data-favorite-theme="liverpool"] .token-b { background: #00b2a9; }
+
+/* Chelsea — blue flowing rings */
+[data-favorite-theme="chelsea"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  width: 600px; height: 600px;
+  border-radius: 50%;
+  top: -200px; left: -100px;
+  background: radial-gradient(circle, rgba(3,70,148,0.08) 0%, transparent 70%);
+  animation: rotateRing 20s linear infinite;
+}
+[data-favorite-theme="chelsea"] .token-a { background: #034694; }
+[data-favorite-theme="chelsea"] .token-b { background: #d4a017; }
+
+/* PSG — dark blue + red flash */
+[data-favorite-theme="paris-saint-germain"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 400px 600px at 80% 50%, rgba(0,65,112,0.09) 0%, transparent 70%),
+    radial-gradient(ellipse 300px 300px at 20% 80%, rgba(218,41,28,0.07) 0%, transparent 70%);
+}
+
+/* Bayern Munich — deep red + blue cross lines */
+[data-favorite-theme="bayern-munich"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(0deg, rgba(220,5,45,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,102,178,0.04) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+[data-favorite-theme="bayern-munich"] .token-a { background: #dc052d; }
+[data-favorite-theme="bayern-munich"] .token-b { background: #0066b2; }
+
+/* Inter Milan — blue & black diagonal halves */
+[data-favorite-theme="inter-milan"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(0,87,184,0.05) 0px, rgba(0,87,184,0.05) 16px,
+    rgba(5,11,22,0.03) 16px, rgba(5,11,22,0.03) 32px
+  );
+}
+[data-favorite-theme="inter-milan"] .token-a { background: #0057b8; }
+[data-favorite-theme="inter-milan"] .token-b { background: #050b16; }
+
+/* =============================================================================
+   FOOTBALL PLAYERS
+   ============================================================================= */
+
+/* Cristiano Ronaldo — CR7 gold pulses + red shimmer */
+[data-favorite-theme="cristiano-ronaldo"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 500px 500px at 90% 10%, rgba(220,5,45,0.09) 0%, transparent 65%),
+    radial-gradient(ellipse 400px 400px at 10% 90%, rgba(212,175,55,0.1) 0%, transparent 65%);
+}
+[data-favorite-theme="cristiano-ronaldo"] .token-a { background: #d4af37; }
+[data-favorite-theme="cristiano-ronaldo"] .token-b { background: #dc052d; }
+[data-favorite-theme="cristiano-ronaldo"] .token-c { background: #fff; }
+
+/* Lionel Messi — Inter Miami pink & black + light blue */
+[data-favorite-theme="lionel-messi"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 600px 300px at 50% 0%, rgba(252,29,101,0.08) 0%, transparent 70%),
+    radial-gradient(ellipse 400px 600px at 0% 100%, rgba(117,205,234,0.09) 0%, transparent 70%);
+}
+[data-favorite-theme="lionel-messi"] .ambient-game-bg::after {
+  content: "";
+  position: absolute;
+  width: 280px; height: 280px;
+  border-radius: 50%;
+  top: 30%; left: 60%;
+  background: radial-gradient(circle, rgba(252,29,101,0.12) 0%, transparent 70%);
+  animation: pulseGlow 5s ease-in-out infinite;
+}
+[data-favorite-theme="lionel-messi"] .token-a { background: #fc1d65; }
+[data-favorite-theme="lionel-messi"] .token-b { background: #75cdea; }
+[data-favorite-theme="lionel-messi"] .token-c { background: #111; }
+
+/* Kylian Mbappe — PSG blue & gold speed streaks */
+[data-favorite-theme="kylian-mbappe"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    70deg,
+    rgba(0,65,112,0.05) 0px, rgba(0,65,112,0.05) 3px,
+    transparent 3px, transparent 40px
+  );
+}
+[data-favorite-theme="kylian-mbappe"] .token-a { background: #004170; }
+[data-favorite-theme="kylian-mbappe"] .token-b { background: #f1c75b; }
+
+/* Erling Haaland — City sky blue + white pulses */
+[data-favorite-theme="erling-haaland"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 700px 500px at 50% 100%, rgba(108,171,221,0.1) 0%, transparent 70%);
+}
+[data-favorite-theme="erling-haaland"] .token-a { background: #6cabdd; }
+[data-favorite-theme="erling-haaland"] .token-b { background: #ffffff; }
+
+/* Vinicius Junior — Real Madrid white & gold rays */
+[data-favorite-theme="vinicius-junior"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: conic-gradient(from 180deg at 80% 20%,
+    rgba(212,175,55,0.06) 0deg,
+    transparent 60deg,
+    rgba(255,255,255,0.04) 120deg,
+    transparent 180deg,
+    rgba(212,175,55,0.04) 240deg,
+    transparent 300deg,
+    rgba(212,175,55,0.06) 360deg);
+}
+[data-favorite-theme="vinicius-junior"] .token-a { background: #d4af37; }
+[data-favorite-theme="vinicius-junior"] .token-b { background: #172554; }
+
+/* Jude Bellingham — Real Madrid gold + England red */
+[data-favorite-theme="jude-bellingham"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 400px 400px at 85% 15%, rgba(212,175,55,0.1) 0%, transparent 65%),
+    radial-gradient(ellipse 300px 300px at 15% 85%, rgba(200,16,46,0.06) 0%, transparent 65%);
+}
+[data-favorite-theme="jude-bellingham"] .token-a { background: #d4af37; }
+[data-favorite-theme="jude-bellingham"] .token-b { background: #c8102e; }
+
+/* Mohamed Salah — Liverpool red + Egyptian gold */
+[data-favorite-theme="mohamed-salah"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-radial-gradient(
+    circle at 70% 30%,
+    rgba(200,16,46,0.06) 0px, transparent 40px,
+    rgba(200,16,46,0.03) 80px, transparent 120px
+  );
+}
+[data-favorite-theme="mohamed-salah"] .token-a { background: #c8102e; }
+[data-favorite-theme="mohamed-salah"] .token-b { background: #d4a017; }
+
+/* Bukayo Saka — Arsenal red + bright energy yellow */
+[data-favorite-theme="bukayo-saka"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    -55deg,
+    rgba(219,22,35,0.04) 0px, rgba(219,22,35,0.04) 5px,
+    transparent 5px, transparent 35px
+  );
+}
+[data-favorite-theme="bukayo-saka"] .token-a { background: #db1623; }
+[data-favorite-theme="bukayo-saka"] .token-b { background: #f4c542; }
+
+/* Lamine Yamal — Barca stripes */
+[data-favorite-theme="lamine-yamal"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(165,0,68,0.04) 0px, rgba(165,0,68,0.04) 10px,
+    rgba(24,36,90,0.04) 10px, rgba(24,36,90,0.04) 20px
+  );
+}
+[data-favorite-theme="lamine-yamal"] .token-a { background: #a50044; }
+[data-favorite-theme="lamine-yamal"] .token-b { background: #edbb00; }
+
+/* Harry Kane — England white + royal blue */
+[data-favorite-theme="harry-kane"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 500px 400px at 20% 30%, rgba(200,16,46,0.06) 0%, transparent 65%),
+    radial-gradient(ellipse 400px 300px at 80% 70%, rgba(30,30,80,0.05) 0%, transparent 65%);
+}
+[data-favorite-theme="harry-kane"] .token-a { background: #c8102e; }
+[data-favorite-theme="harry-kane"] .token-b { background: #1e1e50; }
+
+/* =============================================================================
+   BASKETBALL TEAMS
+   ============================================================================= */
+
+/* Golden State Warriors — gold & blue court lines */
+[data-favorite-theme="golden-state-warriors"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(0deg, rgba(255,199,44,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(29,66,138,0.04) 1px, transparent 1px);
+  background-size: 80px 80px;
+}
+[data-favorite-theme="golden-state-warriors"] .token-a { background: #ffc72c; }
+[data-favorite-theme="golden-state-warriors"] .token-b { background: #1d428a; }
+
+/* Los Angeles Lakers — purple & gold luxury */
+[data-favorite-theme="los-angeles-lakers"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 600px 400px at 80% 10%, rgba(85,37,131,0.1) 0%, transparent 65%),
+    radial-gradient(ellipse 400px 500px at 10% 90%, rgba(253,185,39,0.09) 0%, transparent 65%);
+}
+[data-favorite-theme="los-angeles-lakers"] .token-a { background: #552583; }
+[data-favorite-theme="los-angeles-lakers"] .token-b { background: #fdb927; }
+
+/* Chicago Bulls — red + black power diagonals */
+[data-favorite-theme="chicago-bulls"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(206,17,65,0.05) 0px, rgba(206,17,65,0.05) 10px,
+    rgba(17,17,17,0.03) 10px, rgba(17,17,17,0.03) 20px
+  );
+}
+[data-favorite-theme="chicago-bulls"] .token-a { background: #ce1141; }
+[data-favorite-theme="chicago-bulls"] .token-b { background: #111; }
+
+/* Boston Celtics — green parquet floor pattern */
+[data-favorite-theme="boston-celtics"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(45deg, rgba(0,122,51,0.04) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(0,122,51,0.04) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(186,150,83,0.04) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(186,150,83,0.04) 75%);
+  background-size: 40px 40px;
+}
+[data-favorite-theme="boston-celtics"] .token-a { background: #007a33; }
+[data-favorite-theme="boston-celtics"] .token-b { background: #ba9653; }
+
+/* Miami Heat — orange sunset gradient */
+[data-favorite-theme="miami-heat"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg,
+    rgba(152,0,46,0.07) 0%,
+    transparent 40%,
+    rgba(249,160,27,0.07) 80%,
+    transparent 100%
+  );
+}
+[data-favorite-theme="miami-heat"] .token-a { background: #98002e; }
+[data-favorite-theme="miami-heat"] .token-b { background: #f9a01b; }
+
+/* New York Knicks — orange & blue NYC energy */
+[data-favorite-theme="new-york-knicks"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 500px 300px at 50% 0%, rgba(0,107,182,0.08) 0%, transparent 65%),
+    radial-gradient(ellipse 500px 300px at 50% 100%, rgba(245,132,38,0.08) 0%, transparent 65%);
+}
+[data-favorite-theme="new-york-knicks"] .token-a { background: #006bb6; }
+[data-favorite-theme="new-york-knicks"] .token-b { background: #f58426; }
+
+/* =============================================================================
+   BASKETBALL PLAYERS
+   ============================================================================= */
+
+/* Stephen Curry — Warriors gold arc */
+[data-favorite-theme="stephen-curry"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: conic-gradient(from 200deg at 80% 80%,
+    rgba(255,199,44,0.08) 0deg, transparent 80deg,
+    rgba(29,66,138,0.05) 160deg, transparent 240deg,
+    rgba(255,199,44,0.06) 320deg, transparent 360deg
+  );
+}
+[data-favorite-theme="stephen-curry"] .token-a { background: #ffc72c; }
+[data-favorite-theme="stephen-curry"] .token-b { background: #1d428a; }
+
+/* LeBron James — Lakers purple & gold royalty */
+[data-favorite-theme="lebron-james"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 700px 500px at 90% 50%, rgba(85,37,131,0.1) 0%, transparent 65%),
+    radial-gradient(ellipse 400px 400px at 5% 50%, rgba(253,185,39,0.08) 0%, transparent 65%);
+}
+[data-favorite-theme="lebron-james"] .token-a { background: #552583; }
+[data-favorite-theme="lebron-james"] .token-b { background: #fdb927; }
+
+/* Luka Doncic — Mavs blue & silver */
+[data-favorite-theme="luka-doncic"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    30deg,
+    rgba(0,83,188,0.04) 0px, rgba(0,83,188,0.04) 4px,
+    transparent 4px, transparent 44px
+  );
+}
+[data-favorite-theme="luka-doncic"] .token-a { background: #0053bc; }
+[data-favorite-theme="luka-doncic"] .token-b { background: #b8c4ca; }
+
+/* Victor Wembanyama — Spurs silver & black futuristic */
+[data-favorite-theme="victor-wembanyama"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(135deg, rgba(196,206,212,0.06) 0%, transparent 50%),
+    linear-gradient(315deg, rgba(23,23,23,0.04) 0%, transparent 50%);
+}
+[data-favorite-theme="victor-wembanyama"] .token-a { background: #c4ced4; }
+[data-favorite-theme="victor-wembanyama"] .token-b { background: #171717; }
+
+/* Nikola Jokic — Nuggets gold & sky blue Denver */
+[data-favorite-theme="nikola-jokic"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 500px 400px at 30% 20%, rgba(13,34,64,0.08) 0%, transparent 65%),
+    radial-gradient(ellipse 400px 400px at 70% 80%, rgba(255,198,37,0.08) 0%, transparent 65%);
+}
+[data-favorite-theme="nikola-jokic"] .token-a { background: #0d2240; }
+[data-favorite-theme="nikola-jokic"] .token-b { background: #ffc625; }
+
+/* Giannis Antetokounmpo — Bucks green forest */
+[data-favorite-theme="giannis-antetokounmpo"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 700px 700px at 50% 50%, rgba(0,113,67,0.08) 0%, transparent 70%);
+}
+[data-favorite-theme="giannis-antetokounmpo"] .token-a { background: #007143; }
+[data-favorite-theme="giannis-antetokounmpo"] .token-b { background: #eee114; }
+
+/* Anthony Edwards — Timberwolves midnight blue & green */
+[data-favorite-theme="anthony-edwards"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    -30deg,
+    rgba(12,35,64,0.05) 0px, rgba(12,35,64,0.05) 8px,
+    transparent 8px, transparent 48px
+  );
+}
+[data-favorite-theme="anthony-edwards"] .token-a { background: #0c2340; }
+[data-favorite-theme="anthony-edwards"] .token-b { background: #236192; }
+
+/* Jayson Tatum — Celtics green */
+[data-favorite-theme="jayson-tatum"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(45deg, rgba(0,122,51,0.05) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(0,122,51,0.05) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(186,150,83,0.04) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(186,150,83,0.04) 75%);
+  background-size: 32px 32px;
+}
+[data-favorite-theme="jayson-tatum"] .token-a { background: #007a33; }
+[data-favorite-theme="jayson-tatum"] .token-b { background: #ba9653; }
+
+/* Shai Gilgeous-Alexander & Jalen Brunson — OKC blue/orange */
+[data-favorite-theme="shai-gilgeous-alexander"] .ambient-game-bg::before,
+[data-favorite-theme="jalen-brunson"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 500px 400px at 80% 20%, rgba(0,125,195,0.09) 0%, transparent 65%),
+    radial-gradient(ellipse 400px 400px at 20% 80%, rgba(239,110,30,0.08) 0%, transparent 65%);
+}
+[data-favorite-theme="shai-gilgeous-alexander"] .token-a,
+[data-favorite-theme="jalen-brunson"] .token-a { background: #007dc3; }
+[data-favorite-theme="shai-gilgeous-alexander"] .token-b,
+[data-favorite-theme="jalen-brunson"] .token-b { background: #ef6e1e; }
+
+/* =============================================================================
+   LEARNING-THEME (CATEGORY) BACKGROUNDS
+   ============================================================================= */
+
+/* News — newsprint dot grid */
+[data-learning-theme="local-news"] .ambient-game-bg::before,
+[data-learning-theme="international-news"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(16,35,63,0.07) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+[data-learning-theme="local-news"] .token-a,
+[data-learning-theme="international-news"] .token-a { background: #1d4ed8; }
+[data-learning-theme="local-news"] .token-b,
+[data-learning-theme="international-news"] .token-b { background: #dc2626; }
+
+/* Cartoons — bright confetti dots */
+[data-learning-theme="cartoons"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(rgba(124,58,237,0.12) 2px, transparent 2px),
+    radial-gradient(rgba(245,158,11,0.10) 2px, transparent 2px),
+    radial-gradient(rgba(239,68,68,0.09) 2px, transparent 2px);
+  background-size: 44px 44px, 88px 88px, 66px 66px;
+  background-position: 0 0, 22px 22px, 11px 33px;
+  animation: confettiDrift 8s linear infinite;
+}
+[data-learning-theme="cartoons"] .token-a { background: #7c3aed; }
+[data-learning-theme="cartoons"] .token-b { background: #f59e0b; }
+[data-learning-theme="cartoons"] .token-c { background: #ef4444; }
+
+/* Games — pixel grid */
+[data-learning-theme="games"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(8,127,140,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(8,127,140,0.06) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+[data-learning-theme="games"] .token-a { background: #087f8c; }
+[data-learning-theme="games"] .token-b { background: #f97316; }
+[data-learning-theme="games"] .token-c { background: #a3e635; }
+
+/* Music — sound-wave lines */
+[data-learning-theme="music"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 18px,
+    rgba(181,43,101,0.04) 18px,
+    rgba(181,43,101,0.04) 20px
+  );
+  animation: soundwave 4s ease-in-out infinite alternate;
+}
+[data-learning-theme="music"] .token-a { background: #b52b65; }
+[data-learning-theme="music"] .token-b { background: #0891b2; }
+[data-learning-theme="music"] .token-c { background: #f9a8d4; }
+
+/* Career — clean blueprint grid */
+[data-learning-theme="career"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(36,107,69,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(36,107,69,0.05) 1px, transparent 1px),
+    linear-gradient(rgba(36,107,69,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(36,107,69,0.025) 1px, transparent 1px);
+  background-size: 80px 80px, 80px 80px, 20px 20px, 20px 20px;
+}
+[data-learning-theme="career"] .token-a { background: #246b45; }
+[data-learning-theme="career"] .token-b { background: #b7791f; }
+
+/* =============================================================================
+   ANIMATED BACKGROUND PARTICLES — floating shapes per category
+   ============================================================================= */
+
+/* Football — floating hexagons (ball panels) */
+[data-learning-theme="football-clubs"] .ambient-game-bg,
+[data-learning-theme="football-players"] .ambient-game-bg {
+  --shape-color-a: var(--theme-primary);
+  --shape-color-b: var(--theme-accent);
+}
+
+[data-learning-theme="football-clubs"] .ambient-game-bg::before,
+[data-learning-theme="football-players"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(rgba(0,0,0,0.05) 2px, transparent 2px),
+    radial-gradient(var(--theme-accent) 1px, transparent 1px);
+  background-size: 60px 52px, 30px 26px;
+  background-position: 0 0, 15px 13px;
+  opacity: 0.35;
+}
+
+/* Ball bounce particles for football */
+[data-learning-theme="football-clubs"] .token-a,
+[data-learning-theme="football-players"] .token-a {
+  width: 60px; height: 60px;
+  background: var(--theme-primary);
+  border: 4px solid var(--theme-accent);
+  animation: footballBounce 7s cubic-bezier(.36,.07,.19,.97) infinite;
+}
+[data-learning-theme="football-clubs"] .token-b,
+[data-learning-theme="football-players"] .token-b {
+  width: 40px; height: 40px;
+  background: var(--theme-accent);
+  border: 3px solid var(--theme-primary);
+  animation: footballBounce 9s cubic-bezier(.36,.07,.19,.97) infinite;
+  animation-delay: 2s;
+}
+[data-learning-theme="football-clubs"] .token-d,
+[data-learning-theme="football-players"] .token-d {
+  width: 30px; height: 30px;
+  background: var(--theme-highlight);
+  border: 2px solid var(--theme-secondary);
+  animation: footballBounce 11s cubic-bezier(.36,.07,.19,.97) infinite;
+  animation-delay: 5s;
+}
+
+@keyframes footballBounce {
+  0%   { transform: translate(0, 0)     rotate(0deg)   scale(1);   }
+  15%  { transform: translate(30px,-60px) rotate(120deg) scale(0.9); }
+  30%  { transform: translate(60px, 0)  rotate(240deg)  scale(1.05);}
+  50%  { transform: translate(20px,-40px) rotate(360deg) scale(0.95);}
+  70%  { transform: translate(-20px,-20px) rotate(480deg) scale(1);  }
+  85%  { transform: translate(-40px,-60px) rotate(540deg) scale(0.9);}
+  100% { transform: translate(0, 0)     rotate(600deg)  scale(1);   }
+}
+
+/* Basketball — arc-shaped arcs */
+[data-learning-theme="basketball-teams"] .ambient-game-bg::before,
+[data-learning-theme="basketball-players"] .ambient-game-bg::before {
+  content: "";
+  position: absolute;
+  width: 500px; height: 500px;
+  border-radius: 50%;
+  border: 2px solid var(--theme-accent);
+  opacity: 0.07;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  animation: hoopPulse 5s ease-in-out infinite;
+}
+[data-learning-theme="basketball-teams"] .ambient-game-bg::after,
+[data-learning-theme="basketball-players"] .ambient-game-bg::after {
+  content: "";
+  position: absolute;
+  width: 300px; height: 300px;
+  border-radius: 50%;
+  border: 1px solid var(--theme-secondary);
+  opacity: 0.06;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  animation: hoopPulse 5s ease-in-out infinite 1.5s;
+}
+[data-learning-theme="basketball-teams"] .token-a,
+[data-learning-theme="basketball-players"] .token-a {
+  animation: basketballArc 8s ease-in-out infinite;
+  border-radius: 50%;
+}
+
+@keyframes hoopPulse {
+  0%, 100% { transform: translate(-50%,-50%) scale(1);    opacity: 0.07; }
+  50%       { transform: translate(-50%,-50%) scale(1.12); opacity: 0.04; }
+}
+@keyframes basketballArc {
+  0%   { transform: translate(0,0)       rotate(0deg)   scale(1);    }
+  25%  { transform: translate(80px,-100px) rotate(90deg)  scale(0.9);  }
+  50%  { transform: translate(160px,0)   rotate(180deg) scale(1.05); }
+  75%  { transform: translate(80px,80px) rotate(270deg) scale(0.95); }
+  100% { transform: translate(0,0)       rotate(360deg) scale(1);    }
+}
+
+/* =============================================================================
+   SHARED ANIMATION KEYFRAMES
+   ============================================================================= */
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 1;   transform: scale(1);    }
+  50%       { opacity: 0.6; transform: scale(1.15); }
+}
+
+@keyframes rotateRing {
+  from { transform: rotate(0deg);   }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes confettiDrift {
+  0%   { background-position: 0 0,    22px 22px, 11px 33px; }
+  100% { background-position: 0 44px, 22px 66px, 11px 77px; }
+}
+
+@keyframes soundwave {
+  0%   { background-size: 100% 20px; }
+  100% { background-size: 100% 28px; }
+}
+
+/* =============================================================================
+   THEME-AWARE SIDEBAR GLOW & ACCENT BORDERS
+   ============================================================================= */
+
+/* Sidebar nav hover uses theme accent */
+.nav-item:hover {
+  background: rgba(255,255,255,0.08);
+  border-left-color: var(--theme-accent);
+}
+
+/* Cards get a subtle top border in theme accent */
+.admin-card {
+  border-top: 2px solid var(--theme-accent);
+}
+.knowledge-panel,
+.profile-card,
+.teachspace-card {
+  border-top: 2px solid var(--theme-accent);
+}
+
+/* Hero section uses theme gradient */
+.hero {
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%);
+}
+
+/* Stats use theme highlight */
+.stat-value { color: var(--theme-primary); }
+.stat-card:hover { border-color: var(--theme-accent); }
+
+/* Section eyebrow */
+.eyebrow { color: var(--theme-secondary); }
+
+/* Active competitions / arena cards */
+.competition-card { border-left: 3px solid var(--theme-accent); }
+.mission-item { border-left: 3px solid var(--theme-secondary); }
+
+/* Lesson items */
+.lesson-item.is-completed { border-left: 3px solid var(--theme-secondary); }
+.lesson-order {
+  background: var(--theme-highlight);
+  color: var(--theme-on-highlight);
+}
+
+/* Assessment / quiz accent */
+.assessment-card { border-top: 2px solid var(--theme-secondary); }
+
+/* Certificate card */
+.certificate-card { border: 2px solid var(--theme-accent); }
+
+/* Live session card accent */
+.live-session-card { border-left: 3px solid var(--theme-secondary); }
+.live-session-card:hover { border-left-color: var(--theme-accent); }
+
+/* Onboarding active step */
+.onboarding-nav__item.is-active { border-color: var(--theme-highlight); }
+.onboarding-pill.is-selected {
+  background: var(--theme-primary);
+  border-color: var(--theme-primary);
+}
+
+/* Class tabs active */
+.class-tab.is-active {
+  color: var(--theme-primary);
+  border-bottom-color: var(--theme-secondary);
+}
+
+/* Presentation builder accent defaults to theme */
+.pb-preview__accent-bar { background: var(--theme-secondary); }
+.pb-template-card.is-selected { border-color: var(--theme-secondary); }
+
+/* =============================================================================
+   DARK MODE — theme-aware
+   ============================================================================= */
+
+html[data-appearance="dark"] {
+  --color-bg:             #0d1310;
+  --color-surface:        #141a16;
+  --color-border:         #263028;
+  --color-text:           #e8f0eb;
+  --color-text-secondary: #7a9e86;
+  --panel:                #141a16;
+  --surface:              #141a16;
+  --line:                 #263028;
+  --ink:                  #e8f0eb;
+  --muted:                #7a9e86;
+}
+
+html[data-appearance="dark"] .sidebar {
+  background: linear-gradient(180deg, #0a1210 0%, var(--theme-primary) 100%);
+  border-right: 1px solid rgba(255,255,255,0.06);
+}
+
+html[data-appearance="dark"] .admin-card,
+html[data-appearance="dark"] .knowledge-panel,
+html[data-appearance="dark"] .profile-card,
+html[data-appearance="dark"] .teachspace-card,
+html[data-appearance="dark"] .onboarding-card,
+html[data-appearance="dark"] .pb-root,
+html[data-appearance="dark"] .pb-slide-editor,
+html[data-appearance="dark"] .class-tab-panel {
+  background: #141a16;
+  border-color: #263028;
+}
+
+html[data-appearance="dark"] .main-panel {
+  background: #0d1310;
+}
+
+html[data-appearance="dark"] input,
+html[data-appearance="dark"] select,
+html[data-appearance="dark"] textarea {
+  background: #1a2218;
+  border-color: #2d3e30;
+  color: #e8f0eb;
+}
+
+html[data-appearance="dark"] .pb-field input,
+html[data-appearance="dark"] .pb-field textarea,
+html[data-appearance="dark"] .pb-field select,
+html[data-appearance="dark"] .onboarding-form-grid input,
+html[data-appearance="dark"] .onboarding-form-grid select {
+  background: #1a2218;
+  border-color: #2d3e30;
+  color: #e8f0eb;
+}
+
+html[data-appearance="dark"] .modal-panel,
+html[data-appearance="dark"] .pb-template-picker {
+  background: #141a16;
+  border: 1px solid #263028;
+}
+
+html[data-appearance="dark"] .ambient-token {
+  opacity: 0.04;
+}
+
+@media (prefers-color-scheme: dark) {
+  html[data-appearance="system"] {
+    --color-bg:             #0d1310;
+    --color-surface:        #141a16;
+    --color-border:         #263028;
+    --color-text:           #e8f0eb;
+    --color-text-secondary: #7a9e86;
+    --panel: #141a16;
+    --surface: #141a16;
+    --line: #263028;
+    --ink: #e8f0eb;
+    --muted: #7a9e86;
+  }
+  html[data-appearance="system"] .sidebar {
+    background: linear-gradient(180deg, #0a1210 0%, var(--theme-primary) 100%);
+  }
+  html[data-appearance="system"] .main-panel { background: #0d1310; }
 }

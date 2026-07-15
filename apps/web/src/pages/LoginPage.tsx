@@ -13,15 +13,12 @@ export function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? "/dashboard";
 
-  if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
-  }
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
     setError("");
     setIsSubmitting(true);
-
     try {
       await login({ email, password });
       navigate(from, { replace: true });
@@ -34,36 +31,141 @@ export function LoginPage() {
 
   return (
     <main className="auth-page">
-      <section className="auth-visual">
-        <img src={logoMark} alt="" />
-        <span className="eyebrow">Knowledge Hub</span>
-        <h1>Sign in, continue your missions, and grow with feedback.</h1>
-        <p>Access your personalised dashboard, courses, challenges, certificates, leaderboards, and trainer feedback.</p>
+      {/* ── Left visual panel ── */}
+      <section className="auth-visual" aria-hidden="false">
+        <div className="auth-visual__bg" aria-hidden="true">
+          <AuthBgPattern />
+        </div>
+
+        <div className="auth-visual__content">
+          <div className="auth-visual__logo-wrap">
+            <img src={logoMark} alt="Knowledge Hub logo" />
+          </div>
+
+          <div className="auth-visual__badge">Knowledge Hub</div>
+
+          <h1 className="auth-visual__headline">
+            Explore.<br />Learn.<br />Compete<br />
+            <span className="auth-visual__accent">&amp; Be Certified.</span>
+          </h1>
+
+          <p className="auth-visual__sub">
+            Connecting young learners, educators, and industry partners to practical skills,
+            live challenges, certificates, feedback, and real-world opportunities.
+          </p>
+
+          <div className="auth-visual__tagline">
+            Build skills. Prove talent. Connect to opportunity.
+          </div>
+
+          {/* Feature pills */}
+          <div className="auth-visual__features">
+            {["📚 Live Courses", "🏆 Competitions", "🎓 Certificates", "💬 Trainer Feedback", "🗺️ GIS Skills"].map((f) => (
+              <span key={f} className="auth-visual__feature-pill">{f}</span>
+            ))}
+          </div>
+
+          {/* Stats strip */}
+          <div className="auth-visual__stats">
+            <div><strong>10K+</strong><span>Learners</span></div>
+            <div><strong>200+</strong><span>Courses</span></div>
+            <div><strong>50+</strong><span>Challenges</span></div>
+            <div><strong>95%</strong><span>Pass rate</span></div>
+          </div>
+        </div>
+
+        {/* Floating illustration cards */}
+        <div className="auth-visual__cards" aria-hidden="true">
+          <div className="auth-float-card auth-float-card--a">
+            <span>🏅</span>
+            <div><strong>Certificate earned</strong><small>GIS Fundamentals</small></div>
+          </div>
+          <div className="auth-float-card auth-float-card--b">
+            <span>⚡</span>
+            <div><strong>Challenge live</strong><small>Map Sprint — 14 joined</small></div>
+          </div>
+          <div className="auth-float-card auth-float-card--c">
+            <span>📈</span>
+            <div><strong>84% complete</strong><small>Remote Sensing module</small></div>
+          </div>
+        </div>
       </section>
 
+      {/* ── Right form panel ── */}
       <section className="auth-panel">
-        <div>
-          <span className="eyebrow">Welcome back</span>
-          <h2>Log in</h2>
+        <div className="auth-panel__inner">
+          <div className="auth-panel__header">
+            <span className="auth-panel__eyebrow">Welcome back</span>
+            <h2>Log in to<br />Knowledge Hub</h2>
+            <p>Pick up where you left off — your missions, badges, and progress are waiting.</p>
+          </div>
+
+          <form className="auth-form" onSubmit={(e) => void handleSubmit(e)}>
+            <label>
+              Email address
+              <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required autoComplete="email" placeholder="you@example.com" />
+            </label>
+            <label>
+              Password
+              <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" required autoComplete="current-password" placeholder="••••••••" />
+            </label>
+            {error && <p className="form-error">{error}</p>}
+            <button className="primary-button auth-submit-btn" disabled={isSubmitting}>
+              {isSubmitting ? "Signing in…" : "Enter Knowledge Hub →"}
+            </button>
+          </form>
+
+          <div className="auth-panel__divider"><span>New here?</span></div>
+
+          <p className="auth-switch">
+            <Link to="/register" className="auth-switch__cta">Create a free account →</Link>
+          </p>
+
+          <div className="auth-panel__trust">
+            <span>🔒 Secure login</span>
+            <span>·</span>
+            <span>Free to join</span>
+            <span>·</span>
+            <span>No card needed</span>
+          </div>
         </div>
-        <form className="auth-form" onSubmit={handleSubmit}>
-          <label>
-            Email
-            <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" required />
-          </label>
-          <label>
-            Password
-            <input value={password} onChange={(event) => setPassword(event.target.value)} type="password" required />
-          </label>
-          {error ? <p className="form-error">{error}</p> : null}
-          <button className="primary-button" disabled={isSubmitting}>
-            {isSubmitting ? "Signing in..." : "Enter Knowledge Hub"}
-          </button>
-        </form>
-        <p className="auth-switch">
-          New learner? <Link to="/register">Create an account</Link>
-        </p>
       </section>
     </main>
+  );
+}
+
+function AuthBgPattern() {
+  return (
+    <svg className="auth-bg-svg" viewBox="0 0 900 900" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      {/* Grid of dots */}
+      {Array.from({ length: 12 }, (_, row) =>
+        Array.from({ length: 10 }, (_, col) => (
+          <circle key={`${row}-${col}`} cx={col * 90 + 45} cy={row * 80 + 40} r="2" fill="rgba(255,255,255,0.12)" />
+        ))
+      )}
+      {/* Large decorative rings */}
+      <circle cx="750" cy="150" r="180" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="1" />
+      <circle cx="750" cy="150" r="120" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+      <circle cx="750" cy="150" r="60"  fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+      <circle cx="100" cy="750" r="220" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+      <circle cx="100" cy="750" r="140" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+      {/* Accent shapes */}
+      <polygon points="820,400 860,460 780,460" fill="rgba(216,255,120,0.08)" />
+      <polygon points="60,300  90,350  30,350"  fill="rgba(216,255,120,0.06)" />
+      <rect x="680" y="620" width="80" height="80" rx="8" fill="rgba(255,255,255,0.04)" transform="rotate(15,720,660)" />
+      <rect x="40" y="120" width="50" height="50" rx="6" fill="rgba(255,255,255,0.04)" transform="rotate(-10,65,145)" />
+      {/* Connecting lines */}
+      <line x1="0" y1="450" x2="900" y2="450" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
+      <line x1="450" y1="0" x2="450" y2="900" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
+      <line x1="0" y1="0" x2="900" y2="900" stroke="rgba(255,255,255,0.025)" strokeWidth="1" />
+      {/* Map pin icon SVG (GIS reference) */}
+      <g transform="translate(380,200) scale(2.2)" opacity="0.1">
+        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="white"/>
+      </g>
+      {/* Trophy icon (competition reference) */}
+      <g transform="translate(620,580) scale(2)" opacity="0.09">
+        <path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z" fill="white"/>
+      </g>
+    </svg>
   );
 }

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { AppSidebar } from "../components/AppSidebar";
 import { Topbar } from "../components/Topbar";
+import { useTheme } from "../context/ThemeContext";
 import type { PageId } from "../types/navigation";
 
 const routeToPage: Record<string, PageId> = {
@@ -21,8 +22,8 @@ const routeToPage: Record<string, PageId> = {
 export function DashboardLayout() {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { preferences } = useTheme();
 
-  // Match prefix so /assessments/xxx/build etc. all highlight "assessments"
   const activePage =
     (Object.entries(routeToPage).find(([path]) =>
       location.pathname === path || location.pathname.startsWith(path + "/"),
@@ -30,8 +31,17 @@ export function DashboardLayout() {
 
   const closeSidebar = () => setSidebarOpen(false);
 
+  // Slugify the favourite for the data attribute (e.g. "Lionel Messi" → "lionel-messi")
+  const favoriteSlug = preferences.favorite.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  const categorySlug = preferences.fanCategory;
+
   return (
-    <div className="app-shell">
+    <div
+      className="app-shell"
+      data-favorite-theme={favoriteSlug}
+      data-learning-theme={categorySlug}
+      data-learning-style={preferences.learningStyle.toLowerCase().replace(/[^a-z0-9]+/g, "-")}
+    >
       <div className="ambient-game-bg" aria-hidden="true">
         <span className="ambient-token token-a" />
         <span className="ambient-token token-b" />

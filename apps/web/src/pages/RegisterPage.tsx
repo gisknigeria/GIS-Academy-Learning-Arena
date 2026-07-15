@@ -6,32 +6,22 @@ import { useAuth } from "../context/AuthContext";
 export function RegisterPage() {
   const { isAuthenticated, register } = useAuth();
   const navigate = useNavigate();
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
+  const [fullName, setFullName]       = useState("");
+  const [email, setEmail]             = useState("");
+  const [phone, setPhone]             = useState("");
+  const [password, setPassword]       = useState("");
   const [accountType, setAccountType] = useState<"STUDENT" | "TRAINER">("STUDENT");
-  const [error, setError] = useState("");
+  const [error, setError]             = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
-  }
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
     setError("");
     setIsSubmitting(true);
-
     try {
-      await register({
-        fullName,
-        email,
-        phone,
-        password,
-        role: accountType,
-      });
-      // Send new users straight to onboarding to set up their learner profile
+      await register({ fullName, email, phone, password, role: accountType });
       navigate("/onboarding", { replace: true });
     } catch {
       setError("Registration failed. The email or phone may already be in use.");
@@ -41,103 +31,181 @@ export function RegisterPage() {
   }
 
   return (
-    <main className="auth-page">
-      <section className="auth-visual">
-        <img src={logoMark} alt="" />
-        <span className="eyebrow">Free registration</span>
-        <h1>Create your Knowledge Hub profile and learn in your world.</h1>
-        <p>
-          Sign up in seconds — then we'll walk you through setting up your
-          learning profile, interests, and preferences step by step.
-        </p>
+    <main className="auth-page auth-page--register">
+      {/* ── Left visual panel ── */}
+      <section className="auth-visual" aria-hidden="false">
+        <div className="auth-visual__bg" aria-hidden="true">
+          <RegisterBgPattern />
+        </div>
+
+        <div className="auth-visual__content">
+          <div className="auth-visual__logo-wrap">
+            <img src={logoMark} alt="Knowledge Hub logo" />
+          </div>
+
+          <div className="auth-visual__badge">Free Registration</div>
+
+          <h1 className="auth-visual__headline">
+            Explore.<br />Learn.<br />Compete<br />
+            <span className="auth-visual__accent">&amp; Be Certified.</span>
+          </h1>
+
+          <p className="auth-visual__sub">
+            Connecting young learners, educators, and industry partners to practical skills,
+            live challenges, certificates, feedback, and real-world opportunities.
+          </p>
+
+          <div className="auth-visual__tagline">
+            Build skills. Prove talent. Connect to opportunity.
+          </div>
+
+          {/* Journey steps */}
+          <div className="auth-visual__journey">
+            <div className="auth-journey-step">
+              <span className="auth-journey-step__num">1</span>
+              <div>
+                <strong>Create account</strong>
+                <small>Name, email, and password — 30 seconds</small>
+              </div>
+            </div>
+            <div className="auth-journey-step__connector" aria-hidden="true" />
+            <div className="auth-journey-step">
+              <span className="auth-journey-step__num">2</span>
+              <div>
+                <strong>Personalise</strong>
+                <small>Tell us your interests and goals</small>
+              </div>
+            </div>
+            <div className="auth-journey-step__connector" aria-hidden="true" />
+            <div className="auth-journey-step">
+              <span className="auth-journey-step__num">3</span>
+              <div>
+                <strong>Start learning</strong>
+                <small>Your personalised dashboard is ready</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Floating illustration cards */}
+        <div className="auth-visual__cards" aria-hidden="true">
+          <div className="auth-float-card auth-float-card--a">
+            <span>🎓</span>
+            <div><strong>Free certificates</strong><small>Earn as you complete</small></div>
+          </div>
+          <div className="auth-float-card auth-float-card--b">
+            <span>🗺️</span>
+            <div><strong>GIS skills</strong><small>Map the future</small></div>
+          </div>
+          <div className="auth-float-card auth-float-card--c">
+            <span>🌍</span>
+            <div><strong>Global community</strong><small>10K+ learners worldwide</small></div>
+          </div>
+        </div>
       </section>
 
-      <section className="auth-panel">
-        <div>
-          <span className="eyebrow">Join Knowledge Hub</span>
-          <h2>Create account</h2>
+      {/* ── Right form panel ── */}
+      <section className="auth-panel auth-panel--register">
+        <div className="auth-panel__inner">
+          <div className="auth-panel__header">
+            <span className="auth-panel__eyebrow">Join Knowledge Hub</span>
+            <h2>Create your<br />free account</h2>
+            <p>Sign up in seconds — then we'll personalise your experience step by step.</p>
+          </div>
+
+          <form className="auth-form" onSubmit={(e) => void handleSubmit(e)}>
+            <label>
+              Full name
+              <input value={fullName} onChange={(e) => setFullName(e.target.value)} required autoComplete="name" placeholder="Your full name" />
+            </label>
+            <label>
+              Email address
+              <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required autoComplete="email" placeholder="you@example.com" />
+            </label>
+            <label>
+              Phone <span className="auth-optional">(optional)</span>
+              <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+234…" autoComplete="tel" />
+            </label>
+            <label>
+              Password
+              <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" minLength={8} required autoComplete="new-password" placeholder="Min. 8 characters" />
+            </label>
+
+            {/* Account type */}
+            <div className="auth-role-picker" role="radiogroup" aria-label="Account type">
+              <button type="button" className={accountType === "STUDENT" ? "selected" : ""} onClick={() => setAccountType("STUDENT")} aria-pressed={accountType === "STUDENT"}>
+                <span className="auth-role-icon">🎒</span>
+                <strong>Learner</strong>
+                <span>Start learning immediately</span>
+              </button>
+              <button type="button" className={accountType === "TRAINER" ? "selected" : ""} onClick={() => setAccountType("TRAINER")} aria-pressed={accountType === "TRAINER"}>
+                <span className="auth-role-icon">🏫</span>
+                <strong>Trainer</strong>
+                <span>Requires approval</span>
+              </button>
+            </div>
+
+            {error && <p className="form-error">{error}</p>}
+
+            <button className="primary-button auth-submit-btn" disabled={isSubmitting}>
+              {isSubmitting ? "Creating account…" : "Create account & continue →"}
+            </button>
+          </form>
+
+          <div className="auth-panel__divider"><span>Already have an account?</span></div>
+          <p className="auth-switch">
+            <Link to="/login" className="auth-switch__cta">Log in instead →</Link>
+          </p>
+
+          <div className="auth-panel__trust">
+            <span>🔒 Secure & private</span>
+            <span>·</span>
+            <span>100% free</span>
+            <span>·</span>
+            <span>No card needed</span>
+          </div>
         </div>
-        <form className="auth-form" onSubmit={(e) => void handleSubmit(e)}>
-          <label>
-            Full name
-            <input
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              required
-              autoComplete="name"
-            />
-          </label>
-          <label>
-            Email
-            <input
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              type="email"
-              required
-              autoComplete="email"
-            />
-          </label>
-          <label>
-            Phone
-            <input
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+234…"
-              autoComplete="tel"
-            />
-          </label>
-          <label>
-            Password
-            <input
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              type="password"
-              minLength={8}
-              required
-              autoComplete="new-password"
-            />
-          </label>
-
-          <div className="auth-role-picker" role="radiogroup" aria-label="Account type">
-            <button
-              type="button"
-              className={accountType === "STUDENT" ? "selected" : ""}
-              onClick={() => setAccountType("STUDENT")}
-              aria-pressed={accountType === "STUDENT"}
-            >
-              <strong>Learner</strong>
-              <span>Start learning immediately.</span>
-            </button>
-            <button
-              type="button"
-              className={accountType === "TRAINER" ? "selected" : ""}
-              onClick={() => setAccountType("TRAINER")}
-              aria-pressed={accountType === "TRAINER"}
-            >
-              <strong>Trainer</strong>
-              <span>Requires approval before dashboard access.</span>
-            </button>
-          </div>
-
-          <div className="auth-register-note">
-            <span>🎯</span>
-            <p>
-              After signing up you'll complete a quick onboarding wizard to
-              personalise your experience — courses, badges, challenges, and
-              recommendations will all be tailored to you.
-            </p>
-          </div>
-
-          {error ? <p className="form-error">{error}</p> : null}
-
-          <button className="primary-button" disabled={isSubmitting}>
-            {isSubmitting ? "Creating account…" : "Create account & continue →"}
-          </button>
-        </form>
-        <p className="auth-switch">
-          Already registered? <Link to="/login">Log in</Link>
-        </p>
       </section>
     </main>
+  );
+}
+
+function RegisterBgPattern() {
+  return (
+    <svg className="auth-bg-svg" viewBox="0 0 900 900" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      {/* Hexagonal grid pattern */}
+      {Array.from({ length: 6 }, (_, row) =>
+        Array.from({ length: 8 }, (_, col) => {
+          const cx = col * 110 + (row % 2 === 0 ? 55 : 0) + 20;
+          const cy = row * 96 + 48;
+          return <polygon key={`${row}-${col}`} points={`${cx},${cy - 30} ${cx + 26},${cy - 15} ${cx + 26},${cy + 15} ${cx},${cy + 30} ${cx - 26},${cy + 15} ${cx - 26},${cy - 15}`} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />;
+        })
+      )}
+      {/* Radial burst from top right */}
+      {Array.from({ length: 8 }, (_, i) => {
+        const angle = (i / 8) * Math.PI * 2;
+        const x2 = 820 + Math.cos(angle) * 300;
+        const y2 = 80  + Math.sin(angle) * 300;
+        return <line key={i} x1="820" y1="80" x2={x2} y2={y2} stroke="rgba(216,255,120,0.05)" strokeWidth="1" />;
+      })}
+      {/* Large arcs */}
+      <path d="M 0 600 Q 450 200 900 600" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="1.5" />
+      <path d="M 0 750 Q 450 350 900 750" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
+      {/* Certificate / award shapes */}
+      <circle cx="800" cy="700" r="80" fill="none" stroke="rgba(216,255,120,0.08)" strokeWidth="2" />
+      <circle cx="800" cy="700" r="55" fill="none" stroke="rgba(216,255,120,0.06)" strokeWidth="1" />
+      <circle cx="800" cy="700" r="30" fill="rgba(216,255,120,0.05)" />
+      {/* Star shapes */}
+      <g transform="translate(120,180) scale(1.5)" opacity="0.08">
+        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" fill="rgba(216,255,120,1)" />
+      </g>
+      <g transform="translate(700,400) scale(1.2)" opacity="0.07">
+        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" fill="white" />
+      </g>
+      {/* Book/learn icon */}
+      <g transform="translate(50,550) scale(2.5)" opacity="0.08">
+        <path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z" fill="white"/>
+      </g>
+    </svg>
   );
 }

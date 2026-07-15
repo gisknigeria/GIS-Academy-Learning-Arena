@@ -60,8 +60,9 @@ function App() {
             <Route path="/teachspace" element={<TeachSpacePage />} />
             <Route element={<RoleRoute page="learn" />}>
               <Route path="/learn" element={<LearnPage />} />
-              <Route path="/live-sessions/:sessionId" element={<LiveSessionPage />} />
             </Route>
+            {/* Live session workspace — accessible to all authenticated users (trainers + learners) */}
+            <Route path="/live-sessions/:sessionId" element={<LiveSessionPage />} />
             <Route element={<RoleRoute page="arena" />}>
               <Route path="/competitions" element={<ArenaPage />} />
               <Route path="/competitions/:id" element={<CompetitionDetailPage />} />
