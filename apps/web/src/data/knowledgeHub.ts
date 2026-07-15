@@ -117,7 +117,7 @@ export const competitionTypes = ["Live quiz", "Map challenge", "Coding sprint", 
 export const courseInterests = ["GIS and Mapping", "Artificial Intelligence", "Cybersecurity", "Agriculture Technology", "Fintech", "Media", "Climate", "Entrepreneurship", "Software Development"];
 export const notificationPreferences = ["Daily motivation", "Competition alerts", "Trainer feedback", "Weekly digest", "Certificates and badges", "Minimal notifications"];
 export const languagePreferences = ["English", "Pidgin", "Yoruba", "Hausa", "Igbo", "French"];
-export const fontPreferences = ["Inter", "Poppins", "Nunito", "Atkinson Hyperlegible", "Merriweather"];
+export const fontPreferences = ["Inter", "Poppins", "Nunito", "Atkinson Hyperlegible", "Merriweather", "DM Sans", "Manrope", "Lexend", "Roboto Serif", "Lora", "Source Sans 3", "Space Grotesk"];
 export const appearanceModes = ["Light", "Dark", "System"] as const;
 
 export const platformModules = [
@@ -288,6 +288,13 @@ export function applyKnowledgeHubPreferences(preferences: KnowledgeHubPreference
     Nunito: '"Nunito", ui-sans-serif, system-ui, sans-serif',
     "Atkinson Hyperlegible": '"Atkinson Hyperlegible", ui-sans-serif, system-ui, sans-serif',
     Merriweather: '"Merriweather", Georgia, serif',
+    "DM Sans": '"DM Sans", "Inter", ui-sans-serif, system-ui, sans-serif',
+    Manrope: '"Manrope", "Inter", ui-sans-serif, system-ui, sans-serif',
+    Lexend: '"Lexend", "Inter", ui-sans-serif, system-ui, sans-serif',
+    "Roboto Serif": '"Roboto Serif", Georgia, serif',
+    Lora: '"Lora", Georgia, serif',
+    "Source Sans 3": '"Source Sans 3", "Inter", ui-sans-serif, system-ui, sans-serif',
+    "Space Grotesk": '"Space Grotesk", "Inter", ui-sans-serif, system-ui, sans-serif',
   };
   root.setProperty("--app-font", fontFamilies[preferences.fontPreference] || fontFamilies.Inter);
   document.documentElement.dataset.appearance = preferences.appearanceMode.toLowerCase();

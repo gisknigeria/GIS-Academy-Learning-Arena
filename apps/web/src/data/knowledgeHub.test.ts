@@ -13,7 +13,7 @@ describe("knowledge hub preferences", () => {
     const preferences = {
       ...defaultKnowledgeHubPreferences,
       favorite: "Arsenal",
-      fontPreference: "Nunito",
+      fontPreference: "DM Sans",
       appearanceMode: "Dark" as const,
       languagePreference: "Yoruba",
     };
@@ -23,7 +23,7 @@ describe("knowledge hub preferences", () => {
     expect(document.documentElement.dataset.appearance).toBe("dark");
     expect(document.documentElement.dataset.favoriteTheme).toBe("arsenal");
     expect(document.documentElement.lang).toBe("yo");
-    expect(document.documentElement.style.getPropertyValue("--app-font")).toContain("Nunito");
+    expect(document.documentElement.style.getPropertyValue("--app-font")).toContain("DM Sans");
   });
 
   it("persists preferences and emits the live-update event", () => {

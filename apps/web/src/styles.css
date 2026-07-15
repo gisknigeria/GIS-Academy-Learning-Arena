@@ -9,7 +9,7 @@
    1. VARIABLES — DESIGN TOKENS
    ============================================================================= */
 
-@import url("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Inter:wght@400;500;600;700;800;900&family=Merriweather:wght@400;700&family=Nunito:wght@400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=DM+Sans:wght@400;500;700&family=Inter:wght@400;500;600;700;800;900&family=Lexend:wght@400;500;600;700&family=Lora:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Merriweather:wght@400;700&family=Nunito:wght@400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800&family=Roboto+Serif:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;700&display=swap");
 
 :root {
   /* ── Font ── */
@@ -6195,6 +6195,7 @@ textarea {
   display: grid;
   gap: 7px;
   color: var(--ink);
+  font-family: var(--app-font);
   font-size: 0.9rem;
   font-weight: 800;
 }
@@ -6208,13 +6209,71 @@ textarea {
   outline: 0;
   padding: 0 12px;
   background: var(--surface);
-  color: var(--ink);
+  color: #5d6b63;
+  font-family: var(--app-font);
+}
+
+.knowledge-form-grid input::placeholder {
+  color: #8a978e;
 }
 
 .knowledge-form-grid input:focus,
 .knowledge-form-grid select:focus {
   border-color: var(--lime);
+  color: var(--ink);
   box-shadow: 0 0 0 4px rgba(216, 255, 120, 0.35);
+}
+
+.knowledge-onboarding-layout {
+  display: grid;
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.knowledge-onboarding-card {
+  display: grid;
+  gap: 12px;
+  border: 1px solid #dfe9e1;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #f8fdf9, #f3fbf6);
+  padding: 16px;
+  box-shadow: 0 8px 26px rgba(12, 51, 38, 0.05);
+}
+
+.knowledge-onboarding-card__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.knowledge-onboarding-step {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--green-900);
+  color: #fff;
+  font-size: 0.84rem;
+  font-weight: 900;
+  flex: 0 0 auto;
+}
+
+.knowledge-onboarding-step.step-accent {
+  background: var(--blue);
+}
+
+.knowledge-onboarding-card__header strong {
+  display: block;
+  color: var(--green-900);
+  font-size: 0.95rem;
+}
+
+.knowledge-onboarding-card__header p {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
 }
 
 .knowledge-save-button { gap: 8px; margin-top: 14px; }
