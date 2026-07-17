@@ -51,6 +51,10 @@ export const coursesApi = {
     return apiRequest<Course>(`/courses/${id}`, { method: "DELETE", token });
   },
 
+  remove(token: string, id: string): Promise<{ deleted: true }> {
+    return apiRequest<{ deleted: true }>(`/courses/${id}/destroy`, { method: "DELETE", token });
+  },
+
   restore(token: string, id: string): Promise<Course> {
     return apiRequest<Course>(`/courses/${id}/restore`, { method: "PATCH", token });
   },

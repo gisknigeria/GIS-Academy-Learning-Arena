@@ -2,11 +2,11 @@ import {
   Archive,
   ArrowRight,
   BookOpen,
-  Filter,
   Loader2,
   PlusCircle,
   RotateCcw,
   Search,
+  Trash2,
   Users,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -14,40 +14,15 @@ import { Link } from "react-router-dom";
 import { CreateCourseModal } from "../components/CreateCourseModal";
 import { PaymentGate } from "../components/PaymentGate";
 import { PaymentStatusBanner } from "../components/PaymentStatusBanner";
-import { ProgrammeCatalogue } from "../components/ProgrammeCatalogue";
 import { SectionHeading } from "../components/SectionHeading";
 import { useAuth } from "../context/AuthContext";
-import { getCourseAccessLevelLabel, loadKnowledgeHubPreferences, trainingCategories } from "../data/knowledgeHub";
+import { getCourseAccessLevelLabel, loadKnowledgeHubPreferences } from "../data/knowledgeHub";
 import { coursesApi } from "../lib/courses-api";
 import { profileApi } from "../lib/profile-api";
 import { getCourseAccess } from "../lib/use-payment-access";
 import { isAdminRole } from "../lib/roles";
 import type { PaymentStatus, UserRole } from "../types/auth";
 import type { Course } from "../types/course";
-import { DELIVERY_MODE_LABELS } from "../types/course";
-
-const TRAINING_CATEGORY_CARDS = [
-  {
-    title: "Bootcamp",
-    body: "Short, practical and outcome-focused programmes.",
-  },
-  {
-    title: "Green",
-    body: "School pathways for technology, sustainability and geospatial skills.",
-  },
-  {
-    title: "Academy",
-    body: "Professional technical courses and certification.",
-  },
-  {
-    title: "Industry Training",
-    body: "Sector-focused workforce and operational training.",
-  },
-  {
-    title: "Premium Executive Service",
-    body: "Custom leadership, strategy and advisory programmes.",
-  },
-];
 
 // ─── Delivery mode colour config ─────────────────────────────────────────────
 
@@ -61,14 +36,6 @@ const MODE_CONFIG: Record<
   HYBRID:       { badge: "badge-purple", gradient: "linear-gradient(135deg, #3b0764 0%, #7c3aed 100%)", dot: "#7c3aed" },
 };
 
-function DeliveryBadge({ mode }: { mode: Course["deliveryMode"] }) {
-  return (
-    <span className={`course-badge ${MODE_CONFIG[mode].badge}`}>
-      {DELIVERY_MODE_LABELS[mode]}
-    </span>
-  );
-}
-
 function LevelTag({ course }: { course: Course }) {
   if (!course.level) return null;
   return <span className="course-level">{getCourseAccessLevelLabel(course.trainingCategory, course.level)}</span>;
@@ -80,12 +47,16 @@ function CourseRow({
   course,
   onArchive,
   onRestore,
+  onDelete,
   canArchive,
+  canDelete,
 }: {
   course: Course;
   onArchive: (id: string) => void;
   onRestore: (id: string) => void;
+  onDelete: (id: string) => void;
   canArchive: boolean;
+  canDelete: boolean;
 }) {
   return (
     <tr className={course.isArchived ? "row-archived" : ""}>
@@ -102,9 +73,6 @@ function CourseRow({
       </td>
       <td>
         <LevelTag course={course} />
-      </td>
-      <td>
-        <DeliveryBadge mode={course.deliveryMode} />
       </td>
       <td>
         <span className="badge-xs badge-green">{course.trainingCategory ?? "Academy"}</span>
@@ -132,25 +100,51 @@ function CourseRow({
         {!canArchive ? (
           <Link className="secondary-button small-button" to={`/courses/${course.id}`}>Manage</Link>
         ) : course.isArchived ? (
-          <button
-            className="action-btn restore"
-            onClick={() => onRestore(course.id)}
-            title="Restore course"
-            aria-label="Restore course"
-          >
-            <RotateCcw size={15} />
-            Restore
-          </button>
+          <>
+            <button
+              className="action-btn restore"
+              onClick={() => onRestore(course.id)}
+              title="Restore course"
+              aria-label="Restore course"
+            >
+              <RotateCcw size={15} />
+              Restore
+            </button>
+            {canDelete ? (
+              <button
+                className="action-btn archive"
+                onClick={() => onDelete(course.id)}
+                title="Delete course permanently"
+                aria-label="Delete course permanently"
+              >
+                <Trash2 size={15} />
+                Delete
+              </button>
+            ) : null}
+          </>
         ) : (
-          <button
-            className="action-btn archive"
-            onClick={() => onArchive(course.id)}
-            title="Archive course"
-            aria-label="Archive course"
-          >
-            <Archive size={15} />
-            Archive
-          </button>
+          <>
+            <button
+              className="action-btn archive"
+              onClick={() => onArchive(course.id)}
+              title="Archive course"
+              aria-label="Archive course"
+            >
+              <Archive size={15} />
+              Archive
+            </button>
+            {canDelete ? (
+              <button
+                className="action-btn archive"
+                onClick={() => onDelete(course.id)}
+                title="Delete course permanently"
+                aria-label="Delete course permanently"
+              >
+                <Trash2 size={15} />
+                Delete
+              </button>
+            ) : null}
+          </>
         )}
       </td>
     </tr>
@@ -205,9 +199,8 @@ function CourseCard({
 
       {/* Body */}
       <div className="course-card-v2-body">
-        {/* Mode + payment badges */}
+        {/* Category badges */}
         <div className="course-card-v2-badges">
-          <DeliveryBadge mode={course.deliveryMode} />
           <span className="badge-green badge-xs">{course.trainingCategory ?? "Academy"}</span>
         </div>
 
@@ -270,7 +263,6 @@ export function CoursesPage() {
   const [error, setError] = useState("");
 
   const [search, setSearch] = useState("");
-  const [modeFilter, setModeFilter] = useState("");
   const [categoryFilter, setCategoryFilter] = useState(() => {
     if (isAdminRole(role) || role === "TRAINER") return "";
     return loadKnowledgeHubPreferences().trainingCategory;
@@ -282,14 +274,13 @@ export function CoursesPage() {
   const searchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = useCallback(
-    async (opts: { search?: string; mode?: string; category?: string; archived?: boolean; page?: number } = {}) => {
+    async (opts: { search?: string; category?: string; archived?: boolean; page?: number } = {}) => {
       if (!token) return;
       setLoading(true);
       setError("");
       try {
         const res = await coursesApi.list(token, {
           search: opts.search ?? search,
-          deliveryMode: (opts.mode ?? modeFilter) || undefined,
           trainingCategory: (opts.category ?? effectiveCategoryFilter) || undefined,
           includeArchived: opts.archived ?? showArchived,
           page: opts.page ?? page,
@@ -304,7 +295,7 @@ export function CoursesPage() {
         setLoading(false);
       }
     },
-    [token, search, modeFilter, categoryFilter, showArchived, page],
+    [token, search, effectiveCategoryFilter, showArchived, page],
   );
 
   useEffect(() => {
@@ -339,12 +330,6 @@ export function CoursesPage() {
     }, 350);
   }
 
-  function handleModeChange(val: string) {
-    setModeFilter(val);
-    setPage(1);
-    void load({ mode: val, page: 1 });
-  }
-
   function handleCategoryChange(val: string) {
     if (!isAdmin) {
       const nextCategory = loadKnowledgeHubPreferences().trainingCategory || effectiveCategoryFilter;
@@ -373,6 +358,14 @@ export function CoursesPage() {
   async function handleRestore(id: string) {
     if (!token) return;
     await coursesApi.restore(token, id);
+    void load();
+  }
+
+  async function handleDelete(id: string) {
+    if (!token || role !== "SUPER_ADMIN" || !window.confirm("Delete this course permanently? This cannot be undone.")) {
+      return;
+    }
+    await coursesApi.remove(token, id);
     void load();
   }
 
@@ -406,23 +399,6 @@ export function CoursesPage() {
 
 
       {/* Filters */}
-      <div className="training-category-strip" aria-label="Training categories">
-        {TRAINING_CATEGORY_CARDS.map((category) => (
-          <article
-            className={categoryFilter === category.title ? "active" : ""}
-            key={category.title}
-            onClick={() => {
-              if (isAdmin) handleCategoryChange(category.title);
-            }}
-            role="button"
-            tabIndex={0}
-          >
-            <strong>{category.title}</strong>
-            <span>{category.body}</span>
-          </article>
-        ))}
-      </div>
-
       <div className="filter-bar">
         <div className="filter-search">
           <Search size={16} />
@@ -432,33 +408,6 @@ export function CoursesPage() {
             onChange={(e) => handleSearchChange(e.target.value)}
             aria-label="Search courses"
           />
-        </div>
-        <div className="filter-select-wrap">
-          <Filter size={15} />
-          <select
-            value={effectiveCategoryFilter}
-            onChange={(e) => handleCategoryChange(e.target.value)}
-            aria-label="Filter by training category"
-            disabled={!isAdmin}
-          >
-            {isAdmin ? <option value="">All categories</option> : null}
-            {trainingCategories.map((category) => (
-              <option key={category} value={category}>{category}</option>
-            ))}
-          </select>
-        </div>
-        <div className="filter-select-wrap">
-          <Filter size={15} />
-          <select
-            value={modeFilter}
-            onChange={(e) => handleModeChange(e.target.value)}
-            aria-label="Filter by delivery mode"
-          >
-            <option value="">All modes</option>
-            <option value="E_LEARNING">E-Learning</option>
-            <option value="ONSITE">Onsite</option>
-            <option value="HYBRID">Hybrid</option>
-          </select>
         </div>
         {isAdmin && (
           <label className="filter-toggle">
@@ -474,6 +423,24 @@ export function CoursesPage() {
           {loading ? "" : `${total} course${total !== 1 ? "s" : ""}`}
         </span>
       </div>
+
+      {isAdmin && (
+        <div className="filter-bar secondary-filter-row">
+          <label className="filter-toggle">
+            <span>Category</span>
+            <select
+              value={categoryFilter}
+              onChange={(e) => handleCategoryChange(e.target.value)}
+              aria-label="Filter by training category"
+            >
+              <option value="">All categories</option>
+              {["Bootcamp", "Green", "Academy", "Industry Training", "Premium Executive Service"].map((category) => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+      )}
 
       {/* Error */}
       {error && <p className="form-error">{error}</p>}
@@ -510,7 +477,6 @@ export function CoursesPage() {
                 <th>Code</th>
                 <th>Title</th>
               <th>Level</th>
-              <th>Mode</th>
               <th>Category</th>
               <th className="cell-center">Lessons</th>
                 <th className="cell-center">Enrolled</th>
@@ -525,7 +491,9 @@ export function CoursesPage() {
                   course={c}
                   onArchive={handleArchive}
                   onRestore={handleRestore}
+                  onDelete={handleDelete}
                   canArchive={isAdminRole(role)}
+                  canDelete={role === "SUPER_ADMIN"}
                 />
               ))}
             </tbody>

@@ -149,6 +149,18 @@ export class CoursesService {
     });
   }
 
+  async remove(id: string) {
+    const course = await this.prisma.course.findUnique({ where: { id } });
+
+    if (!course) {
+      throw new NotFoundException(`Course "${id}" not found.`);
+    }
+
+    await this.prisma.course.delete({ where: { id } });
+
+    return { deleted: true };
+  }
+
   async createLesson(courseId: string, dto: CreateLessonDto) {
     await this.findOne(courseId);
     await this.ensureModuleBelongsToCourse(dto.moduleId, courseId);

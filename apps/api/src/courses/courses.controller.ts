@@ -210,6 +210,16 @@ export class CoursesController {
     return this.coursesService.restore(id);
   }
 
+  /**
+   * DELETE /api/courses/:id/destroy
+   * Permanent delete. Super admin only.
+   */
+  @Roles(UserRole.SUPER_ADMIN)
+  @Delete(":id/destroy")
+  remove(@Param("id") id: string) {
+    return this.coursesService.remove(id);
+  }
+
   @Roles(...LESSON_WRITE_ROLES)
   @Patch("lessons/:lessonId")
   updateLesson(@Param("lessonId") lessonId: string, @Body() dto: UpdateLessonDto) {
