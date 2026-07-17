@@ -10,6 +10,7 @@ import { ClassesModule } from "./classes/classes.module";
 import { CompetitionsModule } from "./competitions/competitions.module";
 import { PlayersModule } from "./players/players.module";
 import { CoursesModule } from "./courses/courses.module";
+import { CurriculumModule } from "./curriculum/curriculum.module";
 import { DashboardModule } from "./dashboard/dashboard.module";
 import { EmailModule } from "./email/email.module";
 import { LearnModule } from "./learn/learn.module";
@@ -29,6 +30,7 @@ import { UsersModule } from "./users/users.module";
     UsersModule,
     AuthModule,
     CoursesModule,
+    CurriculumModule,
     DashboardModule,
     ClassesModule,
     AssignmentsModule,

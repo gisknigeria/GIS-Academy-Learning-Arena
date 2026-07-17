@@ -5,6 +5,10 @@ export class ImportLessonDto {
   sourceLessonId!: string;
 
   @IsOptional()
+  @IsString()
+  moduleId?: string;
+
+  @IsOptional()
   @IsInt()
   @Min(1)
   order?: number;

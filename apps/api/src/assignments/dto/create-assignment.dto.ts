@@ -1,6 +1,15 @@
-import { IsBoolean, IsDateString, IsInt, IsOptional, IsString, Min } from "class-validator";
+import { AssignmentKind } from "@prisma/client";
+import { IsArray, IsBoolean, IsDateString, IsEnum, IsInt, IsOptional, IsString, Min } from "class-validator";
 
 export class CreateAssignmentDto {
+  @IsOptional()
+  @IsString()
+  moduleId?: string;
+
+  @IsOptional()
+  @IsEnum(AssignmentKind)
+  kind?: AssignmentKind;
+
   @IsString()
   title!: string;
 
@@ -20,4 +29,8 @@ export class CreateAssignmentDto {
   @IsOptional()
   @IsBoolean()
   isPublished?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  acceptedEvidence?: string[];
 }

@@ -14,6 +14,7 @@ import { Link } from "react-router-dom";
 import { CreateCourseModal } from "../components/CreateCourseModal";
 import { PaymentGate } from "../components/PaymentGate";
 import { PaymentStatusBanner } from "../components/PaymentStatusBanner";
+import { ProgrammeCatalogue } from "../components/ProgrammeCatalogue";
 import { SectionHeading } from "../components/SectionHeading";
 import { useAuth } from "../context/AuthContext";
 import { loadKnowledgeHubPreferences, trainingCategories } from "../data/knowledgeHub";
@@ -27,16 +28,24 @@ import { DELIVERY_MODE_LABELS } from "../types/course";
 
 const TRAINING_CATEGORY_CARDS = [
   {
+    title: "Bootcamp",
+    body: "Short, practical and outcome-focused programmes.",
+  },
+  {
+    title: "Green",
+    body: "School pathways for technology, sustainability and geospatial skills.",
+  },
+  {
     title: "Academy",
-    body: "Structured cohorts for academy programmes, with courses grouped into modules.",
+    body: "Professional technical courses and certification.",
   },
   {
-    title: "Corporate",
-    body: "Company or group training for software use, workflows, and professional upskilling.",
+    title: "Industry Training",
+    body: "Sector-focused workforce and operational training.",
   },
   {
-    title: "Geography Green",
-    body: "Primary and secondary school pathways with age-aware levels and competitions.",
+    title: "Premium Executive Service",
+    body: "Custom leadership, strategy and advisory programmes.",
   },
 ];
 
@@ -71,10 +80,12 @@ function CourseRow({
   course,
   onArchive,
   onRestore,
+  canArchive,
 }: {
   course: Course;
   onArchive: (id: string) => void;
   onRestore: (id: string) => void;
+  canArchive: boolean;
 }) {
   return (
     <tr className={course.isArchived ? "row-archived" : ""}>
@@ -118,7 +129,9 @@ function CourseRow({
         )}
       </td>
       <td className="cell-actions">
-        {course.isArchived ? (
+        {!canArchive ? (
+          <Link className="secondary-button small-button" to={`/courses/${course.id}`}>Manage</Link>
+        ) : course.isArchived ? (
           <button
             className="action-btn restore"
             onClick={() => onRestore(course.id)}
@@ -252,7 +265,7 @@ export function CoursesPage() {
   const { user, token } = useAuth();
   const role = user?.role ?? "GUEST";
   const paymentStatus = user?.paymentStatus ?? "PENDING";
-  const isAdmin = isAdminRole(role);
+  const isAdmin = isAdminRole(role) || role === "TRAINER";
 
   const [courses, setCourses] = useState<Course[]>([]);
   const [total, setTotal] = useState(0);
@@ -264,7 +277,7 @@ export function CoursesPage() {
   const [search, setSearch] = useState("");
   const [modeFilter, setModeFilter] = useState("");
   const [categoryFilter, setCategoryFilter] = useState(() => {
-    if (isAdminRole(role)) return "";
+    if (isAdminRole(role) || role === "TRAINER") return "";
     return loadKnowledgeHubPreferences().trainingCategory;
   });
   const [showArchived, setShowArchived] = useState(false);
@@ -388,6 +401,8 @@ export function CoursesPage() {
         </div>
       </div>
 
+      <ProgrammeCatalogue availableCourses={courses} onChanged={() => void load()} />
+
       {/* Filters */}
       <div className="training-category-strip" aria-label="Training categories">
         {TRAINING_CATEGORY_CARDS.map((category) => (
@@ -505,6 +520,7 @@ export function CoursesPage() {
                   course={c}
                   onArchive={handleArchive}
                   onRestore={handleRestore}
+                  canArchive={isAdminRole(role)}
                 />
               ))}
             </tbody>

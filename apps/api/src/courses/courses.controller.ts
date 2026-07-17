@@ -27,7 +27,7 @@ import { AnswerLessonDiscussionDto } from "./dto/answer-lesson-discussion.dto";
 import { CreateLessonDiscussionDto } from "./dto/create-lesson-discussion.dto";
 import { ImportLessonDto } from "./dto/import-lesson.dto";
 
-const WRITE_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TRAINING_MANAGER];
+const WRITE_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TRAINING_MANAGER, UserRole.TRAINER];
 const LESSON_WRITE_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TRAINING_MANAGER, UserRole.TRAINER];
 
 @UseGuards(JwtAuthGuard, RolesGuard)

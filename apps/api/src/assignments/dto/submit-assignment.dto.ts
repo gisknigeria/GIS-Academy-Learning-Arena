@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsUrl } from "class-validator";
+import { IsArray, IsOptional, IsString, IsUrl } from "class-validator";
 
 export class SubmitAssignmentDto {
   @IsOptional()
@@ -8,4 +8,8 @@ export class SubmitAssignmentDto {
   @IsOptional()
   @IsUrl()
   fileUrl?: string;
+
+  @IsOptional()
+  @IsArray()
+  evidence?: Array<{ name: string; url: string; type?: string }>;
 }

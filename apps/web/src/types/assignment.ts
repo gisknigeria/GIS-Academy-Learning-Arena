@@ -3,11 +3,14 @@ export type SubmissionStatus = "PENDING" | "SUBMITTED" | "GRADED" | "RETURNED";
 export type Assignment = {
   id: string;
   courseId: string;
+  moduleId?: string | null;
+  kind: "COURSEWORK" | "MODULE_PRACTICAL" | "CAPSTONE_PROJECT";
   title: string;
   description?: string | null;
   dueDate?: string | null;
   maxScore: number;
   isPublished: boolean;
+  acceptedEvidence?: string[];
   createdAt: string;
   updatedAt: string;
   _count?: { submissions: number };
@@ -30,6 +33,7 @@ export type Submission = {
   studentId: string;
   answer?: string | null;
   fileUrl?: string | null;
+  evidence?: EvidenceFile[];
   status: SubmissionStatus;
   score?: number | null;
   feedback?: string | null;
@@ -43,11 +47,14 @@ export type Submission = {
 };
 
 export type CreateAssignmentPayload = {
+  moduleId?: string;
+  kind?: "COURSEWORK" | "MODULE_PRACTICAL" | "CAPSTONE_PROJECT";
   title: string;
   description?: string;
   dueDate?: string;
   maxScore?: number;
   isPublished?: boolean;
+  acceptedEvidence?: string[];
 };
 
 export type UpdateAssignmentPayload = Partial<CreateAssignmentPayload>;
@@ -55,6 +62,13 @@ export type UpdateAssignmentPayload = Partial<CreateAssignmentPayload>;
 export type SubmitAssignmentPayload = {
   answer?: string;
   fileUrl?: string;
+  evidence?: EvidenceFile[];
+};
+
+export type EvidenceFile = {
+  name: string;
+  url: string;
+  type?: string;
 };
 
 export type GradeSubmissionPayload = {

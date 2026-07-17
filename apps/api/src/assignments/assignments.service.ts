@@ -7,6 +7,7 @@ import {
 import { SubmissionStatus, UserRole } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { EmailService } from "../email/email.service";
+import { CertificatesService } from "../certificates/certificates.service";
 import { CreateAssignmentDto } from "./dto/create-assignment.dto";
 import { GradeSubmissionDto } from "./dto/grade-submission.dto";
 import { SubmitAssignmentDto } from "./dto/submit-assignment.dto";
@@ -23,22 +24,33 @@ const GRADER_ROLES: UserRole[] = [
 
 @Injectable()
 export class AssignmentsService {
-  constructor(private readonly prisma: PrismaService, private readonly emailService: EmailService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly emailService: EmailService,
+    private readonly certificatesService: CertificatesService,
+  ) {}
 
   // ─── Assignments ──────────────────────────────────────────────────────────
 
   async create(courseId: string, dto: CreateAssignmentDto) {
     const course = await this.prisma.course.findUnique({ where: { id: courseId } });
     if (!course) throw new NotFoundException(`Course "${courseId}" not found.`);
+    if (dto.moduleId) {
+      const module = await this.prisma.courseModule.findFirst({ where: { id: dto.moduleId, courseId } });
+      if (!module) throw new NotFoundException("The selected module does not belong to this course.");
+    }
 
     return this.prisma.assignment.create({
       data: {
         courseId,
+        moduleId: dto.moduleId,
+        kind: dto.kind,
         title: dto.title,
         description: dto.description,
         dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
         maxScore: dto.maxScore ?? 100,
         isPublished: dto.isPublished ?? false,
+        acceptedEvidence: dto.acceptedEvidence ?? [],
       },
     });
   }
@@ -51,9 +63,12 @@ export class AssignmentsService {
       where: { id: assignmentId },
       data: {
         title: dto.title,
+        moduleId: dto.moduleId,
+        kind: dto.kind,
         description: dto.description,
         maxScore: dto.maxScore,
         isPublished: dto.isPublished,
+        acceptedEvidence: dto.acceptedEvidence,
         ...(dto.dueDate !== undefined
           ? { dueDate: dto.dueDate ? new Date(dto.dueDate) : null }
           : {}),
@@ -96,6 +111,7 @@ export class AssignmentsService {
                   status: true,
                   score: true,
                   feedback: true,
+                  evidence: true,
                   submittedAt: true,
                   gradedAt: true,
                 },
@@ -146,6 +162,7 @@ export class AssignmentsService {
         data: {
           answer: dto.answer,
           fileUrl: dto.fileUrl,
+          evidence: dto.evidence ?? [],
           status: SubmissionStatus.SUBMITTED,
           submittedAt: new Date(),
         },
@@ -158,6 +175,7 @@ export class AssignmentsService {
         studentId,
         answer: dto.answer,
         fileUrl: dto.fileUrl,
+        evidence: dto.evidence ?? [],
         status: SubmissionStatus.SUBMITTED,
       },
     });
@@ -195,7 +213,7 @@ export class AssignmentsService {
       },
       include: {
         student: { select: { id: true, fullName: true, email: true } },
-        assignment: { select: { title: true } },
+        assignment: { select: { title: true, courseId: true } },
       },
     });
 
@@ -210,6 +228,10 @@ export class AssignmentsService {
       );
     } catch (err) {
       // Swallow email errors — grading should still succeed
+    }
+
+    if (updated.status === SubmissionStatus.GRADED) {
+      await this.certificatesService.issueAutoCompletion(updated.student.id, updated.assignment.courseId).catch(() => null);
     }
 
     return updated;

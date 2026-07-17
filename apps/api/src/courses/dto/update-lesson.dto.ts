@@ -3,6 +3,10 @@ import { IsArray, IsInt, IsOptional, IsString, Min, MinLength } from "class-vali
 export class UpdateLessonDto {
   @IsOptional()
   @IsString()
+  moduleId?: string;
+
+  @IsOptional()
+  @IsString()
   @MinLength(3)
   title?: string;
 

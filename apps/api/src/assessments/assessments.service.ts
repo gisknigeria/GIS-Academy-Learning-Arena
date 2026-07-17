@@ -233,6 +233,7 @@ export class AssessmentsService {
     return this.prisma.assessment.create({
       data: {
         title: dto.title,
+        scope: dto.lessonId ? "LESSON" : dto.scope ?? "COURSE_FINAL",
         description: dto.description,
         courseId,
         lessonId: dto.lessonId,

@@ -67,6 +67,13 @@ export class CertificatesService {
           where: { isPublished: true },
           select: { id: true },
         },
+        assignments: {
+          where: {
+            isPublished: true,
+            kind: { in: ["MODULE_PRACTICAL", "CAPSTONE_PROJECT"] },
+          },
+          select: { id: true, maxScore: true },
+        },
       },
     });
 
@@ -84,6 +91,7 @@ export class CertificatesService {
     });
 
     if (existing) {
+      await this.issueEligibleStageCertificates(userId, courseId);
       return existing;
     }
 
@@ -119,11 +127,35 @@ export class CertificatesService {
       }
     }
 
-    return this.createCertificate({
+    if (course.assignments.length > 0) {
+      const submissions = await this.prisma.submission.findMany({
+        where: {
+          studentId: userId,
+          assignmentId: { in: course.assignments.map((assignment) => assignment.id) },
+          status: "GRADED",
+        },
+        select: { assignmentId: true, score: true },
+      });
+      const passingSubmissions = new Set(
+        submissions
+          .filter((submission) => {
+            const assignment = course.assignments.find((item) => item.id === submission.assignmentId);
+            return assignment && (submission.score ?? 0) >= assignment.maxScore * 0.5;
+          })
+          .map((submission) => submission.assignmentId),
+      );
+      if (passingSubmissions.size < course.assignments.length) {
+        return null;
+      }
+    }
+
+    const certificate = await this.createCertificate({
       userId,
       title: `Certificate of Completion: ${course.title}`,
       courseId,
     });
+    await this.issueEligibleStageCertificates(userId, courseId);
+    return certificate;
   }
 
   async verify(verificationId: string) {
@@ -181,7 +213,17 @@ export class CertificatesService {
     return this.createCertificatePdf(certificate);
   }
 
-  private async createCertificate({ userId, title, courseId }: { userId: string; title: string; courseId?: string }) {
+  private async createCertificate({
+    userId,
+    title,
+    courseId,
+    stageId,
+  }: {
+    userId: string;
+    title: string;
+    courseId?: string;
+    stageId?: string;
+  }) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { id: true, fullName: true, email: true },
@@ -195,6 +237,7 @@ export class CertificatesService {
       data: {
         userId: user.id,
         courseId,
+        stageId,
         title,
         certificateNo: await this.createCertificateNumber(),
         verificationId: randomUUID(),
@@ -208,6 +251,33 @@ export class CertificatesService {
     }
 
     return { ...certificate, user };
+  }
+
+  private async issueEligibleStageCertificates(userId: string, completedCourseId: string) {
+    const stages = await this.prisma.learningStage.findMany({
+      where: { courses: { some: { courseId: completedCourseId } } },
+      include: {
+        pathway: { include: { category: true } },
+        courses: { where: { required: true }, select: { courseId: true } },
+      },
+    });
+
+    for (const stage of stages) {
+      const existing = await this.prisma.certificate.findFirst({ where: { userId, stageId: stage.id } });
+      if (existing) continue;
+
+      const requiredCourseIds = stage.courses.map((item) => item.courseId);
+      const completed = await this.prisma.certificate.count({
+        where: { userId, courseId: { in: requiredCourseIds } },
+      });
+      if (requiredCourseIds.length > 0 && completed === requiredCourseIds.length) {
+        await this.createCertificate({
+          userId,
+          stageId: stage.id,
+          title: `${stage.pathway.category.name} - ${stage.name} Stage Certificate`,
+        });
+      }
+    }
   }
 
   private async createCertificatePdf(certificate: Certificate & { user: { fullName: string; email: string } | null; course: { title: string } | null }) {

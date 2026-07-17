@@ -102,9 +102,11 @@ export const preferenceCategories: PreferenceCategory[] = [
 
 export const ageBands = ["Under 13", "13-15", "16-18", "19-24", "25-34", "35+"];
 export const trainingCategories = [
+  "Bootcamp",
+  "Green",
   "Academy",
-  "Corporate",
-  "Geography Green",
+  "Industry Training",
+  "Premium Executive Service",
 ];
 export const knowledgeLearningModes = [
   { value: "E_LEARNING", label: "E-Learning" },

@@ -98,6 +98,7 @@ export type AttemptSummary = {
 };
 
 export type CreateAssessmentPayload = {
+  scope?: "LESSON" | "MODULE" | "COURSE_FINAL";
   title: string;
   description?: string;
   courseId?: string;

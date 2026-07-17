@@ -63,6 +63,18 @@ enum CompetitionStatus {
   ARCHIVED
 }
 
+enum AssignmentKind {
+  COURSEWORK
+  MODULE_PRACTICAL
+  CAPSTONE_PROJECT
+}
+
+enum AssessmentScope {
+  LESSON
+  MODULE
+  COURSE_FINAL
+}
+
 model User {
   id           String       @id @default(uuid())
   email        String       @unique
@@ -158,13 +170,93 @@ model Course {
   assessments     Assessment[]
   libraryQuestions Question[]   @relation("QuestionCourse")
   certificates    Certificate[]
+  stagePlacements LearningStageCourse[]
+  modules         CourseModule[]
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
+}
+
+model TrainingCategory {
+  id          String   @id @default(uuid())
+  slug        String   @unique
+  name        String
+  description String?
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  pathways    LearningPathway[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model LearningPathway {
+  id          String   @id @default(uuid())
+  categoryId  String
+  name        String
+  description String?
+  order       Int      @default(0)
+  category    TrainingCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  stages      LearningStage[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([categoryId, name])
+  @@index([categoryId, order])
+}
+
+model LearningStage {
+  id          String   @id @default(uuid())
+  pathwayId   String
+  stageNumber Int
+  name        String
+  description String?
+  pathway     LearningPathway @relation(fields: [pathwayId], references: [id], onDelete: Cascade)
+  courses     LearningStageCourse[]
+  certificates Certificate[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([pathwayId, stageNumber])
+  @@index([pathwayId, stageNumber])
+}
+
+model LearningStageCourse {
+  id       String @id @default(uuid())
+  stageId  String
+  courseId String
+  order    Int    @default(0)
+  required Boolean @default(true)
+  stage    LearningStage @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([stageId, courseId])
+  @@index([courseId])
+}
+
+model CourseModule {
+  id             String   @id @default(uuid())
+  courseId       String
+  title          String
+  description    String?
+  order          Int
+  importedFromId String?
+  course         Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons        Lesson[]
+  practicals     Assignment[]
+  importedFrom   CourseModule? @relation("ModuleImports", fields: [importedFromId], references: [id], onDelete: SetNull)
+  imports        CourseModule[] @relation("ModuleImports")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([courseId, order])
+  @@index([courseId])
+  @@index([importedFromId])
 }
 
 model Lesson {
   id           String   @id @default(uuid())
   courseId     String
+  moduleId     String?
+  importedFromId String?
   title        String
   summary      String?
   content      String?
@@ -176,11 +268,17 @@ model Lesson {
   mapUrl       String?
   attachments  Json     @default("[]")
   course       Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  module       CourseModule? @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+  importedFrom Lesson?  @relation("LessonImports", fields: [importedFromId], references: [id], onDelete: SetNull)
+  imports      Lesson[]  @relation("LessonImports")
   progress     LessonProgress[]
   discussions  LessonDiscussion[]
   classUnlocks ClassLessonUnlock[]
   assessments Assessment[]
   libraryQuestions Question[] @relation("QuestionLesson")
+
+  @@index([moduleId, order])
+  @@index([importedFromId])
 }
 
 model ClassLessonUnlock {
@@ -321,12 +419,16 @@ model LessonProgress {
 model Assignment {
   id          String       @id @default(uuid())
   courseId    String
+  moduleId    String?
+  kind        AssignmentKind @default(COURSEWORK)
   title       String
   description String?
   dueDate     DateTime?
   maxScore    Int          @default(100)
   isPublished Boolean      @default(false)
+  acceptedEvidence Json    @default("[]")
   course      Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  module      CourseModule? @relation(fields: [moduleId], references: [id], onDelete: SetNull)
   submissions Submission[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
@@ -345,6 +447,7 @@ model Submission {
   studentId    String
   answer       String?
   fileUrl      String?
+  evidence     Json             @default("[]")
   status       SubmissionStatus @default(SUBMITTED)
   score        Int?
   feedback     String?
@@ -377,6 +480,7 @@ model Assessment {
   id               String      @id @default(uuid())
   courseId         String?
   lessonId         String?
+  scope            AssessmentScope @default(COURSE_FINAL)
   title            String
   description      String?
   durationMin      Int         @default(30)
@@ -687,14 +791,17 @@ model Certificate {
   certificateNo  String   @unique
   userId         String
   courseId       String?
+  stageId        String?
   title          String
   verificationId String   @unique
   issuedAt       DateTime @default(now())
 
   user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   course Course? @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  stage  LearningStage? @relation(fields: [stageId], references: [id], onDelete: SetNull)
 
   @@unique([userId, courseId])
+  @@unique([userId, stageId])
 }
 
 model PlatformSetting {

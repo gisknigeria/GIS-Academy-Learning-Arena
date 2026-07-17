@@ -1,6 +1,10 @@
 import { IsArray, IsInt, IsOptional, IsString, Min, MinLength } from "class-validator";
 
 export class CreateLessonDto {
+  @IsOptional()
+  @IsString()
+  moduleId?: string;
+
   @IsString()
   @MinLength(3)
   title!: string;

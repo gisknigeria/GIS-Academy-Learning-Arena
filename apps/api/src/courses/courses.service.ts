@@ -5,6 +5,7 @@ import {
 } from "@nestjs/common";
 import { DeliveryMode, Prisma } from "@prisma/client";
 import { CertificatesService } from "../certificates/certificates.service";
+import { CurriculumService } from "../curriculum/curriculum.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateCourseDto } from "./dto/create-course.dto";
 import { QueryCoursesDto } from "./dto/query-courses.dto";
@@ -20,6 +21,7 @@ export class CoursesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly certificatesService: CertificatesService,
+    private readonly curriculumService: CurriculumService,
   ) {}
 
   async create(dto: CreateCourseDto) {
@@ -149,10 +151,12 @@ export class CoursesService {
 
   async createLesson(courseId: string, dto: CreateLessonDto) {
     await this.findOne(courseId);
+    await this.ensureModuleBelongsToCourse(dto.moduleId, courseId);
 
     return this.prisma.lesson.create({
       data: {
         courseId,
+        moduleId: dto.moduleId,
         title: dto.title,
         summary: dto.summary,
         content: dto.content,
@@ -195,6 +199,7 @@ export class CoursesService {
 
   async importLesson(courseId: string, dto: ImportLessonDto) {
     await this.findOne(courseId);
+    await this.ensureModuleBelongsToCourse(dto.moduleId, courseId);
     const source = await this.prisma.lesson.findUnique({
       where: { id: dto.sourceLessonId },
     });
@@ -208,6 +213,8 @@ export class CoursesService {
     return this.prisma.lesson.create({
       data: {
         courseId,
+        moduleId: dto.moduleId,
+        importedFromId: source.id,
         title: source.title,
         summary: source.summary,
         content: source.content,
@@ -278,6 +285,7 @@ export class CoursesService {
     if (!lesson) {
       throw new NotFoundException(`Lesson "${id}" not found.`);
     }
+    await this.ensureModuleBelongsToCourse(dto.moduleId, lesson.courseId);
 
     return this.prisma.lesson.update({
       where: { id },
@@ -401,6 +409,7 @@ export class CoursesService {
   async enrollSelf(courseId: string, userId: string) {
     const course = await this.prisma.course.findUnique({ where: { id: courseId } });
     if (!course) throw new NotFoundException(`Course "${courseId}" not found.`);
+    await this.curriculumService.assertCanEnroll(courseId, userId);
 
     // Create or return existing enrollment; set initial progress based on any
     // completed lessons the user already has (usually zero).
@@ -480,6 +489,14 @@ export class CoursesService {
 
     if (lockContext && !lockContext.unlockedLessonIds.has(lessonId)) {
       throw new NotFoundException("This onsite lesson is locked until your trainer unlocks it.");
+    }
+  }
+
+  private async ensureModuleBelongsToCourse(moduleId: string | undefined, courseId: string) {
+    if (!moduleId) return;
+    const module = await this.prisma.courseModule.findFirst({ where: { id: moduleId, courseId } });
+    if (!module) {
+      throw new NotFoundException("The selected module does not belong to this course.");
     }
   }
 }

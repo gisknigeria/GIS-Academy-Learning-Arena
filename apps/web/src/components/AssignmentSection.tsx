@@ -8,6 +8,8 @@ import {
   Loader2,
   PlusCircle,
   Trash2,
+  UploadCloud,
+  X,
 } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
@@ -16,42 +18,53 @@ import { isAdminRole, isInstructorRole } from "../lib/roles";
 import type {
   Assignment,
   CreateAssignmentPayload,
+  EvidenceFile,
   SubmitAssignmentPayload,
 } from "../types/assignment";
+import type { CourseModule } from "../types/curriculum";
 import { STATUS_COLOURS, STATUS_LABELS } from "../types/assignment";
 import { GradingModal } from "./GradingModal";
 import { SectionHeading } from "./SectionHeading";
 
-type Props = { courseId: string };
+type Props = { courseId: string; modules?: CourseModule[] };
 
 type AssignmentFormState = {
   id?: string;
+  moduleId: string;
+  kind: "COURSEWORK" | "MODULE_PRACTICAL" | "CAPSTONE_PROJECT";
   title: string;
   description: string;
   dueDate: string;
   maxScore: string;
   isPublished: boolean;
+  acceptedEvidence: string[];
 };
 
 const emptyForm: AssignmentFormState = {
+  moduleId: "",
+  kind: "COURSEWORK",
   title: "",
   description: "",
   dueDate: "",
   maxScore: "100",
   isPublished: false,
+  acceptedEvidence: [],
 };
 
 function toPayload(form: AssignmentFormState): CreateAssignmentPayload {
   return {
+    moduleId: form.moduleId || undefined,
+    kind: form.kind,
     title: form.title,
     description: form.description || undefined,
     dueDate: form.dueDate || undefined,
     maxScore: Number(form.maxScore),
     isPublished: form.isPublished,
+    acceptedEvidence: form.acceptedEvidence,
   };
 }
 
-export function AssignmentSection({ courseId }: Props) {
+export function AssignmentSection({ courseId, modules = [] }: Props) {
   const { token, user } = useAuth();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,6 +78,7 @@ export function AssignmentSection({ courseId }: Props) {
   const [submitForm, setSubmitForm] = useState<SubmitAssignmentPayload>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [uploadingEvidence, setUploadingEvidence] = useState(false);
 
   const isStaff = Boolean(user && (isAdminRole(user.role) || isInstructorRole(user.role)));
 
@@ -94,11 +108,14 @@ export function AssignmentSection({ courseId }: Props) {
   function startEdit(assignment: Assignment) {
     setForm({
       id: assignment.id,
+      moduleId: assignment.moduleId ?? "",
+      kind: assignment.kind ?? "COURSEWORK",
       title: assignment.title,
       description: assignment.description ?? "",
       dueDate: assignment.dueDate ? assignment.dueDate.slice(0, 10) : "",
       maxScore: String(assignment.maxScore),
       isPublished: assignment.isPublished,
+      acceptedEvidence: assignment.acceptedEvidence ?? [],
     });
     setShowForm(true);
   }
@@ -165,6 +182,28 @@ export function AssignmentSection({ courseId }: Props) {
     }
   }
 
+  async function uploadEvidence(assignmentId: string, files: FileList | null) {
+    if (!token || !files?.length) return;
+    setUploadingEvidence(true);
+    setSubmitError("");
+    try {
+      const uploaded: EvidenceFile[] = [];
+      for (const file of Array.from(files)) {
+        const result = await assignmentsApi.uploadEvidence(token, assignmentId, file);
+        uploaded.push({ name: file.name, url: result.url, type: file.type || undefined });
+      }
+      setSubmitForm((current) => ({ ...current, evidence: [...(current.evidence ?? []), ...uploaded] }));
+    } catch {
+      setSubmitError("One or more evidence files could not be uploaded.");
+    } finally {
+      setUploadingEvidence(false);
+    }
+  }
+
+  function removeEvidence(url: string) {
+    setSubmitForm((current) => ({ ...current, evidence: (current.evidence ?? []).filter((item) => item.url !== url) }));
+  }
+
   return (
     <section className="workstream">
       <SectionHeading
@@ -212,6 +251,9 @@ export function AssignmentSection({ courseId }: Props) {
                 <div className="assignment-item-meta">
                   <h3>{assignment.title}</h3>
                   <div className="assignment-badges">
+                    {assignment.kind === "MODULE_PRACTICAL" ? <span className="assignment-badge score">Module practical</span> : null}
+                    {assignment.kind === "CAPSTONE_PROJECT" ? <span className="assignment-badge due">Capstone project</span> : null}
+                    {assignment.moduleId ? <span className="assignment-badge submissions">{modules.find((module) => module.id === assignment.moduleId)?.title ?? "Module"}</span> : null}
                     {isStaff && !assignment.isPublished ? (
                       <span className="assignment-badge draft">Draft</span>
                     ) : null}
@@ -344,10 +386,32 @@ export function AssignmentSection({ courseId }: Props) {
                       }
                     />
                   </label>
+                  <label className="submission-evidence-picker">
+                    Evidence files
+                    <span>Upload images, documents, a ZIP containing shapefile components, or other project evidence.</span>
+                    <span className="secondary-button small-button"><UploadCloud size={15} /> {uploadingEvidence ? "Uploading..." : "Choose files"}</span>
+                    <input
+                      type="file"
+                      multiple
+                      accept=".zip,.shp,.shx,.dbf,.prj,.geojson,.kml,.kmz,.gpkg,.tif,.tiff,.png,.jpg,.jpeg,.pdf,.doc,.docx,.ppt,.pptx"
+                      disabled={uploadingEvidence}
+                      onChange={(event) => {
+                        void uploadEvidence(assignment.id, event.target.files);
+                        event.currentTarget.value = "";
+                      }}
+                    />
+                  </label>
+                  {submitForm.evidence?.length ? (
+                    <div className="submission-evidence-list">
+                      {submitForm.evidence.map((file) => (
+                        <span key={file.url}><a href={file.url} target="_blank" rel="noreferrer">{file.name}</a><button onClick={() => removeEvidence(file.url)} aria-label={`Remove ${file.name}`}><X size={13} /></button></span>
+                      ))}
+                    </div>
+                  ) : null}
                   <div className="submission-inline-actions">
                     <button
                       className="primary-button small-button"
-                      disabled={submitting || (!submitForm.answer && !submitForm.fileUrl)}
+                      disabled={submitting || uploadingEvidence || (!submitForm.answer && !submitForm.fileUrl && !submitForm.evidence?.length)}
                       onClick={() => void handleSubmit(assignment.id)}
                     >
                       {submitting ? <Loader2 size={14} className="spin" /> : null}
@@ -376,6 +440,23 @@ export function AssignmentSection({ courseId }: Props) {
               </button>
             </div>
             <form className="modal-form" onSubmit={(e) => void handleSave(e)}>
+              <div className="form-row">
+                <label>
+                  Activity type
+                  <select value={form.kind} onChange={(event) => setForm({ ...form, kind: event.target.value as AssignmentFormState["kind"] })}>
+                    <option value="COURSEWORK">Course assignment</option>
+                    <option value="MODULE_PRACTICAL">End-of-module practical</option>
+                    <option value="CAPSTONE_PROJECT">Course capstone project</option>
+                  </select>
+                </label>
+                <label>
+                  Module
+                  <select value={form.moduleId} onChange={(event) => setForm({ ...form, moduleId: event.target.value })} required={form.kind === "MODULE_PRACTICAL"}>
+                    <option value="">Whole course</option>
+                    {modules.map((module) => <option value={module.id} key={module.id}>{module.order}. {module.title}</option>)}
+                  </select>
+                </label>
+              </div>
               <label>
                 Title
                 <input
@@ -410,6 +491,24 @@ export function AssignmentSection({ courseId }: Props) {
                   required
                 />
               </label>
+              <fieldset className="evidence-options">
+                <legend>Accepted evidence</legend>
+                {["Shapefile / GIS archive", "Map image", "Document / report", "Presentation", "External project link"].map((option) => (
+                  <label className="checkbox-label" key={option}>
+                    <input
+                      type="checkbox"
+                      checked={form.acceptedEvidence.includes(option)}
+                      onChange={(event) => setForm({
+                        ...form,
+                        acceptedEvidence: event.target.checked
+                          ? [...form.acceptedEvidence, option]
+                          : form.acceptedEvidence.filter((item) => item !== option),
+                      })}
+                    />
+                    {option}
+                  </label>
+                ))}
+              </fieldset>
               <label className="checkbox-label">
                 <input
                   type="checkbox"

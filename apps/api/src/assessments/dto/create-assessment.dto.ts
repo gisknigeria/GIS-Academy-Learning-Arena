@@ -1,6 +1,11 @@
-import { IsBoolean, IsInt, IsOptional, IsString, Max, Min, MinLength } from "class-validator";
+import { AssessmentScope } from "@prisma/client";
+import { IsBoolean, IsEnum, IsInt, IsOptional, IsString, Max, Min, MinLength } from "class-validator";
 
 export class CreateAssessmentDto {
+  @IsOptional()
+  @IsEnum(AssessmentScope)
+  scope?: AssessmentScope;
+
   @IsString()
   @MinLength(3)
   title!: string;

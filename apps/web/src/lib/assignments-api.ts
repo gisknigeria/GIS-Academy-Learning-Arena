@@ -1,4 +1,4 @@
-import { apiRequest } from "./api";
+import { API_BASE_URL, apiRequest } from "./api";
 import type {
   Assignment,
   CreateAssignmentPayload,
@@ -54,5 +54,18 @@ export const assignmentsApi = {
       token,
       body: payload,
     });
+  },
+
+  async uploadEvidence(token: string, assignmentId: string, file: File): Promise<{ url: string }> {
+    const form = new FormData();
+    form.append("file", file);
+    form.append("assignmentId", assignmentId);
+    const response = await fetch(`${API_BASE_URL}/uploads/submission`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}` },
+      body: form,
+    });
+    if (!response.ok) throw new Error(await response.text());
+    return response.json() as Promise<{ url: string }>;
   },
 };

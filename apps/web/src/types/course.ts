@@ -34,6 +34,7 @@ export type Course = {
 export type Lesson = {
   id: string;
   courseId: string;
+  moduleId?: string | null;
   title: string;
   summary?: string | null;
   content?: string | null;
@@ -103,6 +104,7 @@ export type CreateCoursePayload = {
 export type UpdateCoursePayload = Partial<CreateCoursePayload>;
 
 export type CreateLessonPayload = {
+  moduleId?: string;
   title: string;
   summary?: string;
   content?: string;
@@ -119,6 +121,7 @@ export type UpdateLessonPayload = Partial<CreateLessonPayload>;
 
 export type ImportLessonPayload = {
   sourceLessonId: string;
+  moduleId?: string;
   order?: number;
 };
 

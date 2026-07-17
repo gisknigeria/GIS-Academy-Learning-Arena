@@ -2,6 +2,7 @@ import { ArrowLeft, BookOpen, CheckCircle2, ClipboardCheck, Edit3, ExternalLink,
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { AssignmentSection } from "../components/AssignmentSection";
+import { CourseModuleManager } from "../components/CourseModuleManager";
 import { PaymentGate } from "../components/PaymentGate";
 import { SectionHeading } from "../components/SectionHeading";
 import { useAuth } from "../context/AuthContext";
@@ -9,10 +10,12 @@ import { coursesApi } from "../lib/courses-api";
 import { assessmentsApi } from "../lib/assessments-api";
 import { isAdminRole, isInstructorRole } from "../lib/roles";
 import type { Course, CourseProgress, CreateLessonPayload, Lesson, LessonAttachment, LessonLibraryItem } from "../types/course";
+import type { CourseModule } from "../types/curriculum";
 import { DELIVERY_MODE_LABELS } from "../types/course";
 
 type LessonFormState = {
   id?: string;
+  moduleId: string;
   title: string;
   summary: string;
   content: string;
@@ -26,6 +29,7 @@ type LessonFormState = {
 };
 
 const emptyForm: LessonFormState = {
+  moduleId: "",
   title: "",
   summary: "",
   content: "",
@@ -40,6 +44,7 @@ const emptyForm: LessonFormState = {
 
 function toLessonPayload(form: LessonFormState): CreateLessonPayload {
   return {
+    moduleId: form.moduleId || undefined,
     title: form.title.trim(),
     summary: form.summary.trim() || undefined,
     content: form.content.trim() || undefined,
@@ -169,6 +174,7 @@ export function CourseDetailPage() {
   const { token, user } = useAuth();
   const [course, setCourse] = useState<Course | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [modules, setModules] = useState<CourseModule[]>([]);
   const [progress, setProgress] = useState<CourseProgress | null>(null);
   const [loading, setLoading] = useState(true);
   const [lessonError, setLessonError] = useState("");
@@ -271,6 +277,7 @@ export function CourseDetailPage() {
   function startEditLesson(lesson: Lesson) {
     setForm({
       id: lesson.id,
+      moduleId: lesson.moduleId ?? "",
       title: lesson.title,
       summary: lesson.summary ?? "",
       content: lesson.content ?? "",
@@ -369,6 +376,27 @@ export function CourseDetailPage() {
       navigate(`/assessments/${created.id}/build`);
     } catch {
       setLessonError("Could not create a lesson assessment. Please try again.");
+    } finally {
+      setCreatingAssessmentLessonId("");
+    }
+  }
+
+  async function handleCreateCourseAssessment() {
+    if (!token || !id || !course) return;
+    setCreatingAssessmentLessonId("course-final");
+    setLessonError("");
+    try {
+      const created = await assessmentsApi.create(token, {
+        courseId: id,
+        scope: "COURSE_FINAL",
+        title: `${course.title} final assessment`,
+        description: "Final course exercise required before certification.",
+        durationMin: 45,
+        passMark: 70,
+      });
+      navigate(`/assessments/${created.id}/build`);
+    } catch {
+      setLessonError("Could not create the final course assessment.");
     } finally {
       setCreatingAssessmentLessonId("");
     }
@@ -514,6 +542,10 @@ export function CourseDetailPage() {
               <BookOpen size={17} />
               Import existing
             </button>
+            <button className="secondary-button" onClick={() => void handleCreateCourseAssessment()} disabled={creatingAssessmentLessonId === "course-final"}>
+              {creatingAssessmentLessonId === "course-final" ? <Loader2 className="spin" size={17} /> : <ClipboardCheck size={17} />}
+              Final assessment
+            </button>
           </div>
         ) : null}
 
@@ -528,6 +560,8 @@ export function CourseDetailPage() {
       {isLocked ? (
         <PaymentGate accessStatus={course.accessStatus as { allowed: false; reason: "payment_required" | "account_blocked" | "account_overdue" }} />
       ) : (
+        <>
+        <CourseModuleManager courseId={course.id} canManage={canManageLessons} onChange={setModules} />
         <section className="workstream">
           <SectionHeading eyebrow="Course content" title="Lessons" compact />
           {lessonError ? <p className="form-error">{lessonError}</p> : null}
@@ -620,10 +654,11 @@ export function CourseDetailPage() {
             </div>
           )}
         </section>
+        </>
       )}
 
       {/* Assignment section — shown to all who have course access */}
-      {!isLocked ? <AssignmentSection courseId={course.id} /> : null}
+      {!isLocked ? <AssignmentSection courseId={course.id} modules={modules} /> : null}
 
       {showLessonForm ? (
         <div className="modal-backdrop" role="dialog" aria-modal="true">
@@ -647,6 +682,13 @@ export function CourseDetailPage() {
                   </div>
                 </div>
                 <div className="lesson-form-basics-grid">
+                  <label>
+                    Module
+                    <select value={form.moduleId} onChange={(event) => setForm({ ...form, moduleId: event.target.value })}>
+                      <option value="">Unassigned / legacy lesson</option>
+                      {modules.map((module) => <option key={module.id} value={module.id}>{module.order}. {module.title}</option>)}
+                    </select>
+                  </label>
                   <label>
                     Lesson title
                     <input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} placeholder="e.g. Understanding coordinate systems" required />

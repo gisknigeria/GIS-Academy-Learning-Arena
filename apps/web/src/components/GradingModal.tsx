@@ -145,6 +145,16 @@ export function GradingModal({ assignment, onClose }: Props) {
                     Open submission file
                   </a>
                 ) : null}
+                {sub.evidence?.length ? (
+                  <div className="submission-evidence-links">
+                    {sub.evidence.map((file) => (
+                      <a className="submission-file-link" href={file.url} target="_blank" rel="noreferrer" key={file.url}>
+                        <ExternalLink size={13} />
+                        {file.name}
+                      </a>
+                    ))}
+                  </div>
+                ) : null}
                 {sub.feedback ? (
                   <p className="submission-feedback">
                     <strong>Feedback:</strong> {sub.feedback}
