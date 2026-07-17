@@ -1,4 +1,4 @@
-import { BookCopy, Boxes, CheckCircle2, ChevronDown, ChevronUp, FileCheck2, Loader2, Lock, Plus, Search, Trash2, X } from "lucide-react";
+import { BookCopy, CheckCircle2, ChevronDown, ChevronUp, ExternalLink, FileCheck2, FileText, Loader2, Lock, PlayCircle, Plus, Search, Trash2, Video, X } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -13,6 +13,16 @@ type Props = {
   lessons?: Lesson[];
   onChange?: (modules: CourseModule[]) => void;
 };
+
+function getLessonMaterials(lesson: Lesson) {
+  return [
+    lesson.videoUrl ? { label: "Video", url: lesson.videoUrl, icon: Video } : null,
+    lesson.resourceUrl ? { label: "File", url: lesson.resourceUrl, icon: FileText } : null,
+    lesson.slideUrl ? { label: "Slides", url: lesson.slideUrl, icon: FileText } : null,
+    lesson.mapUrl ? { label: "Map", url: lesson.mapUrl, icon: FileText } : null,
+    ...(lesson.attachments ?? []).map((item) => ({ label: item.name || "File", url: item.url, icon: FileText })),
+  ].filter((item): item is { label: string; url: string; icon: typeof Video } => Boolean(item));
+}
 
 export function CourseModuleManager({ courseId, canManage, lessons = [], onChange }: Props) {
   const { token } = useAuth();
@@ -32,6 +42,7 @@ export function CourseModuleManager({ courseId, canManage, lessons = [], onChang
     try {
       const data = await curriculumApi.listModules(token, courseId);
       setModules(data);
+      setExpandedModuleId((current) => current || data[0]?.id || "");
       onChange?.(data);
     } catch {
       setError("Could not load course modules.");
@@ -111,12 +122,12 @@ export function CourseModuleManager({ courseId, canManage, lessons = [], onChang
   }
 
   return (
-    <section className="course-module-manager">
-      <div className="course-module-manager-head">
+    <section className="course-curriculum-outline">
+      <div className="curriculum-outline-heading">
         <div>
-          <span className="section-eyebrow">Course structure</span>
+          <span className="section-eyebrow">Course content</span>
           <h2>Modules</h2>
-          <p>Lessons and practical activities are organised inside these modules.</p>
+          <p>Open a module to view its lessons, materials, and required practical exercise.</p>
         </div>
         {canManage ? (
           <div className="course-module-actions">
@@ -139,26 +150,32 @@ export function CourseModuleManager({ courseId, canManage, lessons = [], onChang
           <p>{canManage ? "Create a module before adding its lessons and practical exercise." : "Your trainer is preparing this course structure."}</p>
         </div>
       ) : (
-        <div className="course-module-grid">
-          {modules.map((module) => (
-            <article key={module.id} className={expandedModuleId === module.id ? "course-module-card expanded" : "course-module-card"}>
+        <div className="curriculum-module-list">
+          {modules.map((module) => {
+            const moduleLessons = lessons.filter((lesson) => lesson.moduleId === module.id);
+            const completedLessons = moduleLessons.filter((lesson) => lesson.completed).length;
+            const isExpanded = expandedModuleId === module.id;
+
+            return (
+            <article key={module.id} className={isExpanded ? "curriculum-module is-open" : "curriculum-module"}>
               <button
-                className="course-module-toggle"
+                className="curriculum-module-toggle"
                 type="button"
                 onClick={() => setExpandedModuleId((current) => current === module.id ? "" : module.id)}
-                aria-expanded={expandedModuleId === module.id}
+                aria-expanded={isExpanded}
               >
-                <span className="module-order">{module.order}</span>
-                <div>
+                <span className="curriculum-module-number"><small>Module</small>{module.order}</span>
+                <div className="curriculum-module-copy">
                   <h3>{module.title}</h3>
                   {module.description ? <p>{module.description}</p> : null}
-                  <div className="module-stat-row">
-                    <span><Boxes size={14} /> {lessons.filter((lesson) => lesson.moduleId === module.id).length || module.lessons?.length || module._count?.lessons || 0} lessons</span>
-                    <span><FileCheck2 size={14} /> {module.practicals?.length ?? module._count?.practicals ?? 0} practicals</span>
-                    {module.importedFromId ? <span>Imported</span> : null}
+                  <div className="curriculum-module-meta">
+                    <span>{completedLessons}/{moduleLessons.length || module.lessons?.length || 0} lessons complete</span>
+                    <span><FileCheck2 size={13} /> {module.practicals?.length ?? 0} practical exercise{module.practicals?.length === 1 ? "" : "s"}</span>
                   </div>
                 </div>
-                {expandedModuleId === module.id ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                <span className="curriculum-module-chevron">
+                  {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                </span>
               </button>
               {canManage ? (
                 <button
@@ -171,48 +188,84 @@ export function CourseModuleManager({ courseId, canManage, lessons = [], onChang
                   {busy === module.id ? <Loader2 className="spin" size={15} /> : <Trash2 size={15} />}
                 </button>
               ) : null}
-              {expandedModuleId === module.id ? (
-                <div className="module-lesson-drawer">
-                  {lessons.filter((lesson) => lesson.moduleId === module.id).length === 0 ? (
-                    <p>No lessons have been added to this module.</p>
-                  ) : lessons.filter((lesson) => lesson.moduleId === module.id).map((lesson) =>
-                    lesson.locked ? (
-                      <span className="module-lesson-link locked" key={lesson.id}>
-                        <span>{lesson.order}</span>
-                        <strong>{lesson.title}</strong>
-                        <Lock size={15} />
-                      </span>
-                    ) : (
-                      <Link className="module-lesson-link" key={lesson.id} to={`/courses/${courseId}/lessons/${lesson.id}`}>
-                        <span>{lesson.order}</span>
-                        <strong>{lesson.title}</strong>
-                        {lesson.completed ? <CheckCircle2 size={15} /> : null}
-                      </Link>
-                    ),
+              {isExpanded ? (
+                <div className="curriculum-module-content">
+                  <div className="curriculum-lessons-heading">
+                    <span>Lessons</span>
+                    <b>{moduleLessons.length}</b>
+                  </div>
+                  {moduleLessons.length === 0 ? (
+                    <div className="curriculum-empty-row">No lessons have been added to this module.</div>
+                  ) : (
+                    <div className="curriculum-lesson-list">
+                      {moduleLessons.map((lesson) => {
+                        const materials = getLessonMaterials(lesson);
+                        return (
+                          <article className={lesson.locked ? "curriculum-lesson is-locked" : "curriculum-lesson"} key={lesson.id}>
+                            <span className="curriculum-lesson-number">{lesson.order}</span>
+                            <div className="curriculum-lesson-main">
+                              <div className="curriculum-lesson-title">
+                                <h4>{lesson.title}</h4>
+                                {lesson.completed ? <span><CheckCircle2 size={14} /> Done</span> : null}
+                              </div>
+                              {lesson.summary ? <p>{lesson.summary}</p> : null}
+                              {materials.length ? (
+                                <div className="curriculum-lesson-materials">
+                                  {materials.map((material) => {
+                                    const MaterialIcon = material.icon;
+                                    return (
+                                      <a href={material.url} target="_blank" rel="noreferrer" key={`${lesson.id}-${material.url}`}>
+                                        <MaterialIcon size={14} />
+                                        <strong>{material.label}</strong>
+                                      </a>
+                                    );
+                                  })}
+                                </div>
+                              ) : <span className="curriculum-no-material">Text lesson</span>}
+                            </div>
+                            {lesson.locked ? (
+                              <span className="curriculum-lesson-action is-locked"><Lock size={15} /> Locked</span>
+                            ) : (
+                              <Link className="curriculum-lesson-action" to={`/courses/${courseId}/lessons/${lesson.id}`}>
+                                <PlayCircle size={16} /> Open
+                              </Link>
+                            )}
+                          </article>
+                        );
+                      })}
+                    </div>
                   )}
-                  <div className="module-practical-list">
-                    <span className="module-drawer-label">Practical exercise</span>
+
+                  <div className="curriculum-practical-section">
+                    <div className="curriculum-practical-heading">
+                      <span><FileCheck2 size={16} /> Practical exercise</span>
+                      <p>Complete this activity and submit your evidence before finishing the course.</p>
+                    </div>
                     {module.practicals?.length ? module.practicals.map((practical) => (
-                      <a className="module-practical-link" href={`#assignment-${practical.id}`} key={practical.id}>
-                        <FileCheck2 size={15} />
-                        <span>
-                          <strong>{practical.title}</strong>
-                          <small>{practical.maxScore} points</small>
-                        </span>
+                      <article className="curriculum-practical" key={practical.id}>
+                        <span className="curriculum-practical-icon"><FileCheck2 size={20} /></span>
+                        <div>
+                          <h4>{practical.title}</h4>
+                          {practical.description ? <p>{practical.description}</p> : null}
+                          <span>{practical.maxScore} points</span>
+                        </div>
                         <b className={practical.mySubmission?.status === "GRADED" ? "done" : ""}>
                           {practical.mySubmission ? STATUS_LABELS[practical.mySubmission.status] : "Not submitted"}
                         </b>
-                      </a>
+                        <a className="curriculum-practical-action" href={`#assignment-${practical.id}`}>
+                          Open practical <ExternalLink size={14} />
+                        </a>
+                      </article>
                     )) : (
-                      <span className="module-practical-missing">
+                      <div className="curriculum-practical-missing">
                         No practical exercise has been published for this module yet.
-                      </span>
+                      </div>
                     )}
                   </div>
                 </div>
               ) : null}
             </article>
-          ))}
+          )})}
         </div>
       )}
 

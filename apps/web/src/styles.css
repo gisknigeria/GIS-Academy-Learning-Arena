@@ -11464,3 +11464,430 @@ html[data-appearance="dark"] .ambient-token {
     flex-direction: column;
   }
 }
+
+/* Learner course outline: module -> lessons -> practical */
+.course-curriculum-outline {
+  margin: 22px 0;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.curriculum-outline-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.curriculum-outline-heading h2 {
+  margin: 4px 0 5px;
+  font-size: 1.18rem;
+  letter-spacing: 0;
+}
+
+.curriculum-outline-heading p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: .83rem;
+  line-height: 1.5;
+}
+
+.curriculum-module-list {
+  display: grid;
+}
+
+.curriculum-module {
+  position: relative;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.curriculum-module:last-child {
+  border-bottom: 0;
+}
+
+.curriculum-module.is-open {
+  box-shadow: inset 3px 0 0 var(--primary);
+}
+
+.curriculum-module-toggle {
+  display: grid;
+  grid-template-columns: 62px minmax(0, 1fr) 38px;
+  gap: 14px;
+  align-items: center;
+  width: 100%;
+  min-height: 92px;
+  padding: 14px 18px;
+  border: 0;
+  color: var(--text);
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.curriculum-module-toggle:hover {
+  background: var(--surface-subtle);
+}
+
+.curriculum-module-number {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  width: 58px;
+  height: 58px;
+  color: #fff;
+  background: var(--primary);
+  font-size: 1.08rem;
+  font-weight: 850;
+}
+
+.curriculum-module-number small {
+  font-size: .57rem;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.curriculum-module-copy {
+  min-width: 0;
+}
+
+.curriculum-module-copy h3 {
+  margin: 0 0 5px;
+  font-size: .98rem;
+  letter-spacing: 0;
+}
+
+.curriculum-module-copy > p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: .78rem;
+  line-height: 1.45;
+}
+
+.curriculum-module-meta {
+  display: flex;
+  gap: 8px 14px;
+  flex-wrap: wrap;
+  margin-top: 9px;
+}
+
+.curriculum-module-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-muted);
+  font-size: .69rem;
+  font-weight: 650;
+}
+
+.curriculum-module-chevron {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  color: var(--primary);
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.curriculum-module-content {
+  padding: 0 18px 18px 94px;
+  background: var(--surface);
+}
+
+.curriculum-lessons-heading {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 0;
+  color: var(--text-muted);
+  font-size: .7rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.curriculum-lessons-heading b {
+  display: grid;
+  place-items: center;
+  min-width: 21px;
+  height: 21px;
+  padding: 0 5px;
+  color: var(--primary);
+  border: 1px solid var(--border);
+  font-size: .66rem;
+}
+
+.curriculum-lesson-list {
+  display: grid;
+  border: 1px solid var(--border);
+  border-bottom: 0;
+}
+
+.curriculum-lesson {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 98px;
+  padding: 13px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.curriculum-lesson:hover {
+  background: var(--surface-subtle);
+}
+
+.curriculum-lesson.is-locked {
+  opacity: .68;
+  background: var(--surface-subtle);
+}
+
+.curriculum-lesson-number {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  color: var(--primary);
+  border: 1px solid color-mix(in srgb, var(--primary) 35%, var(--border));
+  background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+  font-size: .82rem;
+  font-weight: 850;
+}
+
+.curriculum-lesson-main {
+  min-width: 0;
+}
+
+.curriculum-lesson-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.curriculum-lesson-title h4 {
+  margin: 0;
+  font-size: .9rem;
+  letter-spacing: 0;
+}
+
+.curriculum-lesson-title > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #16784c;
+  font-size: .67rem;
+  font-weight: 800;
+}
+
+.curriculum-lesson-main > p {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+  font-size: .76rem;
+  line-height: 1.45;
+}
+
+.curriculum-lesson-materials {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-top: 9px;
+}
+
+.curriculum-lesson-materials a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 28px;
+  padding: 4px 8px;
+  color: var(--primary);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: .68rem;
+  text-decoration: none;
+}
+
+.curriculum-lesson-materials a:hover {
+  border-color: var(--primary);
+}
+
+.curriculum-no-material {
+  display: inline-block;
+  margin-top: 8px;
+  color: var(--text-muted);
+  font-size: .68rem;
+}
+
+.curriculum-lesson-action,
+.curriculum-practical-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 7px 11px;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  background: var(--surface);
+  font-size: .72rem;
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.curriculum-lesson-action:hover,
+.curriculum-practical-action:hover {
+  color: #fff;
+  background: var(--primary);
+}
+
+.curriculum-lesson-action.is-locked {
+  color: var(--text-muted);
+  border-color: var(--border);
+  cursor: not-allowed;
+}
+
+.curriculum-empty-row {
+  padding: 18px;
+  color: var(--text-muted);
+  border: 1px dashed var(--border);
+  font-size: .78rem;
+}
+
+.curriculum-practical-section {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.curriculum-practical-heading {
+  margin-bottom: 9px;
+}
+
+.curriculum-practical-heading > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text);
+  font-size: .77rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.curriculum-practical-heading p {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+  font-size: .72rem;
+}
+
+.curriculum-practical {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 84px;
+  padding: 13px 14px;
+  border: 1px solid #91cbb1;
+  background: color-mix(in srgb, #e8f8ef 70%, var(--surface));
+}
+
+.curriculum-practical-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  color: #16784c;
+  border: 1px solid #91cbb1;
+  background: var(--surface);
+}
+
+.curriculum-practical h4 {
+  margin: 0;
+  font-size: .86rem;
+}
+
+.curriculum-practical p {
+  margin: 4px 0;
+  color: var(--text-muted);
+  font-size: .73rem;
+}
+
+.curriculum-practical div > span {
+  color: #16784c;
+  font-size: .67rem;
+  font-weight: 750;
+}
+
+.curriculum-practical > b {
+  padding: 5px 7px;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: .67rem;
+  white-space: nowrap;
+}
+
+.curriculum-practical > b.done {
+  color: #16784c;
+  border-color: #75c9a4;
+}
+
+.curriculum-practical-missing {
+  padding: 12px;
+  color: var(--text-muted);
+  border: 1px dashed var(--border);
+  background: var(--surface-subtle);
+  font-size: .75rem;
+}
+
+@media (max-width: 760px) {
+  .curriculum-outline-heading {
+    display: grid;
+    padding: 16px;
+  }
+
+  .curriculum-module-toggle {
+    grid-template-columns: 50px minmax(0, 1fr) 32px;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .curriculum-module-number {
+    width: 48px;
+    height: 48px;
+  }
+
+  .curriculum-module-content {
+    padding: 0 12px 14px;
+  }
+
+  .curriculum-lesson {
+    grid-template-columns: 36px minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .curriculum-lesson-number {
+    width: 34px;
+    height: 34px;
+  }
+
+  .curriculum-lesson-action {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .curriculum-practical {
+    grid-template-columns: 38px minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .curriculum-practical > b,
+  .curriculum-practical-action {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
