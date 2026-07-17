@@ -401,7 +401,6 @@ export function CoursesPage() {
         </div>
       </div>
 
-      <ProgrammeCatalogue availableCourses={courses} onChanged={() => void load()} />
 
       {/* Filters */}
       <div className="training-category-strip" aria-label="Training categories">
