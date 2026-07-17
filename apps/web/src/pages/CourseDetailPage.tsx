@@ -566,6 +566,7 @@ export function CourseDetailPage() {
       ) : (
         <>
         <CourseModuleManager courseId={course.id} canManage={canManageLessons} lessons={lessons} onChange={setModules} />
+        {canManageLessons ? (
         <section className="workstream">
           <SectionHeading eyebrow="Course content" title="Lessons" compact />
           {lessonError ? <p className="form-error">{lessonError}</p> : null}
@@ -664,6 +665,7 @@ export function CourseDetailPage() {
             </div>
           )}
         </section>
+        ) : null}
         </>
       )}
 

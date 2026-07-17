@@ -14,8 +14,8 @@ import {
   PlaceCourseDto,
 } from "./dto/curriculum.dto";
 
-const MANAGE_ROLES = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TRAINING_MANAGER, UserRole.TRAINER];
-const STRUCTURE_ROLES = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TRAINING_MANAGER];
+const MANAGE_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TRAINING_MANAGER, UserRole.TRAINER];
+const STRUCTURE_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TRAINING_MANAGER];
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller("curriculum")
@@ -58,8 +58,8 @@ export class CurriculumController {
   }
 
   @Get("courses/:courseId/modules")
-  listModules(@Param("courseId") courseId: string) {
-    return this.curriculum.listModules(courseId);
+  listModules(@Param("courseId") courseId: string, @Req() req: AuthenticatedRequest) {
+    return this.curriculum.listModules(courseId, req.user.sub, MANAGE_ROLES.includes(req.user.role));
   }
 
   @Roles(...MANAGE_ROLES)
@@ -92,4 +92,3 @@ export class CurriculumController {
     return this.curriculum.deleteModule(moduleId);
   }
 }
-

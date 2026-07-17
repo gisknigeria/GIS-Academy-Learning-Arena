@@ -246,7 +246,7 @@ export function AssignmentSection({ courseId, modules = [] }: Props) {
       ) : (
         <div className="assignment-list">
           {assignments.map((assignment) => (
-            <article key={assignment.id} className="assignment-item">
+            <article key={assignment.id} className="assignment-item" id={`assignment-${assignment.id}`}>
               <div className="assignment-item-header">
                 <div className="assignment-item-meta">
                   <h3>{assignment.title}</h3>

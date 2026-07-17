@@ -157,18 +157,42 @@ export class CurriculumService {
     }
   }
 
-  async listModules(courseId: string) {
-    return this.prisma.courseModule.findMany({
+  async listModules(courseId: string, userId: string, canManage = false) {
+    const modules = await this.prisma.courseModule.findMany({
       where: { courseId },
       orderBy: { order: "asc" },
       include: {
         lessons: { orderBy: { order: "asc" } },
         practicals: {
+          where: canManage ? undefined : { isPublished: true },
           orderBy: { createdAt: "asc" },
-          include: { _count: { select: { submissions: true } } },
+          include: {
+            _count: { select: { submissions: true } },
+            submissions: {
+              where: { studentId: userId },
+              orderBy: { submittedAt: "desc" },
+              take: 1,
+              select: {
+                id: true,
+                status: true,
+                score: true,
+                feedback: true,
+                submittedAt: true,
+                gradedAt: true,
+              },
+            },
+          },
         },
       },
     });
+
+    return modules.map((module) => ({
+      ...module,
+      practicals: module.practicals.map(({ submissions, ...practical }) => ({
+        ...practical,
+        mySubmission: submissions[0] ?? null,
+      })),
+    }));
   }
 
   async moduleLibrary(search?: string, excludeCourseId?: string) {

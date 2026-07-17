@@ -3,6 +3,7 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { curriculumApi } from "../lib/curriculum-api";
+import { STATUS_LABELS } from "../types/assignment";
 import type { CourseModule } from "../types/curriculum";
 import type { Lesson } from "../types/course";
 
@@ -189,12 +190,25 @@ export function CourseModuleManager({ courseId, canManage, lessons = [], onChang
                       </Link>
                     ),
                   )}
-                  {module.practicals?.length ? (
-                    <a className="module-practical-link" href="#coursework">
-                      <FileCheck2 size={15} />
-                      Complete module practical
-                    </a>
-                  ) : null}
+                  <div className="module-practical-list">
+                    <span className="module-drawer-label">Practical exercise</span>
+                    {module.practicals?.length ? module.practicals.map((practical) => (
+                      <a className="module-practical-link" href={`#assignment-${practical.id}`} key={practical.id}>
+                        <FileCheck2 size={15} />
+                        <span>
+                          <strong>{practical.title}</strong>
+                          <small>{practical.maxScore} points</small>
+                        </span>
+                        <b className={practical.mySubmission?.status === "GRADED" ? "done" : ""}>
+                          {practical.mySubmission ? STATUS_LABELS[practical.mySubmission.status] : "Not submitted"}
+                        </b>
+                      </a>
+                    )) : (
+                      <span className="module-practical-missing">
+                        No practical exercise has been published for this module yet.
+                      </span>
+                    )}
+                  </div>
                 </div>
               ) : null}
             </article>

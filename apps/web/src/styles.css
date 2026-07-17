@@ -7093,10 +7093,62 @@ textarea {
 }
 
 .module-practical-link {
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, 1fr) auto;
   margin-top: 4px;
   color: var(--primary);
   font-weight: 750;
+}
+
+.module-practical-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.module-drawer-label {
+  color: var(--text-muted);
+  font-size: .68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.module-practical-link span,
+.module-practical-link strong,
+.module-practical-link small {
+  display: block;
+}
+
+.module-practical-link small {
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: .67rem;
+  font-weight: 500;
+}
+
+.module-practical-link b {
+  padding: 4px 6px;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  font-size: .65rem;
+  white-space: nowrap;
+}
+
+.module-practical-link b.done {
+  color: #16784c;
+  border-color: #75c9a4;
+  background: #effbf5;
+}
+
+.module-practical-missing {
+  padding: 9px;
+  color: var(--text-muted);
+  border: 1px dashed var(--border);
+  background: var(--surface);
+  font-size: .74rem;
+}
+
+.assignment-item {
+  scroll-margin-top: 90px;
 }
 
 .playlist-item.locked,
