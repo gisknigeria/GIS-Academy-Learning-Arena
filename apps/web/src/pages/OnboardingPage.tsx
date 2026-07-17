@@ -12,6 +12,7 @@ import {
   mergeKnowledgeHubPreferences,
   saveKnowledgeHubPreferences,
   trainingCategories,
+  trainingCategoryDetails,
   type KnowledgeHubPreferences,
 } from "../data/knowledgeHub";
 import { profileApi } from "../lib/profile-api";
@@ -41,6 +42,7 @@ export function OnboardingPage() {
 
   const canContinue = Boolean(preferences.ageBand && preferences.organisation.trim() && preferences.trainingCategory && preferences.learningMode);
   const canFinish = Boolean(preferences.learningGoal && preferences.courseInterest);
+  const selectedTrainingCategory = trainingCategoryDetails[preferences.trainingCategory as keyof typeof trainingCategoryDetails] ?? trainingCategoryDetails.Bootcamp;
 
   async function finishOnboarding() {
     if (!token || !canFinish) return;
@@ -107,6 +109,44 @@ export function OnboardingPage() {
                 <label>Learning mode
                   <select value={preferences.learningMode} onChange={(event) => update("learningMode", event.target.value as KnowledgeHubPreferences["learningMode"])}>{knowledgeLearningModes.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
                 </label>
+              </div>
+              <div className="onboarding-support-card">
+                <div className="onboarding-support-card__header">
+                  <div>
+                    <span className="section-eyebrow">Structured learning pathways</span>
+                    <strong>Pick the route that fits your pace, confidence, and ambition.</strong>
+                  </div>
+                  <span className="onboarding-support-card__pill">Guided by stage-based learning</span>
+                </div>
+                <p className="onboarding-support-card__desc">Each category is a guided pathway through courses, milestones, and certificates—so you can see what kind of experience you are choosing before you continue.</p>
+                <div className="onboarding-category-grid">
+                  {trainingCategories.map((category) => {
+                    const detail = trainingCategoryDetails[category as keyof typeof trainingCategoryDetails];
+                    const isSelected = preferences.trainingCategory === category;
+                    return (
+                      <button
+                        key={category}
+                        type="button"
+                        className={`onboarding-category-card ${isSelected ? "is-selected" : ""}`}
+                        onClick={() => update("trainingCategory", category)}
+                      >
+                        <span className="onboarding-category-card__label">{detail.title}</span>
+                        <p>{detail.description}</p>
+                        <span className="onboarding-category-card__meta">Best for {detail.idealFor}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="onboarding-category-preview">
+                  <div>
+                    <span className="section-eyebrow">Recommended fit</span>
+                    <strong>{selectedTrainingCategory.title}</strong>
+                  </div>
+                  <p>{selectedTrainingCategory.description}</p>
+                  <div className="onboarding-category-preview__list">
+                    {selectedTrainingCategory.highlights.map((highlight) => <span key={highlight}>{highlight}</span>)}
+                  </div>
+                </div>
               </div>
               <div className="onboarding-step-nav">
                 <button type="button" className="primary-button" disabled={!canContinue} onClick={() => setStep("goals")}>Continue <ArrowRight size={17} /></button>

@@ -108,6 +108,40 @@ export const trainingCategories = [
   "Industry Training",
   "Premium Executive Service",
 ];
+
+export const trainingCategoryDetails = {
+  Bootcamp: {
+    title: "Bootcamp",
+    description: "A fast, hands-on route for learners who want momentum, visible progress, and practical outputs quickly.",
+    idealFor: "career starters and first-time learners",
+    highlights: ["Short, high-intensity sprint", "Project-led milestones", "Fast confidence building"],
+  },
+  Green: {
+    title: "Green",
+    description: "A sustainability and impact-led pathway that connects learning to real-world environmental and community challenges.",
+    idealFor: "learners with purpose-driven goals",
+    highlights: ["Impact-focused projects", "Applied problem solving", "Community and climate themes"],
+  },
+  Academy: {
+    title: "Academy",
+    description: "A balanced pathway for learners who want a steady mix of theory, practice, and guided support over time.",
+    idealFor: "students and professionals building long-term skills",
+    highlights: ["Structured progression", "Mentored practice", "Strong foundation building"],
+  },
+  "Industry Training": {
+    title: "Industry Training",
+    description: "A job-ready route that mirrors workplace expectations, employer skills, and performance-based learning.",
+    idealFor: "teams and professionals preparing for work",
+    highlights: ["Workplace-aligned outcomes", "Career-ready skills", "Professional delivery"],
+  },
+  "Premium Executive Service": {
+    title: "Premium Executive Service",
+    description: "A high-touch pathway designed for leaders who want strategic depth, coaching support, and premium guidance.",
+    idealFor: "managers and executives",
+    highlights: ["Leadership coaching", "Strategic depth", "Personalised support"],
+  },
+} as const;
+
 export const knowledgeLearningModes = [
   { value: "E_LEARNING", label: "E-Learning" },
   { value: "ONSITE", label: "Onsite" },
