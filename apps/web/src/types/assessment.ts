@@ -1,5 +1,5 @@
 export type QuestionType = "MCQ" | "MULTIPLE_CHOICE" | "TRUE_FALSE" | "SHORT_ANSWER" | "FILE_UPLOAD" | "MAP_TASK" | "NOTE";
-export type AttemptStatus = "IN_PROGRESS" | "SUBMITTED" | "TIMED_OUT";
+export type AttemptStatus = "IN_PROGRESS" | "SUBMITTED" | "GRADED" | "TIMED_OUT";
 export type AssessmentAnswer = string | string[];
 
 export type Question = {
@@ -41,6 +41,12 @@ export type Assessment = {
   lesson?: { id: string; title: string; order: number } | null;
   questions?: Question[];
   _count?: { questions: number; attempts: number };
+  myAttempt?: {
+    id: string;
+    passed: boolean | null;
+    percentage: number | null;
+    status: AttemptStatus;
+  } | null;
 };
 
 export type AttemptSession = {

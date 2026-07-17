@@ -48,7 +48,7 @@ export type Lesson = {
   completed?: boolean;
   completedAt?: string | null;
   locked?: boolean;
-  lockReason?: "trainer_locked" | null;
+  lockReason?: "trainer_locked" | "previous_lesson" | null;
 };
 
 export type LessonLibraryItem = Lesson & {
@@ -129,6 +129,11 @@ export type CourseProgress = {
   courseId: string;
   totalLessons: number;
   completedLessons: number;
+  totalModules: number;
+  completedPracticalModules: number;
+  totalFinalAssessments: number;
+  passedFinalAssessments: number;
+  courseCompleted: boolean;
   progress: number;
 };
 

@@ -1,4 +1,4 @@
-import { ArrowLeft, BookOpen, CheckCircle2, ClipboardCheck, Edit3, ExternalLink, FileArchive, FileText, Image, Link2, Loader2, Map, PlayCircle, PlusCircle, Presentation, Search, Trophy, Trash2, UploadCloud, Video, X } from "lucide-react";
+import { ArrowLeft, BookOpen, CheckCircle2, ClipboardCheck, Edit3, ExternalLink, FileArchive, FileText, Image, Link2, Loader2, Lock, Map, PlayCircle, PlusCircle, Presentation, Search, Trophy, Trash2, UploadCloud, Video, X } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { AssignmentSection } from "../components/AssignmentSection";
@@ -11,6 +11,7 @@ import { assessmentsApi } from "../lib/assessments-api";
 import { isAdminRole, isInstructorRole } from "../lib/roles";
 import type { Course, CourseProgress, CreateLessonPayload, Lesson, LessonAttachment, LessonLibraryItem } from "../types/course";
 import type { CourseModule } from "../types/curriculum";
+import type { Assessment } from "../types/assessment";
 import { DELIVERY_MODE_LABELS } from "../types/course";
 
 type LessonFormState = {
@@ -176,6 +177,7 @@ export function CourseDetailPage() {
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [modules, setModules] = useState<CourseModule[]>([]);
   const [progress, setProgress] = useState<CourseProgress | null>(null);
+  const [finalAssessments, setFinalAssessments] = useState<Assessment[]>([]);
   const [loading, setLoading] = useState(true);
   const [lessonError, setLessonError] = useState("");
   const [pageError, setPageError] = useState("");
@@ -203,7 +205,7 @@ export function CourseDetailPage() {
     [lessons],
   );
 
-  const allComplete = lessons.length > 0 && lessons.every((lesson) => lesson.completed);
+  const allComplete = Boolean(progress?.courseCompleted);
 
   const load = useCallback(async () => {
     if (!token || !id) return;
@@ -228,12 +230,14 @@ export function CourseDetailPage() {
         setProgress(null);
       } else {
         // Fetch lessons-with-progress and the progress summary in parallel
-        const [currentLessons, currentProgress] = await Promise.all([
+        const [currentLessons, currentProgress, courseAssessments] = await Promise.all([
           coursesApi.listLessons(token, id),
           coursesApi.getProgress(token, id),
+          assessmentsApi.listForCourse(token, id),
         ]);
         setLessons(currentLessons);
         setProgress(currentProgress);
+        setFinalAssessments(courseAssessments);
       }
     } catch {
       setPageError("Could not load this course. Please try again.");
@@ -561,7 +565,7 @@ export function CourseDetailPage() {
         <PaymentGate accessStatus={course.accessStatus as { allowed: false; reason: "payment_required" | "account_blocked" | "account_overdue" }} />
       ) : (
         <>
-        <CourseModuleManager courseId={course.id} canManage={canManageLessons} onChange={setModules} />
+        <CourseModuleManager courseId={course.id} canManage={canManageLessons} lessons={lessons} onChange={setModules} />
         <section className="workstream">
           <SectionHeading eyebrow="Course content" title="Lessons" compact />
           {lessonError ? <p className="form-error">{lessonError}</p> : null}
@@ -627,9 +631,15 @@ export function CourseDetailPage() {
                       Done
                     </span>
                   ) : null}
-                  <Link className="secondary-button lesson-open-button" to={`/courses/${course.id}/lessons/${lesson.id}`}>
-                    Open
-                  </Link>
+                  {lesson.locked && !canManageLessons ? (
+                    <span className="secondary-button lesson-open-button is-disabled" title="Complete the previous lesson first">
+                      <Lock size={15} /> Locked
+                    </span>
+                  ) : (
+                    <Link className="secondary-button lesson-open-button" to={`/courses/${course.id}/lessons/${lesson.id}`}>
+                      Open
+                    </Link>
+                  )}
                   {canManageLessons ? (
                     <div className="lesson-actions">
                       <button
@@ -659,6 +669,72 @@ export function CourseDetailPage() {
 
       {/* Assignment section — shown to all who have course access */}
       {!isLocked ? <AssignmentSection courseId={course.id} modules={modules} /> : null}
+
+      {!isLocked ? (
+        <section className="course-final-assessment">
+          <div className="course-final-assessment-head">
+            <span><Trophy size={18} /> Course completion</span>
+            <h2>Final assessment</h2>
+            <p>Finish every lesson and pass each module practical before taking the final course assessment.</p>
+          </div>
+          <div className="course-requirement-grid">
+            <span className={progress && progress.completedLessons === progress.totalLessons && progress.totalLessons > 0 ? "done" : ""}>
+              <CheckCircle2 size={16} /> {progress?.completedLessons ?? 0}/{progress?.totalLessons ?? lessons.length} lessons
+            </span>
+            <span className={progress && progress.totalModules > 0 && progress.completedPracticalModules === progress.totalModules ? "done" : ""}>
+              <CheckCircle2 size={16} /> {progress?.completedPracticalModules ?? 0}/{progress?.totalModules ?? modules.length} module practicals
+            </span>
+            <span className={progress?.courseCompleted ? "done" : ""}>
+              {progress?.courseCompleted ? <CheckCircle2 size={16} /> : <Lock size={16} />} Certificate
+            </span>
+          </div>
+          {finalAssessments.length === 0 ? (
+            <div className="course-final-empty">
+              {canManageLessons ? (
+                <button className="primary-button" onClick={() => void handleCreateCourseAssessment()}>
+                  <PlusCircle size={16} /> Create final assessment
+                </button>
+              ) : <span>The trainer has not published the final assessment yet.</span>}
+            </div>
+          ) : (
+            <div className="course-final-list">
+              {finalAssessments.map((assessment) => {
+                const unlocked = canManageLessons || Boolean(
+                  progress
+                  && progress.totalLessons > 0
+                  && progress.completedLessons === progress.totalLessons
+                  && progress.totalModules > 0
+                  && progress.completedPracticalModules === progress.totalModules,
+                );
+                return (
+                  <article key={assessment.id}>
+                    <ClipboardCheck size={20} />
+                    <div>
+                      <strong>{assessment.title}</strong>
+                      <span>{assessment._count?.questions ?? 0} questions · Pass mark {assessment.passMark}%</span>
+                    </div>
+                    {assessment.myAttempt?.passed ? <span className="assessment-pass-pill">Passed {assessment.myAttempt.percentage}%</span> : null}
+                    {unlocked ? (
+                      <Link
+                        className="primary-button small-button"
+                        to={canManageLessons
+                          ? `/assessments/${assessment.id}/build`
+                          : assessment.myAttempt?.passed
+                            ? `/assessments/attempts/${assessment.myAttempt.id}`
+                            : `/assessments/${assessment.id}/take`}
+                      >
+                        {canManageLessons ? "Edit" : assessment.myAttempt?.passed ? "Review result" : "Start assessment"}
+                      </Link>
+                    ) : (
+                      <span className="assessment-locked-pill"><Lock size={14} /> Locked</span>
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      ) : null}
 
       {showLessonForm ? (
         <div className="modal-backdrop" role="dialog" aria-modal="true">

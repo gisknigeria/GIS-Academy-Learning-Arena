@@ -205,7 +205,7 @@ export function AssignmentSection({ courseId, modules = [] }: Props) {
   }
 
   return (
-    <section className="workstream">
+    <section className="workstream" id="coursework">
       <SectionHeading
         eyebrow="Coursework"
         title="Assignments"

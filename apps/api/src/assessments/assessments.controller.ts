@@ -64,6 +64,12 @@ export class AssessmentsController {
     return this.assessmentsService.findByLesson(lessonId, isStaff);
   }
 
+  @Get("course/:courseId")
+  findByCourse(@Param("courseId") courseId: string, @Req() req: AuthenticatedRequest) {
+    const isStaff = isPaymentExempt(req.user.role);
+    return this.assessmentsService.findByCourse(courseId, req.user.sub, isStaff);
+  }
+
   /** GET /api/assessments/:id — full detail + questions (correct answers stripped for students) */
   @Roles(...STAFF_ROLES)
   @Get(":id")

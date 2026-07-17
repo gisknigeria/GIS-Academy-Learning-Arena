@@ -244,7 +244,7 @@ export class CoursesService {
 
     const lessons = await this.prisma.lesson.findMany({
       where: { courseId },
-      orderBy: { order: "asc" },
+      orderBy: [{ module: { order: "asc" } }, { order: "asc" }],
       include: {
         progress: {
           where: { userId },
@@ -252,11 +252,18 @@ export class CoursesService {
         },
       },
     });
+    const completedLessonIds = new Set(
+      lessons.filter((lesson) => lesson.progress.length > 0).map((lesson) => lesson.id),
+    );
 
-    return lessons.map((lesson) => {
+    return lessons.map((lesson, index) => {
       const completedAt = lesson.progress[0]?.completedAt ?? null;
       const { progress: _progress, ...lessonData } = lesson;
-      const isLocked = Boolean(lockContext && !lockContext.unlockedLessonIds.has(lesson.id));
+      const sequentiallyLocked = !canManageLessons
+        && index > 0
+        && !completedLessonIds.has(lessons[index - 1].id);
+      const trainerLocked = Boolean(lockContext && !lockContext.unlockedLessonIds.has(lesson.id));
+      const isLocked = sequentiallyLocked || trainerLocked;
       const safeLessonData = isLocked
         ? {
             ...lessonData,
@@ -274,7 +281,7 @@ export class CoursesService {
         completed: Boolean(completedAt),
         completedAt,
         locked: isLocked,
-        lockReason: isLocked ? "trainer_locked" : null,
+        lockReason: sequentiallyLocked ? "previous_lesson" : trainerLocked ? "trainer_locked" : null,
       };
     });
   }
@@ -431,7 +438,7 @@ export class CoursesService {
   async getCourseProgress(courseId: string, userId: string) {
     await this.findOne(courseId);
 
-    const [totalLessons, completedLessons] = await Promise.all([
+    const [totalLessons, completedLessons, modules, finalAssessments] = await Promise.all([
       this.prisma.lesson.count({ where: { courseId } }),
       this.prisma.lessonProgress.count({
         where: {
@@ -439,14 +446,62 @@ export class CoursesService {
           lesson: { courseId },
         },
       }),
+      this.prisma.courseModule.findMany({
+        where: { courseId },
+        include: {
+          practicals: {
+            where: { isPublished: true, kind: "MODULE_PRACTICAL" },
+            select: {
+              id: true,
+              maxScore: true,
+              submissions: {
+                where: { studentId: userId, status: "GRADED" },
+                select: { score: true },
+              },
+            },
+          },
+        },
+      }),
+      this.prisma.assessment.findMany({
+        where: { courseId, scope: "COURSE_FINAL", isPublished: true },
+        select: {
+          id: true,
+          attempts: {
+            where: { userId, passed: true },
+            select: { id: true },
+            take: 1,
+          },
+        },
+      }),
     ]);
 
-    const progress = totalLessons === 0 ? 0 : Math.round((completedLessons / totalLessons) * 100);
+    const completedPracticalModules = modules.filter((module) =>
+      module.practicals.length > 0
+      && module.practicals.every((practical) =>
+        practical.submissions.some((submission) => (submission.score ?? 0) >= practical.maxScore * 0.5),
+      ),
+    ).length;
+    const passedFinalAssessments = finalAssessments.filter((assessment) => assessment.attempts.length > 0).length;
+    const requiredFinalAssessments = Math.max(finalAssessments.length, 1);
+    const totalRequirements = totalLessons + modules.length + requiredFinalAssessments;
+    const completedRequirements = completedLessons + completedPracticalModules + passedFinalAssessments;
+    const progress = totalRequirements === 0 ? 0 : Math.round((completedRequirements / totalRequirements) * 100);
+    const courseCompleted = totalLessons > 0
+      && completedLessons === totalLessons
+      && modules.length > 0
+      && completedPracticalModules === modules.length
+      && finalAssessments.length > 0
+      && passedFinalAssessments === finalAssessments.length;
 
     return {
       courseId,
       totalLessons,
       completedLessons,
+      totalModules: modules.length,
+      completedPracticalModules,
+      totalFinalAssessments: finalAssessments.length,
+      passedFinalAssessments,
+      courseCompleted,
       progress,
     };
   }
@@ -489,6 +544,21 @@ export class CoursesService {
 
     if (lockContext && !lockContext.unlockedLessonIds.has(lessonId)) {
       throw new NotFoundException("This onsite lesson is locked until your trainer unlocks it.");
+    }
+
+    const lessons = await this.prisma.lesson.findMany({
+      where: { courseId },
+      orderBy: [{ module: { order: "asc" } }, { order: "asc" }],
+      select: { id: true },
+    });
+    const lessonIndex = lessons.findIndex((lesson) => lesson.id === lessonId);
+    if (lessonIndex > 0) {
+      const previousLesson = await this.prisma.lessonProgress.findUnique({
+        where: { userId_lessonId: { userId, lessonId: lessons[lessonIndex - 1].id } },
+      });
+      if (!previousLesson) {
+        throw new NotFoundException("Complete the previous lesson before opening this lesson.");
+      }
     }
   }
 

@@ -64,7 +64,7 @@ export class CertificatesService {
       where: { id: courseId },
       include: {
         assessments: {
-          where: { isPublished: true },
+          where: { isPublished: true, scope: "COURSE_FINAL" },
           select: { id: true },
         },
         assignments: {
@@ -72,8 +72,9 @@ export class CertificatesService {
             isPublished: true,
             kind: { in: ["MODULE_PRACTICAL", "CAPSTONE_PROJECT"] },
           },
-          select: { id: true, maxScore: true },
+          select: { id: true, moduleId: true, maxScore: true },
         },
+        modules: { select: { id: true } },
       },
     });
 
@@ -107,7 +108,11 @@ export class CertificatesService {
 
     const progress = totalLessons === 0 ? 0 : Math.round((completedLessons / totalLessons) * 100);
 
-    if (progress < 100) {
+    if (totalLessons === 0 || progress < 100) {
+      return null;
+    }
+
+    if (course.assessments.length === 0) {
       return null;
     }
 
@@ -125,6 +130,13 @@ export class CertificatesService {
       if (passedAssessments.length < course.assessments.length) {
         return null;
       }
+    }
+
+    const practicalModuleIds = new Set(
+      course.assignments.flatMap((assignment) => assignment.moduleId ? [assignment.moduleId] : []),
+    );
+    if (course.modules.length === 0 || course.modules.some((module) => !practicalModuleIds.has(module.id))) {
+      return null;
     }
 
     if (course.assignments.length > 0) {

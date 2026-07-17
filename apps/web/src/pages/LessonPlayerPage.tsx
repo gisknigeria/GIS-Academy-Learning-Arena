@@ -288,9 +288,11 @@ export function LessonPlayerPage() {
       const updatedProgress = await coursesApi.markLessonComplete(token, courseId, lessonId);
       setProgress(updatedProgress);
       setLessons((current) =>
-        current.map((lesson) =>
+        current.map((lesson, index) =>
           lesson.id === lessonId
             ? { ...lesson, completed: true, completedAt: new Date().toISOString() }
+            : index === currentIndex + 1
+              ? { ...lesson, locked: false, lockReason: null }
             : lesson,
         ),
       );
@@ -427,8 +429,12 @@ export function LessonPlayerPage() {
             <article className="lesson-locked-panel">
               <Lock size={24} />
               <div>
-                <h2>This onsite lesson is locked</h2>
-                <p>Your trainer will unlock this lesson when your cohort reaches this part of the course.</p>
+                <h2>This lesson is locked</h2>
+                <p>
+                  {currentLesson.lockReason === "previous_lesson"
+                    ? "Complete the previous lesson before continuing."
+                    : "Your trainer will unlock this lesson when your cohort reaches this part of the course."}
+                </p>
               </div>
             </article>
           ) : null}
@@ -527,9 +533,16 @@ export function LessonPlayerPage() {
                 </Link>
               ) : null}
               {nextLesson ? (
-                <Link className="secondary-button" to={`/courses/${courseId}/lessons/${nextLesson.id}`}>
-                  Next
-                </Link>
+                currentLesson.completed && !nextLesson.locked ? (
+                  <Link className="secondary-button" to={`/courses/${courseId}/lessons/${nextLesson.id}`}>
+                    Next
+                  </Link>
+                ) : (
+                  <button className="secondary-button" disabled title="Mark this lesson complete to unlock the next lesson">
+                    <Lock size={15} />
+                    Next
+                  </button>
+                )
               ) : null}
             </div>
           </div>
@@ -615,16 +628,23 @@ export function LessonPlayerPage() {
         <aside className="lesson-playlist">
           <div className="lesson-playlist-list">
             {lessons.map((lesson) => (
-              <Link
-                className={lesson.id === currentLesson.id ? "playlist-item active" : "playlist-item"}
-                key={lesson.id}
-                to={`/courses/${courseId}/lessons/${lesson.id}`}
-              >
-                <span>{lesson.order}</span>
-                <strong>{lesson.title}</strong>
-                {lesson.locked ? <Lock size={16} /> : null}
-                {lesson.completed ? <CheckCircle2 size={16} /> : null}
-              </Link>
+              lesson.locked ? (
+                <span className="playlist-item locked" key={lesson.id} aria-disabled="true">
+                  <span>{lesson.order}</span>
+                  <strong>{lesson.title}</strong>
+                  <Lock size={16} />
+                </span>
+              ) : (
+                <Link
+                  className={lesson.id === currentLesson.id ? "playlist-item active" : "playlist-item"}
+                  key={lesson.id}
+                  to={`/courses/${courseId}/lessons/${lesson.id}`}
+                >
+                  <span>{lesson.order}</span>
+                  <strong>{lesson.title}</strong>
+                  {lesson.completed ? <CheckCircle2 size={16} /> : null}
+                </Link>
+              )
             ))}
           </div>
         </aside>

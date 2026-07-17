@@ -13,7 +13,8 @@ describe("AssessmentsService.importQuestions", () => {
       },
       $transaction: vi.fn((operations) => Promise.all(operations)),
     };
-    const service = new AssessmentsService(prisma as never);
+    const certificates = { issueAutoCompletion: vi.fn() };
+    const service = new AssessmentsService(prisma as never, certificates as never);
 
     const result = await service.importQuestions("assessment-1", ["template-1"]);
 

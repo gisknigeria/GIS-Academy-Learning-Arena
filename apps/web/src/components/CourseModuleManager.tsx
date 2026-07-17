@@ -1,16 +1,19 @@
-import { BookCopy, Boxes, FileCheck2, Loader2, Plus, Search, Trash2, X } from "lucide-react";
+import { BookCopy, Boxes, CheckCircle2, ChevronDown, ChevronUp, FileCheck2, Loader2, Lock, Plus, Search, Trash2, X } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { curriculumApi } from "../lib/curriculum-api";
 import type { CourseModule } from "../types/curriculum";
+import type { Lesson } from "../types/course";
 
 type Props = {
   courseId: string;
   canManage: boolean;
+  lessons?: Lesson[];
   onChange?: (modules: CourseModule[]) => void;
 };
 
-export function CourseModuleManager({ courseId, canManage, onChange }: Props) {
+export function CourseModuleManager({ courseId, canManage, lessons = [], onChange }: Props) {
   const { token } = useAuth();
   const [modules, setModules] = useState<CourseModule[]>([]);
   const [library, setLibrary] = useState<CourseModule[]>([]);
@@ -21,6 +24,7 @@ export function CourseModuleManager({ courseId, canManage, onChange }: Props) {
   const [search, setSearch] = useState("");
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
+  const [expandedModuleId, setExpandedModuleId] = useState("");
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -136,17 +140,25 @@ export function CourseModuleManager({ courseId, canManage, onChange }: Props) {
       ) : (
         <div className="course-module-grid">
           {modules.map((module) => (
-            <article key={module.id} className="course-module-card">
-              <span className="module-order">{module.order}</span>
-              <div>
-                <h3>{module.title}</h3>
-                {module.description ? <p>{module.description}</p> : null}
-                <div className="module-stat-row">
-                  <span><Boxes size={14} /> {module.lessons?.length ?? module._count?.lessons ?? 0} lessons</span>
-                  <span><FileCheck2 size={14} /> {module.practicals?.length ?? module._count?.practicals ?? 0} practicals</span>
-                  {module.importedFromId ? <span>Imported</span> : null}
+            <article key={module.id} className={expandedModuleId === module.id ? "course-module-card expanded" : "course-module-card"}>
+              <button
+                className="course-module-toggle"
+                type="button"
+                onClick={() => setExpandedModuleId((current) => current === module.id ? "" : module.id)}
+                aria-expanded={expandedModuleId === module.id}
+              >
+                <span className="module-order">{module.order}</span>
+                <div>
+                  <h3>{module.title}</h3>
+                  {module.description ? <p>{module.description}</p> : null}
+                  <div className="module-stat-row">
+                    <span><Boxes size={14} /> {lessons.filter((lesson) => lesson.moduleId === module.id).length || module.lessons?.length || module._count?.lessons || 0} lessons</span>
+                    <span><FileCheck2 size={14} /> {module.practicals?.length ?? module._count?.practicals ?? 0} practicals</span>
+                    {module.importedFromId ? <span>Imported</span> : null}
+                  </div>
                 </div>
-              </div>
+                {expandedModuleId === module.id ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+              </button>
               {canManage ? (
                 <button
                   className="icon-button danger module-delete"
@@ -157,6 +169,33 @@ export function CourseModuleManager({ courseId, canManage, onChange }: Props) {
                 >
                   {busy === module.id ? <Loader2 className="spin" size={15} /> : <Trash2 size={15} />}
                 </button>
+              ) : null}
+              {expandedModuleId === module.id ? (
+                <div className="module-lesson-drawer">
+                  {lessons.filter((lesson) => lesson.moduleId === module.id).length === 0 ? (
+                    <p>No lessons have been added to this module.</p>
+                  ) : lessons.filter((lesson) => lesson.moduleId === module.id).map((lesson) =>
+                    lesson.locked ? (
+                      <span className="module-lesson-link locked" key={lesson.id}>
+                        <span>{lesson.order}</span>
+                        <strong>{lesson.title}</strong>
+                        <Lock size={15} />
+                      </span>
+                    ) : (
+                      <Link className="module-lesson-link" key={lesson.id} to={`/courses/${courseId}/lessons/${lesson.id}`}>
+                        <span>{lesson.order}</span>
+                        <strong>{lesson.title}</strong>
+                        {lesson.completed ? <CheckCircle2 size={15} /> : null}
+                      </Link>
+                    ),
+                  )}
+                  {module.practicals?.length ? (
+                    <a className="module-practical-link" href="#coursework">
+                      <FileCheck2 size={15} />
+                      Complete module practical
+                    </a>
+                  ) : null}
+                </div>
               ) : null}
             </article>
           ))}

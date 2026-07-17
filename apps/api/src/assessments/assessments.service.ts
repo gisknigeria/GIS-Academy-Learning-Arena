@@ -6,6 +6,7 @@ import {
 } from "@nestjs/common";
 import { AttemptStatus, QuestionType } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
+import { CertificatesService } from "../certificates/certificates.service";
 import { CreateAssessmentDto } from "./dto/create-assessment.dto";
 import { CreateQuestionDto } from "./dto/create-question.dto";
 import { SubmitAttemptDto } from "./dto/submit-attempt.dto";
@@ -46,7 +47,10 @@ function isAutoScored(type: QuestionType, correctAnswer: string | null) {
 
 @Injectable()
 export class AssessmentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly certificatesService: CertificatesService,
+  ) {}
 
   // ─── Question banks & random selection ───────────────────────────────────
 
@@ -272,6 +276,34 @@ export class AssessmentsService {
     });
   }
 
+  async findByCourse(courseId: string, userId: string, includeUnpublished = false) {
+    const course = await this.prisma.course.findUnique({ where: { id: courseId }, select: { id: true } });
+    if (!course) throw new NotFoundException(`Course "${courseId}" not found.`);
+
+    const assessments = await this.prisma.assessment.findMany({
+      where: {
+        courseId,
+        scope: "COURSE_FINAL",
+        ...(includeUnpublished ? {} : { isPublished: true }),
+      },
+      orderBy: { createdAt: "asc" },
+      include: {
+        _count: { select: { questions: true, attempts: true } },
+        attempts: {
+          where: { userId },
+          orderBy: { startedAt: "desc" },
+          take: 1,
+          select: { id: true, passed: true, percentage: true, status: true },
+        },
+      },
+    });
+
+    return assessments.map(({ attempts, ...assessment }) => ({
+      ...assessment,
+      myAttempt: attempts[0] ?? null,
+    }));
+  }
+
   async findOne(id: string) {
     const assessment = await this.prisma.assessment.findUnique({
       where: { id },
@@ -409,6 +441,9 @@ export class AssessmentsService {
     if (!assessment.isPublished) {
       throw new ForbiddenException("This assessment is not available yet.");
     }
+    if (assessment.scope === "COURSE_FINAL" && assessment.courseId) {
+      await this.ensureFinalAssessmentUnlocked(assessment.courseId, userId);
+    }
 
     const existing = await this.prisma.attempt.findFirst({
       where: { assessmentId, userId, status: AttemptStatus.IN_PROGRESS },
@@ -482,6 +517,10 @@ export class AssessmentsService {
         },
       },
     });
+
+    if (updated.passed && updated.assessment.courseId) {
+      await this.certificatesService.issueAutoCompletion(userId, updated.assessment.courseId).catch(() => null);
+    }
 
     return this.buildResult(updated);
   }
@@ -557,6 +596,41 @@ export class AssessmentsService {
       savedAnswers: attempt.answers as Record<string, AssessmentAnswer>,
       questions: shuffled,
     };
+  }
+
+  private async ensureFinalAssessmentUnlocked(courseId: string, userId: string) {
+    const [totalLessons, completedLessons, modules] = await Promise.all([
+      this.prisma.lesson.count({ where: { courseId } }),
+      this.prisma.lessonProgress.count({ where: { userId, lesson: { courseId } } }),
+      this.prisma.courseModule.findMany({
+        where: { courseId },
+        include: {
+          practicals: {
+            where: { isPublished: true, kind: "MODULE_PRACTICAL" },
+            select: {
+              maxScore: true,
+              submissions: {
+                where: { studentId: userId, status: "GRADED" },
+                select: { score: true },
+              },
+            },
+          },
+        },
+      }),
+    ]);
+
+    if (totalLessons === 0 || completedLessons < totalLessons) {
+      throw new ForbiddenException("Complete every lesson before starting the final course assessment.");
+    }
+    const practicalsComplete = modules.length > 0 && modules.every((module) =>
+      module.practicals.length > 0
+      && module.practicals.every((practical) =>
+        practical.submissions.some((submission) => (submission.score ?? 0) >= practical.maxScore * 0.5),
+      ),
+    );
+    if (!practicalsComplete) {
+      throw new ForbiddenException("Complete and pass each module practical before starting the final assessment.");
+    }
   }
 
   /** Build a full result object with per-question breakdown. */

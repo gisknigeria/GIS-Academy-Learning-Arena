@@ -7021,6 +7021,222 @@ textarea {
   }
 }
 
+.course-module-card {
+  display: block;
+  padding: 0;
+}
+
+.course-module-toggle {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: start;
+  width: 100%;
+  min-height: 120px;
+  padding: 14px;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.course-module-card.expanded {
+  grid-column: 1 / -1;
+  border-color: var(--primary);
+}
+
+.module-lesson-drawer {
+  display: grid;
+  gap: 7px;
+  padding: 12px 14px 14px 58px;
+  border-top: 1px solid var(--border);
+  background: var(--surface-subtle);
+}
+
+.module-lesson-drawer > p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: .78rem;
+}
+
+.module-lesson-link,
+.module-practical-link {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  min-height: 40px;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  color: var(--text);
+  background: var(--surface);
+  font-size: .77rem;
+  text-decoration: none;
+}
+
+.module-lesson-link > span {
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  font-weight: 800;
+}
+
+.module-lesson-link.locked {
+  color: var(--text-muted);
+  cursor: not-allowed;
+  opacity: .72;
+}
+
+.module-practical-link {
+  grid-template-columns: auto minmax(0, 1fr);
+  margin-top: 4px;
+  color: var(--primary);
+  font-weight: 750;
+}
+
+.playlist-item.locked,
+.lesson-open-button.is-disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+  opacity: .65;
+}
+
+.course-final-assessment {
+  margin: 20px 0;
+  padding: 20px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.course-final-assessment-head > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--primary);
+  font-size: .73rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.course-final-assessment-head h2 {
+  margin: 7px 0 5px;
+  font-size: 1.1rem;
+}
+
+.course-final-assessment-head p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: .83rem;
+}
+
+.course-requirement-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.course-requirement-grid > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  background: var(--surface-subtle);
+  font-size: .77rem;
+  font-weight: 700;
+}
+
+.course-requirement-grid > span.done {
+  color: #16784c;
+  border-color: #75c9a4;
+  background: #effbf5;
+}
+
+.course-final-list {
+  display: grid;
+  gap: 8px;
+}
+
+.course-final-list article {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface-subtle);
+}
+
+.course-final-list article > svg {
+  color: var(--primary);
+}
+
+.course-final-list strong,
+.course-final-list article div span {
+  display: block;
+}
+
+.course-final-list article div span {
+  margin-top: 3px;
+  color: var(--text-muted);
+  font-size: .72rem;
+}
+
+.assessment-pass-pill,
+.assessment-locked-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px;
+  color: #16784c;
+  border: 1px solid #75c9a4;
+  background: #effbf5;
+  font-size: .71rem;
+  font-weight: 750;
+}
+
+.assessment-locked-pill {
+  color: var(--text-muted);
+  border-color: var(--border);
+  background: var(--surface);
+}
+
+.course-final-empty {
+  padding: 12px;
+  border: 1px dashed var(--border);
+  color: var(--text-muted);
+  font-size: .8rem;
+}
+
+@media (max-width: 680px) {
+  .module-lesson-drawer {
+    padding-left: 14px;
+  }
+
+  .course-requirement-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .course-final-list article {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .course-final-list article > .primary-button,
+  .course-final-list article > .assessment-locked-pill,
+  .course-final-list article > .assessment-pass-pill {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
+
 /* =============================================================================
    36. ACCESSIBILITY & REDUCED MOTION
    ============================================================================= */

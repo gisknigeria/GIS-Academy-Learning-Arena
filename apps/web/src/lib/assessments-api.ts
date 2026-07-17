@@ -69,6 +69,10 @@ export const assessmentsApi = {
     return apiRequest<Assessment[]>(`/assessments/lesson/${lessonId}`, { token });
   },
 
+  listForCourse(token: string, courseId: string): Promise<Assessment[]> {
+    return apiRequest<Assessment[]>(`/assessments/course/${courseId}`, { token });
+  },
+
   get(token: string, id: string): Promise<Assessment> {
     return apiRequest<Assessment>(`/assessments/${id}`, { token });
   },
