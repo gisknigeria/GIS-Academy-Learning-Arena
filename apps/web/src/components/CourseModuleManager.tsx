@@ -1,4 +1,4 @@
-import { BookCopy, CheckCircle2, ChevronDown, ChevronUp, ExternalLink, FileCheck2, FileText, Loader2, Lock, PlayCircle, Plus, Search, Trash2, Video, X } from "lucide-react";
+import { BookCopy, Boxes, CheckCircle2, ChevronDown, ChevronUp, ExternalLink, FileCheck2, FileText, Loader2, Lock, PlayCircle, Plus, Search, Trash2, Video, X } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";

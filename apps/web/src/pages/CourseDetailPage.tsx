@@ -13,6 +13,7 @@ import type { Course, CourseProgress, CreateLessonPayload, Lesson, LessonAttachm
 import type { CourseModule } from "../types/curriculum";
 import type { Assessment } from "../types/assessment";
 import { DELIVERY_MODE_LABELS } from "../types/course";
+import { getCourseCtaLessonId } from "./courseDetailUtils";
 
 type LessonFormState = {
   id?: string;
@@ -199,13 +200,7 @@ export function CourseDetailPage() {
     [user],
   );
 
-  // First lesson that hasn't been completed yet — used for Continue/Start button
-  const firstIncompleteLesson = useMemo(
-    () => lessons.find((lesson) => !lesson.completed) ?? null,
-    [lessons],
-  );
-
-  const allComplete = Boolean(progress?.courseCompleted);
+  const ctaLessonId = useMemo(() => getCourseCtaLessonId(lessons, progress), [lessons, progress]);
 
   const load = useCallback(async () => {
     if (!token || !id) return;
@@ -498,7 +493,7 @@ export function CourseDetailPage() {
           {/* Progress summary + CTA — only for learners with access */}
           {!isLocked && !canManageLessons && progress !== null ? (
             <div className="course-progress-summary">
-              {allComplete ? (
+              {progress.courseCompleted ? (
                 <div className="course-complete-badge">
                   <Trophy size={18} />
                   Course complete — well done!
@@ -516,18 +511,18 @@ export function CourseDetailPage() {
                   </div>
                 </>
               )}
-              {allComplete ? (
+              {progress.courseCompleted && ctaLessonId ? (
                 <Link
                   className="secondary-button course-cta-button"
-                  to={`/courses/${course.id}/lessons/${lessons[0].id}`}
+                  to={`/courses/${course.id}/lessons/${ctaLessonId}`}
                 >
                   <CheckCircle2 size={17} />
                   Review from start
                 </Link>
-              ) : firstIncompleteLesson ? (
+              ) : ctaLessonId ? (
                 <Link
                   className="primary-button course-cta-button"
-                  to={`/courses/${course.id}/lessons/${firstIncompleteLesson.id}`}
+                  to={`/courses/${course.id}/lessons/${ctaLessonId}`}
                 >
                   <PlayCircle size={17} />
                   {progress.completedLessons === 0 ? "Start course" : "Continue learning"}
