@@ -17,7 +17,7 @@ import { PaymentStatusBanner } from "../components/PaymentStatusBanner";
 import { ProgrammeCatalogue } from "../components/ProgrammeCatalogue";
 import { SectionHeading } from "../components/SectionHeading";
 import { useAuth } from "../context/AuthContext";
-import { loadKnowledgeHubPreferences, trainingCategories } from "../data/knowledgeHub";
+import { getCourseAccessLevelLabel, loadKnowledgeHubPreferences, trainingCategories } from "../data/knowledgeHub";
 import { coursesApi } from "../lib/courses-api";
 import { profileApi } from "../lib/profile-api";
 import { getCourseAccess } from "../lib/use-payment-access";
@@ -69,9 +69,9 @@ function DeliveryBadge({ mode }: { mode: Course["deliveryMode"] }) {
   );
 }
 
-function LevelTag({ level }: { level?: number | null }) {
-  if (!level) return null;
-  return <span className="course-level">GIS {level}</span>;
+function LevelTag({ course }: { course: Course }) {
+  if (!course.level) return null;
+  return <span className="course-level">{getCourseAccessLevelLabel(course.trainingCategory, course.level)}</span>;
 }
 
 // ─── Admin table row ──────────────────────────────────────────────────────────
@@ -101,7 +101,7 @@ function CourseRow({
         )}
       </td>
       <td>
-        <LevelTag level={course.level} />
+        <LevelTag course={course} />
       </td>
       <td>
         <DeliveryBadge mode={course.deliveryMode} />
@@ -189,7 +189,7 @@ function CourseCard({
         <div className="course-card-v2-header-content">
           {/* Level pill */}
           {course.level && (
-            <span className="course-card-v2-level">GIS {course.level}</span>
+            <span className="course-card-v2-level">{getCourseAccessLevelLabel(course.trainingCategory, course.level)}</span>
           )}
 
           {/* Lesson count in top-right */}
@@ -208,11 +208,6 @@ function CourseCard({
         {/* Mode + payment badges */}
         <div className="course-card-v2-badges">
           <DeliveryBadge mode={course.deliveryMode} />
-          {course.requiresPayment ? (
-            <span className="badge-orange badge-xs">Paid</span>
-          ) : (
-            <span className="badge-green badge-xs">Free</span>
-          )}
           <span className="badge-green badge-xs">{course.trainingCategory ?? "Academy"}</span>
         </div>
 
@@ -249,7 +244,7 @@ function CourseCard({
               to={`/courses/${course.id}`}
               style={{ background: cfg.gradient }}
             >
-              {course.requiresPayment ? "Enroll now" : "Start free"}
+              Open course
               <ArrowRight size={15} />
             </Link>
           )}
@@ -280,6 +275,7 @@ export function CoursesPage() {
     if (isAdminRole(role) || role === "TRAINER") return "";
     return loadKnowledgeHubPreferences().trainingCategory;
   });
+  const effectiveCategoryFilter = !isAdmin ? (categoryFilter || loadKnowledgeHubPreferences().trainingCategory) : categoryFilter;
   const [showArchived, setShowArchived] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
@@ -294,7 +290,7 @@ export function CoursesPage() {
         const res = await coursesApi.list(token, {
           search: opts.search ?? search,
           deliveryMode: (opts.mode ?? modeFilter) || undefined,
-          trainingCategory: (opts.category ?? categoryFilter) || undefined,
+          trainingCategory: (opts.category ?? effectiveCategoryFilter) || undefined,
           includeArchived: opts.archived ?? showArchived,
           page: opts.page ?? page,
           limit: 20,
@@ -350,6 +346,13 @@ export function CoursesPage() {
   }
 
   function handleCategoryChange(val: string) {
+    if (!isAdmin) {
+      const nextCategory = loadKnowledgeHubPreferences().trainingCategory || effectiveCategoryFilter;
+      setCategoryFilter(nextCategory);
+      setPage(1);
+      void load({ category: nextCategory, page: 1 });
+      return;
+    }
     setCategoryFilter(val);
     setPage(1);
     void load({ category: val, page: 1 });
@@ -408,7 +411,9 @@ export function CoursesPage() {
           <article
             className={categoryFilter === category.title ? "active" : ""}
             key={category.title}
-            onClick={() => handleCategoryChange(category.title)}
+            onClick={() => {
+              if (isAdmin) handleCategoryChange(category.title);
+            }}
             role="button"
             tabIndex={0}
           >
@@ -431,11 +436,12 @@ export function CoursesPage() {
         <div className="filter-select-wrap">
           <Filter size={15} />
           <select
-            value={categoryFilter}
+            value={effectiveCategoryFilter}
             onChange={(e) => handleCategoryChange(e.target.value)}
             aria-label="Filter by training category"
+            disabled={!isAdmin}
           >
-            <option value="">All categories</option>
+            {isAdmin ? <option value="">All categories</option> : null}
             {trainingCategories.map((category) => (
               <option key={category} value={category}>{category}</option>
             ))}

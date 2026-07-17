@@ -1,7 +1,8 @@
 import { X } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { trainingCategories } from "../data/knowledgeHub";
+import { getCourseAccessLevelOptions, trainingCategories } from "../data/knowledgeHub";
+import { COURSE_PREFIX_OPTIONS, normalizeCourseCode } from "../lib/course-code-utils";
 import { coursesApi } from "../lib/courses-api";
 import type { Course, CreateCoursePayload, DeliveryMode } from "../types/course";
 
@@ -24,15 +25,24 @@ export function CreateCourseModal({ onClose, onCreated }: Props) {
     title: "",
     description: "",
     trainingCategory: "Academy",
-    level: undefined,
+    level: 100,
     deliveryMode: "E_LEARNING",
     requiresPayment: true,
   });
+  const [coursePrefix, setCoursePrefix] = useState(COURSE_PREFIX_OPTIONS[0]);
+  const [customPrefix, setCustomPrefix] = useState("");
+  const accessLevelOptions = useMemo(() => getCourseAccessLevelOptions(form.trainingCategory), [form.trainingCategory]);
+  const selectedLevel = accessLevelOptions.find((option) => option.value === form.level)?.value ?? accessLevelOptions[0]?.value ?? 100;
+  const previewCode = `${normalizeCourseCode(customPrefix.trim().toUpperCase() || coursePrefix)}${selectedLevel}`;
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   function set<K extends keyof CreateCoursePayload>(key: K, value: CreateCoursePayload[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function getSelectedPrefix() {
+    return customPrefix.trim().toUpperCase() || coursePrefix;
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -41,13 +51,16 @@ export function CreateCourseModal({ onClose, onCreated }: Props) {
     setLoading(true);
 
     try {
+      const prefix = normalizeCourseCode(getSelectedPrefix());
+      const code = form.code.trim().toUpperCase() || `${prefix}${form.level ?? 100}`;
       const payload: CreateCoursePayload = {
         ...form,
-        code: form.code.trim().toUpperCase(),
+        code,
         title: form.title.trim(),
         description: form.description?.trim() || undefined,
         trainingCategory: form.trainingCategory || undefined,
-        level: form.level ?? undefined,
+        level: selectedLevel,
+        requiresPayment: true,
       };
       const created = await coursesApi.create(token!, payload);
       onCreated(created);
@@ -82,29 +95,65 @@ export function CreateCourseModal({ onClose, onCreated }: Props) {
 
           <div className="form-row">
             <label>
+              Course prefix
+              <select
+                value={customPrefix ? "custom" : coursePrefix}
+                onChange={(e) => {
+                  if (e.target.value === "custom") {
+                    setCustomPrefix(coursePrefix);
+                    setCoursePrefix(COURSE_PREFIX_OPTIONS[0]);
+                  } else {
+                    setCoursePrefix(e.target.value);
+                    setCustomPrefix("");
+                  }
+                }}
+              >
+                {COURSE_PREFIX_OPTIONS.map((prefix) => (
+                  <option key={prefix} value={prefix}>{prefix}</option>
+                ))}
+                <option value="custom">Add new prefix</option>
+              </select>
+            </label>
+            {customPrefix !== "" || (customPrefix === "" && coursePrefix === "custom") ? (
+              <label>
+                New prefix
+                <input
+                  placeholder="e.g. GSD"
+                  value={customPrefix}
+                  onChange={(e) => setCustomPrefix(e.target.value.toUpperCase())}
+                  style={{ textTransform: "uppercase" }}
+                />
+              </label>
+            ) : null}
+          </div>
+
+          <div className="form-row">
+            <label>
               Course code
               <input
                 required
-                placeholder="e.g. GIS200"
-                value={form.code}
+                placeholder="e.g. LIT101"
+                value={form.code || previewCode}
                 onChange={(e) => set("code", e.target.value)}
                 style={{ textTransform: "uppercase" }}
               />
             </label>
             <label>
-              Level
-              <input
-                type="number"
-                placeholder="e.g. 200"
-                min={100}
-                max={999}
-                value={form.level ?? ""}
-                onChange={(e) =>
-                  set("level", e.target.value ? parseInt(e.target.value, 10) : undefined)
-                }
-              />
+              Access level
+              <select
+                value={selectedLevel}
+                onChange={(e) => set("level", Number(e.target.value))}
+              >
+                {accessLevelOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </label>
           </div>
+
+          <p className="form-hint">Preview: {previewCode}</p>
 
           <label>
             Title
@@ -155,14 +204,6 @@ export function CreateCourseModal({ onClose, onCreated }: Props) {
               </select>
             </label>
 
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={form.requiresPayment}
-                onChange={(e) => set("requiresPayment", e.target.checked)}
-              />
-              Requires payment
-            </label>
           </div>
 
           <div className="modal-actions">

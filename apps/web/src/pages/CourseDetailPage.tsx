@@ -6,6 +6,7 @@ import { CourseModuleManager } from "../components/CourseModuleManager";
 import { PaymentGate } from "../components/PaymentGate";
 import { SectionHeading } from "../components/SectionHeading";
 import { useAuth } from "../context/AuthContext";
+import { getCourseAccessLevelLabel } from "../data/knowledgeHub";
 import { coursesApi } from "../lib/courses-api";
 import { assessmentsApi } from "../lib/assessments-api";
 import { isAdminRole, isInstructorRole } from "../lib/roles";
@@ -484,9 +485,9 @@ export function CourseDetailPage() {
           <h1>{course.title}</h1>
           <p>{course.description || "No description has been added yet."}</p>
           <div className="course-detail-meta">
-            {course.level ? <span>GIS {course.level}</span> : null}
+            {course.level ? <span>{getCourseAccessLevelLabel(course.trainingCategory, course.level)}</span> : null}
             <span>{DELIVERY_MODE_LABELS[course.deliveryMode]}</span>
-            <span>{course.requiresPayment ? "Paid course" : "Free course"}</span>
+            <span>{course.trainingCategory ?? "Programme"}</span>
             <span>{course._count?.lessons ?? lessons.length} lessons</span>
           </div>
 
@@ -560,7 +561,14 @@ export function CourseDetailPage() {
         <PaymentGate accessStatus={course.accessStatus as { allowed: false; reason: "payment_required" | "account_blocked" | "account_overdue" }} />
       ) : (
         <>
-        <CourseModuleManager courseId={course.id} canManage={canManageLessons} lessons={lessons} onChange={setModules} />
+        <CourseModuleManager
+          courseId={course.id}
+          courseCode={course.code}
+          deliveryMode={course.deliveryMode}
+          canManage={canManageLessons}
+          lessons={lessons}
+          onChange={setModules}
+        />
         {canManageLessons ? (
         <section className="workstream">
           <SectionHeading eyebrow="Course content" title="Lessons" compact />

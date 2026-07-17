@@ -142,6 +142,48 @@ export const trainingCategoryDetails = {
   },
 } as const;
 
+export const courseAccessLevelOptions = {
+  Bootcamp: [
+    { value: 100, label: "NGO and Development Sector Bootcamps" },
+    { value: 200, label: "Organisation-Wide Bootcamps" },
+    { value: 300, label: "School Enrichment Bootcamps" },
+  ],
+  Green: [
+    { value: 100, label: "Senior Secondary School 1 — Foundation Level" },
+    { value: 200, label: "Senior Secondary School 2 — Applied Level" },
+    { value: 300, label: "Senior Secondary School 3 — Innovation and Competition Level" },
+  ],
+  Academy: [
+    { value: 100, label: "Foundation Cohort" },
+    { value: 200, label: "Intermediate Cohort" },
+    { value: 300, label: "Advanced Cohort" },
+  ],
+  "Industry Training": [
+    { value: 100, label: "Foundation Cohort" },
+    { value: 200, label: "Intermediate Cohort" },
+    { value: 300, label: "Advanced Cohort" },
+  ],
+  "Premium Executive Service": [
+    { value: 100, label: "Premium Executive Service" },
+  ],
+} as const;
+
+export function getCourseAccessLevelOptions(trainingCategory?: string | null) {
+  const category = trainingCategory && trainingCategory in courseAccessLevelOptions
+    ? trainingCategory as keyof typeof courseAccessLevelOptions
+    : "Academy";
+
+  return (courseAccessLevelOptions[category] ?? courseAccessLevelOptions.Academy).map((option) => ({
+    value: option.value,
+    label: option.label,
+  }));
+}
+
+export function getCourseAccessLevelLabel(trainingCategory?: string | null, level?: number | null) {
+  const option = getCourseAccessLevelOptions(trainingCategory).find((item) => item.value === level);
+  return option?.label ?? (level ? `Level ${level}` : "General access");
+}
+
 export const knowledgeLearningModes = [
   { value: "E_LEARNING", label: "E-Learning" },
   { value: "ONSITE", label: "Onsite" },

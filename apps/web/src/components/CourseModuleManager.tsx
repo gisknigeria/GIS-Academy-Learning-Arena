@@ -2,13 +2,16 @@ import { BookCopy, Boxes, CheckCircle2, ChevronDown, ChevronUp, ExternalLink, Fi
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { getLessonCode, getModuleCode } from "../lib/course-code-utils";
 import { curriculumApi } from "../lib/curriculum-api";
 import { STATUS_LABELS } from "../types/assignment";
 import type { CourseModule } from "../types/curriculum";
-import type { Lesson } from "../types/course";
+import type { Course, Lesson } from "../types/course";
 
 type Props = {
   courseId: string;
+  courseCode?: string;
+  deliveryMode?: Course["deliveryMode"];
   canManage: boolean;
   lessons?: Lesson[];
   onChange?: (modules: CourseModule[]) => void;
@@ -24,7 +27,7 @@ function getLessonMaterials(lesson: Lesson) {
   ].filter((item): item is { label: string; url: string; icon: typeof Video } => Boolean(item));
 }
 
-export function CourseModuleManager({ courseId, canManage, lessons = [], onChange }: Props) {
+export function CourseModuleManager({ courseId, courseCode = "", deliveryMode = "E_LEARNING", canManage, lessons = [], onChange }: Props) {
   const { token } = useAuth();
   const [modules, setModules] = useState<CourseModule[]>([]);
   const [library, setLibrary] = useState<CourseModule[]>([]);
@@ -164,7 +167,7 @@ export function CourseModuleManager({ courseId, canManage, lessons = [], onChang
                 onClick={() => setExpandedModuleId((current) => current === module.id ? "" : module.id)}
                 aria-expanded={isExpanded}
               >
-                <span className="curriculum-module-number"><small>Module</small>{module.order}</span>
+                <span className="curriculum-module-number"><small>Module</small>{getModuleCode(courseCode, module.order, deliveryMode)}</span>
                 <div className="curriculum-module-copy">
                   <h3>{module.title}</h3>
                   {module.description ? <p>{module.description}</p> : null}
@@ -202,7 +205,7 @@ export function CourseModuleManager({ courseId, canManage, lessons = [], onChang
                         const materials = getLessonMaterials(lesson);
                         return (
                           <article className={lesson.locked ? "curriculum-lesson is-locked" : "curriculum-lesson"} key={lesson.id}>
-                            <span className="curriculum-lesson-number">{lesson.order}</span>
+                            <span className="curriculum-lesson-number">{getLessonCode(courseCode, module.order, lesson.order, deliveryMode)}</span>
                             <div className="curriculum-lesson-main">
                               <div className="curriculum-lesson-title">
                                 <h4>{lesson.title}</h4>
