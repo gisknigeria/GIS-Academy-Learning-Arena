@@ -225,18 +225,34 @@ export function CourseDetailPage() {
         setLessons([]);
         setProgress(null);
       } else {
-        // Fetch lessons-with-progress and the progress summary in parallel
-        const [currentLessons, currentProgress, courseAssessments] = await Promise.all([
+        // Keep the course page usable if one secondary section is temporarily
+        // unavailable. The course itself is the only request that should make
+        // the whole page fail.
+        const [lessonsResult, progressResult, assessmentsResult] = await Promise.allSettled([
           coursesApi.listLessons(token, id),
           coursesApi.getProgress(token, id),
           assessmentsApi.listForCourse(token, id),
         ]);
-        setLessons(currentLessons);
-        setProgress(currentProgress);
-        setFinalAssessments(courseAssessments);
+
+        if (lessonsResult.status === "fulfilled") {
+          setLessons(lessonsResult.value);
+        } else {
+          setLessons([]);
+          setLessonError("The course opened, but its lessons could not be loaded. Please try again.");
+        }
+
+        setProgress(progressResult.status === "fulfilled" ? progressResult.value : null);
+        setFinalAssessments(assessmentsResult.status === "fulfilled" ? assessmentsResult.value : []);
       }
-    } catch {
-      setPageError("Could not load this course. Please try again.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      if (message.includes('"statusCode":404')) {
+        setPageError("This course no longer exists or is unavailable.");
+      } else if (message.includes('"statusCode":401') || message.toLowerCase().includes("unauthorized")) {
+        setPageError("Your session has expired. Please sign in again.");
+      } else {
+        setPageError("Could not load this course. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
