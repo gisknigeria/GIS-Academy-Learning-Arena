@@ -1757,9 +1757,9 @@ textarea {
   overflow: hidden;
   background:
     linear-gradient(160deg,
-      rgba(6, 28, 22, 0.24) 0%,
-      rgba(10, 48, 35, 0.24) 45%,
-      rgba(4, 21, 16, 0.44) 100%
+      rgba(6, 28, 22, 0.12) 0%,
+      rgba(10, 48, 35, 0.14) 45%,
+      rgba(4, 21, 16, 0.22) 100%
     ),
     url("https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=1400&q=80")
       center center / cover no-repeat;
@@ -1770,9 +1770,9 @@ textarea {
 .auth-page--register .auth-visual {
   background:
     linear-gradient(160deg,
-      rgba(6, 28, 22, 0.24) 0%,
-      rgba(10, 48, 35, 0.24) 45%,
-      rgba(4, 21, 16, 0.44) 100%
+      rgba(6, 28, 22, 0.12) 0%,
+      rgba(10, 48, 35, 0.14) 45%,
+      rgba(4, 21, 16, 0.22) 100%
     ),
     url("https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1400&q=80")
       center center / cover no-repeat;
@@ -2300,7 +2300,12 @@ textarea {
 
   .auth-panel {
     min-height: auto;
-    padding: 24px 16px 40px;
+    padding: 34px 16px 40px;
+    margin-top: 8px;
+  }
+
+  .auth-panel__inner {
+    margin-top: 6px;
   }
 }
 
