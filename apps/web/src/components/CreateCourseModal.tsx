@@ -4,18 +4,12 @@ import { useAuth } from "../context/AuthContext";
 import { getCourseAccessLevelOptions, trainingCategories } from "../data/knowledgeHub";
 import { COURSE_PREFIX_OPTIONS, normalizeCourseCode } from "../lib/course-code-utils";
 import { coursesApi } from "../lib/courses-api";
-import type { Course, CreateCoursePayload, DeliveryMode } from "../types/course";
+import type { Course, CreateCoursePayload } from "../types/course";
 
 type Props = {
   onClose: () => void;
   onCreated: (course: Course) => void;
 };
-
-const DELIVERY_MODES: { value: DeliveryMode; label: string }[] = [
-  { value: "E_LEARNING", label: "E-Learning" },
-  { value: "ONSITE", label: "Onsite" },
-  { value: "HYBRID", label: "Hybrid" },
-];
 
 export function CreateCourseModal({ onClose, onCreated }: Props) {
   const { token } = useAuth();
@@ -188,23 +182,6 @@ export function CreateCourseModal({ onClose, onCreated }: Props) {
               ))}
             </select>
           </label>
-
-          <div className="form-row">
-            <label>
-              Delivery mode
-              <select
-                value={form.deliveryMode}
-                onChange={(e) => set("deliveryMode", e.target.value as DeliveryMode)}
-              >
-                {DELIVERY_MODES.map((m) => (
-                  <option key={m.value} value={m.value}>
-                    {m.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-          </div>
 
           <div className="modal-actions">
             <button type="button" className="secondary-button" onClick={onClose}>
