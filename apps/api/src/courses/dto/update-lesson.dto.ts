@@ -19,6 +19,10 @@ export class UpdateLessonDto {
   content?: string;
 
   @IsOptional()
+  @IsString()
+  code?: string;
+
+  @IsOptional()
   @IsInt()
   @Min(1)
   order?: number;

@@ -6,6 +6,19 @@ export const curriculumApi = {
     return apiRequest<TrainingCategory[]>("/curriculum/catalogue", { token });
   },
 
+  createProgramme(token: string, payload: {
+    categoryId: string;
+    name: string;
+    description?: string;
+    courseIds: string[];
+  }) {
+    return apiRequest("/curriculum/programmes", {
+      method: "POST",
+      token,
+      body: payload,
+    });
+  },
+
   placeCourse(token: string, stageId: string, courseId: string, order = 0) {
     return apiRequest(`/curriculum/stages/${stageId}/courses`, {
       method: "POST",
@@ -49,4 +62,3 @@ export const curriculumApi = {
     return apiRequest(`/curriculum/modules/${moduleId}`, { method: "DELETE", token });
   },
 };
-

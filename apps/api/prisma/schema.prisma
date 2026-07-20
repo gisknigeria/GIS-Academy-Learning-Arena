@@ -237,6 +237,7 @@ model CourseModule {
   courseId       String
   title          String
   description    String?
+  code           String?
   order          Int
   importedFromId String?
   course         Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
@@ -260,6 +261,7 @@ model Lesson {
   title        String
   summary      String?
   content      String?
+  code         String?
   order        Int
   videoUrl     String?
   resourceUrl  String?

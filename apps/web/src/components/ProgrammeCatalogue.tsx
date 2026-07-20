@@ -20,7 +20,7 @@ export function ProgrammeCatalogue({ availableCourses, onChanged }: Props) {
   const [busyId, setBusyId] = useState("");
   const [selectedCourses, setSelectedCourses] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
-  const canManage = Boolean(user && isAdminRole(user.role));
+  const canManage = Boolean(user && (isAdminRole(user.role) || user.role === "TRAINER"));
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -195,4 +195,3 @@ export function ProgrammeCatalogue({ availableCourses, onChanged }: Props) {
     </section>
   );
 }
-

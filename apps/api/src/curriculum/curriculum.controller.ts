@@ -9,13 +9,14 @@ import {
   CreateCategoryDto,
   CreateModuleDto,
   CreatePathwayDto,
+  CreateProgrammeDto,
   CreateStageDto,
   ImportModuleDto,
   PlaceCourseDto,
 } from "./dto/curriculum.dto";
 
 const MANAGE_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TRAINING_MANAGER, UserRole.TRAINER];
-const STRUCTURE_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TRAINING_MANAGER];
+const STRUCTURE_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TRAINING_MANAGER, UserRole.TRAINER];
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller("curriculum")
@@ -37,6 +38,12 @@ export class CurriculumController {
   @Post("categories/:categoryId/pathways")
   createPathway(@Param("categoryId") categoryId: string, @Body() dto: CreatePathwayDto) {
     return this.curriculum.createPathway(categoryId, dto);
+  }
+
+  @Roles(...MANAGE_ROLES)
+  @Post("programmes")
+  createProgramme(@Body() dto: CreateProgrammeDto) {
+    return this.curriculum.createProgramme(dto);
   }
 
   @Roles(...STRUCTURE_ROLES)

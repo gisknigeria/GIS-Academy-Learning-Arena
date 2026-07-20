@@ -5,6 +5,7 @@ import {
   CreateCategoryDto,
   CreateModuleDto,
   CreatePathwayDto,
+  CreateProgrammeDto,
   CreateStageDto,
   ImportModuleDto,
   PlaceCourseDto,
@@ -103,6 +104,57 @@ export class CurriculumService {
 
   createPathway(categoryId: string, dto: CreatePathwayDto) {
     return this.prisma.learningPathway.create({ data: { categoryId, ...dto } });
+  }
+
+  async createProgramme(dto: CreateProgrammeDto) {
+    const category = await this.prisma.trainingCategory.findUnique({ where: { id: dto.categoryId } });
+    if (!category) throw new NotFoundException("Training category not found.");
+
+    const uniqueCourseIds = [...new Set(dto.courseIds)];
+    const courseCount = await this.prisma.course.count({
+      where: { id: { in: uniqueCourseIds }, isArchived: false },
+    });
+    if (courseCount !== uniqueCourseIds.length) {
+      throw new NotFoundException("One or more selected courses could not be found.");
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const lastProgramme = await tx.learningPathway.findFirst({
+        where: { categoryId: dto.categoryId },
+        orderBy: { order: "desc" },
+        select: { order: true },
+      });
+      const programme = await tx.learningPathway.create({
+        data: {
+          categoryId: dto.categoryId,
+          name: dto.name.trim(),
+          description: dto.description?.trim() || null,
+          order: (lastProgramme?.order ?? 0) + 1,
+          stages: {
+            create: {
+              stageNumber: 1,
+              name: "Courses",
+              description: "Complete the courses in this programme.",
+              courses: {
+                create: uniqueCourseIds.map((courseId, order) => ({
+                  courseId,
+                  order: order + 1,
+                  required: true,
+                })),
+              },
+            },
+          },
+        },
+        include: {
+          stages: {
+            include: {
+              courses: { orderBy: { order: "asc" }, include: { course: true } },
+            },
+          },
+        },
+      });
+      return programme;
+    });
   }
 
   createStage(pathwayId: string, dto: CreateStageDto) {

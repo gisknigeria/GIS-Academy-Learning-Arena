@@ -1,4 +1,5 @@
 import { FormEvent, useState } from "react";
+import { BadgeCheck, BookOpen, Eye, EyeOff, Globe, GraduationCap, Map, MessageCircle, ShieldCheck, Sparkles, Trophy } from "lucide-react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import logoMark from "../assets/gis-academy-logo.svg";
 import { useAuth } from "../context/AuthContext";
@@ -10,9 +11,22 @@ export function RegisterPage() {
   const [email, setEmail]             = useState("");
   const [phone, setPhone]             = useState("");
   const [password, setPassword]       = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [accountType, setAccountType] = useState<"STUDENT" | "TRAINER">("STUDENT");
   const [error, setError]             = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const visualFeatures = [
+    { label: "Live Courses", icon: BookOpen },
+    { label: "Competitions", icon: Trophy },
+    { label: "Certificates", icon: BadgeCheck },
+    { label: "Trainer Feedback", icon: MessageCircle },
+    { label: "GIS Skills", icon: Map },
+  ];
+  const floatingCards = [
+    { icon: BadgeCheck, title: "Free certificates", detail: "Earn as you complete" },
+    { icon: Map, title: "GIS skills", detail: "Map the future" },
+    { icon: Globe, title: "Global community", detail: "10K+ learners worldwide" },
+  ];
 
   if (isAuthenticated) return <Navigate to="/dashboard" replace />;
 
@@ -56,7 +70,19 @@ export function RegisterPage() {
           </p>
 
           <div className="auth-visual__tagline">
-            Build skills. Prove talent. Connect to opportunity.
+            <Sparkles size={16} /> Build skills. Prove talent. Connect to opportunity.
+          </div>
+
+          <div className="auth-visual__features">
+            {visualFeatures.map((feature) => {
+              const Icon = feature.icon;
+              return (
+                <span key={feature.label} className="auth-visual__feature-pill">
+                  <Icon size={14} />
+                  <span>{feature.label}</span>
+                </span>
+              );
+            })}
           </div>
 
           {/* Journey steps */}
@@ -89,18 +115,15 @@ export function RegisterPage() {
 
         {/* Floating illustration cards */}
         <div className="auth-visual__cards" aria-hidden="true">
-          <div className="auth-float-card auth-float-card--a">
-            <span>🎓</span>
-            <div><strong>Free certificates</strong><small>Earn as you complete</small></div>
-          </div>
-          <div className="auth-float-card auth-float-card--b">
-            <span>🗺️</span>
-            <div><strong>GIS skills</strong><small>Map the future</small></div>
-          </div>
-          <div className="auth-float-card auth-float-card--c">
-            <span>🌍</span>
-            <div><strong>Global community</strong><small>10K+ learners worldwide</small></div>
-          </div>
+          {floatingCards.map((card, index) => {
+            const Icon = card.icon;
+            return (
+              <div key={card.title} className={`auth-float-card auth-float-card--${index === 0 ? "a" : index === 1 ? "b" : "c"}`}>
+                <span><Icon size={18} /></span>
+                <div><strong>{card.title}</strong><small>{card.detail}</small></div>
+              </div>
+            );
+          })}
         </div>
       </section>
 
@@ -128,18 +151,23 @@ export function RegisterPage() {
             </label>
             <label>
               Password
-              <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" minLength={8} required autoComplete="new-password" placeholder="Min. 8 characters" />
+              <div className="auth-input-with-icon">
+                <input value={password} onChange={(e) => setPassword(e.target.value)} type={showPassword ? "text" : "password"} minLength={8} required autoComplete="new-password" placeholder="Min. 8 characters" />
+                <button type="button" className="auth-password-toggle" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "Hide password" : "Show password"}>
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </label>
 
             {/* Account type */}
             <div className="auth-role-picker" role="radiogroup" aria-label="Account type">
               <button type="button" className={accountType === "STUDENT" ? "selected" : ""} onClick={() => setAccountType("STUDENT")} aria-pressed={accountType === "STUDENT"}>
-                <span className="auth-role-icon">🎒</span>
+                <span className="auth-role-icon"><GraduationCap size={18} /></span>
                 <strong>Learner</strong>
                 <span>Start learning immediately</span>
               </button>
               <button type="button" className={accountType === "TRAINER" ? "selected" : ""} onClick={() => setAccountType("TRAINER")} aria-pressed={accountType === "TRAINER"}>
-                <span className="auth-role-icon">🏫</span>
+                <span className="auth-role-icon"><BookOpen size={18} /></span>
                 <strong>Trainer</strong>
                 <span>Requires approval</span>
               </button>
@@ -158,11 +186,11 @@ export function RegisterPage() {
           </p>
 
           <div className="auth-panel__trust">
-            <span>🔒 Secure & private</span>
+            <span><ShieldCheck size={14} /> Secure & private</span>
             <span>·</span>
-            <span>100% free</span>
+            <span><Sparkles size={14} /> 100% free</span>
             <span>·</span>
-            <span>No card needed</span>
+            <span><BadgeCheck size={14} /> No card needed</span>
           </div>
         </div>
       </section>

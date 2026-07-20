@@ -12,8 +12,10 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { CreateCourseModal } from "../components/CreateCourseModal";
+import { CreateProgrammeModal } from "../components/CreateProgrammeModal";
 import { PaymentGate } from "../components/PaymentGate";
 import { PaymentStatusBanner } from "../components/PaymentStatusBanner";
+import { ProgrammeCatalogue } from "../components/ProgrammeCatalogue";
 import { SectionHeading } from "../components/SectionHeading";
 import { useAuth } from "../context/AuthContext";
 import { getCourseAccessLevelLabel, loadKnowledgeHubPreferences } from "../data/knowledgeHub";
@@ -270,6 +272,8 @@ export function CoursesPage() {
   const effectiveCategoryFilter = !isAdmin ? (categoryFilter || loadKnowledgeHubPreferences().trainingCategory) : categoryFilter;
   const [showArchived, setShowArchived] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showProgrammeModal, setShowProgrammeModal] = useState(false);
+  const [programmeVersion, setProgrammeVersion] = useState(0);
 
   const searchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -389,10 +393,16 @@ export function CoursesPage() {
         />
         <div className="page-header-actions">
           {isAdmin && (
-            <button className="primary-button" onClick={() => setShowModal(true)}>
-              <PlusCircle size={17} />
-              New course
-            </button>
+            <>
+              <button className="secondary-button" onClick={() => setShowProgrammeModal(true)}>
+                <PlusCircle size={17} />
+                New programme
+              </button>
+              <button className="primary-button" onClick={() => setShowModal(true)}>
+                <PlusCircle size={17} />
+                New course
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -405,7 +415,7 @@ export function CoursesPage() {
           <input
             placeholder="Search by title, code, or description…"
             value={search}
-            onChange={(e) => handleSearchChange(e.target.value)}
+            onChange={(e: { target: { value: string; }; }) => handleSearchChange(e.target.value)}
             aria-label="Search courses"
           />
         </div>
@@ -541,9 +551,27 @@ export function CoursesPage() {
         </div>
       )}
 
+      {!loading && (
+        <ProgrammeCatalogue
+          key={programmeVersion}
+          availableCourses={courses.filter((course) => !course.isArchived)}
+          onChanged={() => setProgrammeVersion((version) => version + 1)}
+        />
+      )}
+
       {/* Create modal */}
       {showModal && (
         <CreateCourseModal onClose={() => setShowModal(false)} onCreated={handleCreated} />
+      )}
+      {showProgrammeModal && (
+        <CreateProgrammeModal
+          availableCourses={courses.filter((course) => !course.isArchived)}
+          onClose={() => setShowProgrammeModal(false)}
+          onCreated={() => {
+            setShowProgrammeModal(false);
+            setProgrammeVersion((version) => version + 1);
+          }}
+        />
       )}
     </section>
   );

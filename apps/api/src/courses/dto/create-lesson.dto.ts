@@ -17,6 +17,10 @@ export class CreateLessonDto {
   @IsString()
   content?: string;
 
+  @IsOptional()
+  @IsString()
+  code?: string;
+
   @IsInt()
   @Min(1)
   order!: number;

@@ -1,4 +1,5 @@
 import { FormEvent, useState } from "react";
+import { Award, BadgeCheck, BarChart3, BookOpen, Eye, EyeOff, Map, MessageCircle, ShieldCheck, Sparkles, Trophy, Zap } from "lucide-react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import logoMark from "../assets/gis-academy-logo.svg";
 import { useAuth } from "../context/AuthContext";
@@ -9,9 +10,22 @@ export function LoginPage() {
   const location = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? "/dashboard";
+  const visualFeatures = [
+    { label: "Live Courses", icon: BookOpen },
+    { label: "Competitions", icon: Trophy },
+    { label: "Certificates", icon: BadgeCheck },
+    { label: "Trainer Feedback", icon: MessageCircle },
+    { label: "GIS Skills", icon: Map },
+  ];
+  const floatingCards = [
+    { icon: Award, title: "Certificate earned", detail: "GIS Fundamentals" },
+    { icon: Zap, title: "Challenge live", detail: "Map Sprint — 14 joined" },
+    { icon: BarChart3, title: "84% complete", detail: "Remote Sensing module" },
+  ];
 
   if (isAuthenticated) return <Navigate to="/dashboard" replace />;
 
@@ -55,14 +69,20 @@ export function LoginPage() {
           </p>
 
           <div className="auth-visual__tagline">
-            Build skills. Prove talent. Connect to opportunity.
+            <Sparkles size={16} /> Build skills. Prove talent. Connect to opportunity.
           </div>
 
           {/* Feature pills */}
           <div className="auth-visual__features">
-            {["📚 Live Courses", "🏆 Competitions", "🎓 Certificates", "💬 Trainer Feedback", "🗺️ GIS Skills"].map((f) => (
-              <span key={f} className="auth-visual__feature-pill">{f}</span>
-            ))}
+            {visualFeatures.map((feature) => {
+              const Icon = feature.icon;
+              return (
+                <span key={feature.label} className="auth-visual__feature-pill">
+                  <Icon size={14} />
+                  <span>{feature.label}</span>
+                </span>
+              );
+            })}
           </div>
 
           {/* Stats strip */}
@@ -76,18 +96,15 @@ export function LoginPage() {
 
         {/* Floating illustration cards */}
         <div className="auth-visual__cards" aria-hidden="true">
-          <div className="auth-float-card auth-float-card--a">
-            <span>🏅</span>
-            <div><strong>Certificate earned</strong><small>GIS Fundamentals</small></div>
-          </div>
-          <div className="auth-float-card auth-float-card--b">
-            <span>⚡</span>
-            <div><strong>Challenge live</strong><small>Map Sprint — 14 joined</small></div>
-          </div>
-          <div className="auth-float-card auth-float-card--c">
-            <span>📈</span>
-            <div><strong>84% complete</strong><small>Remote Sensing module</small></div>
-          </div>
+          {floatingCards.map((card, index) => {
+            const Icon = card.icon;
+            return (
+              <div key={card.title} className={`auth-float-card auth-float-card--${index === 0 ? "a" : index === 1 ? "b" : "c"}`}>
+                <span><Icon size={18} /></span>
+                <div><strong>{card.title}</strong><small>{card.detail}</small></div>
+              </div>
+            );
+          })}
         </div>
       </section>
 
@@ -107,7 +124,12 @@ export function LoginPage() {
             </label>
             <label>
               Password
-              <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" required autoComplete="current-password" placeholder="••••••••" />
+              <div className="auth-input-with-icon">
+                <input value={password} onChange={(e) => setPassword(e.target.value)} type={showPassword ? "text" : "password"} required autoComplete="current-password" placeholder="••••••••" />
+                <button type="button" className="auth-password-toggle" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "Hide password" : "Show password"}>
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </label>
             {error && <p className="form-error">{error}</p>}
             <button className="primary-button auth-submit-btn" disabled={isSubmitting}>
@@ -122,11 +144,11 @@ export function LoginPage() {
           </p>
 
           <div className="auth-panel__trust">
-            <span>🔒 Secure login</span>
+            <span><ShieldCheck size={14} /> Secure login</span>
             <span>·</span>
-            <span>Free to join</span>
+            <span><Sparkles size={14} /> Free to join</span>
             <span>·</span>
-            <span>No card needed</span>
+            <span><BadgeCheck size={14} /> No card needed</span>
           </div>
         </div>
       </section>

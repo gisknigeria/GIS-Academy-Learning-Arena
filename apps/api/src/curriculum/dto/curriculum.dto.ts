@@ -1,4 +1,4 @@
-import { IsBoolean, IsInt, IsOptional, IsString, Max, Min, MinLength } from "class-validator";
+import { ArrayMinSize, IsArray, IsBoolean, IsInt, IsOptional, IsString, Max, Min, MinLength } from "class-validator";
 
 export class CreateCategoryDto {
   @IsString()
@@ -32,6 +32,24 @@ export class CreatePathwayDto {
   @IsInt()
   @Min(0)
   order?: number;
+}
+
+export class CreateProgrammeDto {
+  @IsString()
+  categoryId!: string;
+
+  @IsString()
+  @MinLength(2)
+  name!: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsString({ each: true })
+  courseIds!: string[];
 }
 
 export class CreateStageDto {
@@ -73,6 +91,10 @@ export class CreateModuleDto {
   description?: string;
 
   @IsOptional()
+  @IsString()
+  code?: string;
+
+  @IsOptional()
   @IsInt()
   @Min(1)
   order?: number;
@@ -87,4 +109,3 @@ export class ImportModuleDto {
   @Min(1)
   order?: number;
 }
-
