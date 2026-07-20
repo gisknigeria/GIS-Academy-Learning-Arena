@@ -1,4 +1,3 @@
-import { X } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import logoMark from "../assets/gis-academy-logo.svg";
 import { useAuth } from "../context/AuthContext";
@@ -36,15 +35,6 @@ export function AppSidebar({ activePage, isOpen, onClose }: AppSidebarProps) {
           <strong>{brandTitle}</strong>
           <span>{brandTagline}</span>
         </div>
-
-        {/* Close button — visible on mobile only */}
-        <button
-          className="sidebar-close-btn icon-button"
-          aria-label="Close navigation"
-          onClick={onClose}
-        >
-          <X size={19} />
-        </button>
       </div>
 
       {/* Nav items */}
