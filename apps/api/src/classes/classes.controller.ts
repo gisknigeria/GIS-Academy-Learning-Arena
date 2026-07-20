@@ -14,6 +14,7 @@ import { CreateClassMessageDto } from "./dto/create-class-message.dto";
 import { CreateLiveSessionDto } from "./dto/create-live-session.dto";
 import { SetLessonUnlocksDto } from "./dto/set-lesson-unlocks.dto";
 import { UpdateLiveSessionDto } from "./dto/update-live-session.dto";
+import { CreateTutorRequestDto, ProposeTutorSlotsDto, SelectTutorSlotDto, SetTutorMeetingLinkDto } from "./dto/tutor-request.dto";
 import { AuthenticatedRequest } from "../auth/types/authenticated-request";
 
 const WRITE_ROLES = [
@@ -166,5 +167,49 @@ export class ClassesController {
   @Delete("announcements/:id")
   deleteAnnouncement(@Param("id") id: string) {
     return this.classesService.removeAnnouncement(id);
+  }
+
+  @Get(":id/tutor-requests")
+  listTutorRequests(@Param("id") id: string, @Req() req: AuthenticatedRequest) {
+    return this.classesService.listTutorRequests(id, req.user.sub, req.user.role);
+  }
+
+  @Roles(UserRole.STUDENT)
+  @Post(":id/tutor-requests")
+  createTutorRequest(
+    @Param("id") id: string,
+    @Body() dto: CreateTutorRequestDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.classesService.createTutorRequest(id, req.user.sub, dto);
+  }
+
+  @Roles(...WRITE_ROLES)
+  @Patch("tutor-requests/:requestId/slots")
+  proposeTutorSlots(
+    @Param("requestId") requestId: string,
+    @Body() dto: ProposeTutorSlotsDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.classesService.proposeTutorSlots(requestId, req.user.sub, dto);
+  }
+
+  @Roles(UserRole.STUDENT)
+  @Patch("tutor-requests/:requestId/select")
+  selectTutorSlot(
+    @Param("requestId") requestId: string,
+    @Body() dto: SelectTutorSlotDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.classesService.selectTutorSlot(requestId, req.user.sub, dto);
+  }
+
+  @Patch("tutor-requests/:requestId/meeting-link")
+  setTutorMeetingLink(
+    @Param("requestId") requestId: string,
+    @Body() dto: SetTutorMeetingLinkDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.classesService.setTutorMeetingLink(requestId, req.user.sub, req.user.role, dto);
   }
 }

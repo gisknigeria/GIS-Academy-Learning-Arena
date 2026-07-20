@@ -1,20 +1,22 @@
 import {
   CalendarPlus, Download, ExternalLink, Layers, LayoutDashboard,
-  MapPin, MessageSquare, Megaphone, MonitorPlay, Users,
+  LifeBuoy, MapPin, MessageSquare, Megaphone, MonitorPlay, Users,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ClassStudio } from "../components/ClassStudio";
+import { TutorSupportPanel } from "../components/TutorSupportPanel";
 import { SectionHeading } from "../components/SectionHeading";
 import { useAuth } from "../context/AuthContext";
 import classesApi, { type Announcement, type ScheduleSummary } from "../lib/classes-api";
 import { CLASS_WRITE_ROLES, type ClassMessage, type LiveSession } from "../types/class";
 
-type Tab = "overview" | "sessions" | "studio" | "announcements" | "messages" | "students";
+type Tab = "overview" | "sessions" | "support" | "studio" | "announcements" | "messages" | "students";
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "overview",      label: "Overview",      icon: <LayoutDashboard size={15} /> },
   { id: "sessions",      label: "Sessions",      icon: <CalendarPlus size={15} /> },
+  { id: "support",       label: "Tutor support", icon: <LifeBuoy size={15} /> },
   { id: "studio",        label: "Studio",        icon: <Layers size={15} /> },
   { id: "announcements", label: "Announcements", icon: <Megaphone size={15} /> },
   { id: "messages",      label: "Messages",      icon: <MessageSquare size={15} /> },
@@ -143,7 +145,7 @@ export default function ClassPage() {
 
       {/* ── Tab bar ── */}
       <nav className="class-tabs" role="tablist" aria-label="Class sections">
-        {TABS.map((tab) => (
+        {TABS.filter((tab) => tab.id !== "support" || schedule?.mode === "HYBRID").map((tab) => (
           <button
             key={tab.id}
             role="tab"
@@ -274,6 +276,10 @@ export default function ClassPage() {
               ))}
             </div>
           </div>
+        )}
+
+        {activeTab === "support" && schedule?.mode === "HYBRID" && (
+          <TutorSupportPanel classId={id ?? ""} />
         )}
 
         {/* STUDIO */}

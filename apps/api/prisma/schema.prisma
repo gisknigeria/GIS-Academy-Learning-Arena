@@ -109,6 +109,8 @@ model User {
   lessonQuestions       LessonDiscussion[] @relation("LessonQuestionAuthor")
   lessonAnswers         LessonDiscussion[] @relation("LessonAnswerAuthor")
   liveSessionsAuthored  LiveSession[]      @relation("LiveSessionCreator")
+  tutorRequests         TutorRequest[]     @relation("TutorRequestStudent")
+  assignedTutorRequests TutorRequest[]     @relation("TutorRequestTutor")
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 }
@@ -330,6 +332,7 @@ model Class {
   announcements     ClassAnnouncement[]
   lessonUnlocks     ClassLessonUnlock[]
   liveSessions      LiveSession[]
+  tutorRequests     TutorRequest[]
   messages          ClassMessage[]
 }
 
@@ -367,6 +370,32 @@ model LiveSession {
   createdBy User? @relation("LiveSessionCreator", fields: [createdById], references: [id], onDelete: SetNull)
 
   @@index([classId, startsAt])
+}
+
+model TutorRequest {
+  id             String   @id @default(uuid())
+  classId        String
+  studentId      String
+  tutorId        String?
+  topic          String
+  challenge      String
+  attempted      String
+  desiredOutcome String
+  botSummary     String
+  status         String   @default("REQUESTED")
+  proposedSlots  Json     @default("[]")
+  selectedStart  DateTime?
+  meetingUrl     String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  class   Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  student User  @relation("TutorRequestStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  tutor   User? @relation("TutorRequestTutor", fields: [tutorId], references: [id], onDelete: SetNull)
+
+  @@index([classId, status])
+  @@index([studentId, createdAt])
+  @@index([tutorId, status])
 }
 
 model Enrollment {

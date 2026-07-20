@@ -110,6 +110,26 @@ export type UpdateLiveSessionPayload = Partial<CreateLiveSessionPayload> & {
   status?: string;
 };
 
+export type TutorRequest = {
+  id: string;
+  classId: string;
+  studentId: string;
+  tutorId?: string | null;
+  topic: string;
+  challenge: string;
+  attempted: string;
+  desiredOutcome: string;
+  botSummary: string;
+  status: "REQUESTED" | "AWAITING_SELECTION" | "SCHEDULED" | "CONFIRMED";
+  proposedSlots: string[];
+  selectedStart?: string | null;
+  meetingUrl?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  student: { id: string; fullName: string; email: string };
+  tutor?: { id: string; fullName: string; email: string } | null;
+};
+
 export type AttendanceRecord = {
   id: string;
   classId: string;

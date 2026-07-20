@@ -11,6 +11,7 @@ import type {
   MarkAttendancePayload,
   UpdateClassPayload,
   UpdateLiveSessionPayload,
+  TutorRequest,
 } from "../types/class";
 
 export type ScheduleSummary = {
@@ -187,6 +188,40 @@ export const classesApi = {
       token,
       method: "PATCH",
       body: payload,
+    });
+  },
+
+  listTutorRequests(token: string, classId: string): Promise<TutorRequest[]> {
+    return apiRequest<TutorRequest[]>(`/classes/${classId}/tutor-requests`, { token });
+  },
+
+  createTutorRequest(token: string, classId: string, payload: {
+    topic: string;
+    challenge: string;
+    attempted: string;
+    desiredOutcome: string;
+    botSummary: string;
+  }): Promise<TutorRequest> {
+    return apiRequest<TutorRequest>(`/classes/${classId}/tutor-requests`, {
+      method: "POST", token, body: payload,
+    });
+  },
+
+  proposeTutorSlots(token: string, requestId: string, slots: string[]): Promise<TutorRequest> {
+    return apiRequest<TutorRequest>(`/classes/tutor-requests/${requestId}/slots`, {
+      method: "PATCH", token, body: { slots },
+    });
+  },
+
+  selectTutorSlot(token: string, requestId: string, selectedStart: string): Promise<TutorRequest> {
+    return apiRequest<TutorRequest>(`/classes/tutor-requests/${requestId}/select`, {
+      method: "PATCH", token, body: { selectedStart },
+    });
+  },
+
+  setTutorMeetingLink(token: string, requestId: string, meetingUrl: string): Promise<TutorRequest> {
+    return apiRequest<TutorRequest>(`/classes/tutor-requests/${requestId}/meeting-link`, {
+      method: "PATCH", token, body: { meetingUrl },
     });
   },
 };

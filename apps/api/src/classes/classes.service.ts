@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { Prisma } from "@prisma/client";
+import { Prisma, UserRole } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateClassDto } from "./dto/create-class.dto";
 import { EnrollStudentDto } from "./dto/enroll-student.dto";
@@ -11,6 +11,7 @@ import { CreateClassMessageDto } from "./dto/create-class-message.dto";
 import { CreateLiveSessionDto } from "./dto/create-live-session.dto";
 import { SetLessonUnlocksDto } from "./dto/set-lesson-unlocks.dto";
 import { UpdateLiveSessionDto } from "./dto/update-live-session.dto";
+import { CreateTutorRequestDto, ProposeTutorSlotsDto, SelectTutorSlotDto, SetTutorMeetingLinkDto } from "./dto/tutor-request.dto";
 
 @Injectable()
 export class ClassesService {
@@ -392,6 +393,107 @@ export class ClassesService {
       },
       include: this.liveSessionInclude(),
     });
+  }
+
+  async listTutorRequests(classId: string, userId: string, role: UserRole) {
+    await this.findOne(classId);
+    const staffRoles: UserRole[] = [
+      UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TRAINING_MANAGER,
+      UserRole.TRAINER, UserRole.SCHOOL_COORDINATOR,
+    ];
+    return this.prisma.tutorRequest.findMany({
+      where: {
+        classId,
+        ...(staffRoles.includes(role) ? {} : { studentId: userId }),
+      },
+      orderBy: { createdAt: "desc" },
+      include: {
+        student: { select: { id: true, fullName: true, email: true } },
+        tutor: { select: { id: true, fullName: true, email: true } },
+      },
+    });
+  }
+
+  async createTutorRequest(classId: string, studentId: string, dto: CreateTutorRequestDto) {
+    const cohort = await this.findOne(classId);
+    if (cohort.mode !== "HYBRID") {
+      throw new BadRequestException("Tutor requests are available for hybrid classes only.");
+    }
+    const enrollment = await this.prisma.enrollment.findFirst({ where: { classId, userId: studentId } });
+    if (!enrollment) throw new BadRequestException("You must be enrolled in this hybrid class.");
+
+    return this.prisma.tutorRequest.create({
+      data: { classId, studentId, tutorId: cohort.trainerId, ...dto },
+      include: {
+        student: { select: { id: true, fullName: true, email: true } },
+        tutor: { select: { id: true, fullName: true, email: true } },
+      },
+    });
+  }
+
+  async proposeTutorSlots(requestId: string, tutorId: string, dto: ProposeTutorSlotsDto) {
+    const request = await this.ensureTutorRequest(requestId);
+    const slots = dto.slots.map((slot) => {
+      const parsed = new Date(slot);
+      if (Number.isNaN(parsed.getTime()) || parsed <= new Date()) {
+        throw new BadRequestException("All three availability options must be valid future dates.");
+      }
+      return parsed.toISOString();
+    });
+    if (new Set(slots).size !== 3) throw new BadRequestException("Please provide three different time options.");
+
+    return this.prisma.tutorRequest.update({
+      where: { id: request.id },
+      data: { tutorId, proposedSlots: slots, selectedStart: null, status: "AWAITING_SELECTION" },
+      include: {
+        student: { select: { id: true, fullName: true, email: true } },
+        tutor: { select: { id: true, fullName: true, email: true } },
+      },
+    });
+  }
+
+  async selectTutorSlot(requestId: string, studentId: string, dto: SelectTutorSlotDto) {
+    const request = await this.ensureTutorRequest(requestId);
+    if (request.studentId !== studentId) throw new BadRequestException("This request belongs to another learner.");
+    const selected = new Date(dto.selectedStart);
+    const slots = Array.isArray(request.proposedSlots) ? request.proposedSlots.map(String) : [];
+    if (!slots.includes(selected.toISOString())) throw new BadRequestException("Select one of the tutor's proposed times.");
+
+    return this.prisma.tutorRequest.update({
+      where: { id: request.id },
+      data: { selectedStart: selected, status: "SCHEDULED" },
+      include: {
+        student: { select: { id: true, fullName: true, email: true } },
+        tutor: { select: { id: true, fullName: true, email: true } },
+      },
+    });
+  }
+
+  async setTutorMeetingLink(requestId: string, userId: string, role: UserRole, dto: SetTutorMeetingLinkDto) {
+    const request = await this.ensureTutorRequest(requestId);
+    const staffRoles: UserRole[] = [
+      UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TRAINING_MANAGER,
+      UserRole.TRAINER, UserRole.SCHOOL_COORDINATOR,
+    ];
+    if (request.studentId !== userId && !staffRoles.includes(role)) {
+      throw new BadRequestException("You cannot update this tutor request.");
+    }
+    if (!request.selectedStart) throw new BadRequestException("Choose a meeting time before adding the link.");
+
+    return this.prisma.tutorRequest.update({
+      where: { id: request.id },
+      data: { meetingUrl: dto.meetingUrl, status: "CONFIRMED" },
+      include: {
+        student: { select: { id: true, fullName: true, email: true } },
+        tutor: { select: { id: true, fullName: true, email: true } },
+      },
+    });
+  }
+
+  private async ensureTutorRequest(id: string) {
+    const request = await this.prisma.tutorRequest.findUnique({ where: { id } });
+    if (!request) throw new NotFoundException(`Tutor request "${id}" not found.`);
+    return request;
   }
 
   private async ensureCourse(courseId: string) {
