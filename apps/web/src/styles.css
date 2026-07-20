@@ -1734,6 +1734,56 @@ textarea {
 }
 .inline-loader { padding: 10px 0; font-size: 0.9rem; }
 
+.full-page-loading {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: linear-gradient(135deg, #f7fbf3 0%, #eef7ff 100%);
+}
+
+.full-page-loading-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.fpl-logo img {
+  width: 64px;
+  height: 64px;
+  display: block;
+}
+
+.fpl-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fpl-ring {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 3px solid rgba(22, 125, 68, 0.18);
+  border-top-color: var(--green-700);
+  animation: spin 0.9s linear infinite;
+}
+
+.fpl-label {
+  margin: 0;
+  color: var(--green-900);
+  font-weight: 800;
+  font-size: 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 .auth-loading {
   min-height: 100vh;
   display: flex;
