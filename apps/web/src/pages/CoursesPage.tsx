@@ -3,6 +3,7 @@ import {
   ArrowRight,
   BookOpen,
   Loader2,
+  Pencil,
   PlusCircle,
   RotateCcw,
   Search,
@@ -13,6 +14,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { CreateCourseModal } from "../components/CreateCourseModal";
 import { CreateProgrammeModal } from "../components/CreateProgrammeModal";
+import { EditCourseModal } from "../components/EditCourseModal";
 import { PaymentGate } from "../components/PaymentGate";
 import { PaymentStatusBanner } from "../components/PaymentStatusBanner";
 import { ProgrammeCatalogue } from "../components/ProgrammeCatalogue";
@@ -50,6 +52,7 @@ function CourseRow({
   onArchive,
   onRestore,
   onDelete,
+  onEdit,
   canArchive,
   canDelete,
 }: {
@@ -57,6 +60,7 @@ function CourseRow({
   onArchive: (id: string) => void;
   onRestore: (id: string) => void;
   onDelete: (id: string) => void;
+  onEdit: (course: Course) => void;
   canArchive: boolean;
   canDelete: boolean;
 }) {
@@ -99,6 +103,12 @@ function CourseRow({
         )}
       </td>
       <td className="cell-actions">
+        {!course.isArchived ? (
+          <button className="action-btn restore" onClick={() => onEdit(course)} title="Edit course" aria-label="Edit course">
+            <Pencil size={15} />
+            Edit
+          </button>
+        ) : null}
         {!canArchive ? (
           <Link className="secondary-button small-button" to={`/courses/${course.id}`}>Manage</Link>
         ) : course.isArchived ? (
@@ -273,6 +283,7 @@ export function CoursesPage() {
   const [showArchived, setShowArchived] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showProgrammeModal, setShowProgrammeModal] = useState(false);
+  const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [programmeVersion, setProgrammeVersion] = useState(0);
 
   const searchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -502,6 +513,7 @@ export function CoursesPage() {
                   onArchive={handleArchive}
                   onRestore={handleRestore}
                   onDelete={handleDelete}
+                  onEdit={setEditingCourse}
                   canArchive={isAdminRole(role)}
                   canDelete={role === "SUPER_ADMIN"}
                 />
@@ -570,6 +582,16 @@ export function CoursesPage() {
           onCreated={() => {
             setShowProgrammeModal(false);
             setProgrammeVersion((version) => version + 1);
+          }}
+        />
+      )}
+      {editingCourse && (
+        <EditCourseModal
+          course={editingCourse}
+          onClose={() => setEditingCourse(null)}
+          onSaved={(updated) => {
+            setEditingCourse(null);
+            setCourses((current) => current.map((course) => course.id === updated.id ? { ...course, ...updated } : course));
           }}
         />
       )}

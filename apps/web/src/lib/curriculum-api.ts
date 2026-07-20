@@ -19,6 +19,18 @@ export const curriculumApi = {
     });
   },
 
+  updateProgramme(token: string, programmeId: string, payload: {
+    categoryId?: string;
+    name?: string;
+    description?: string;
+  }) {
+    return apiRequest(`/curriculum/programmes/${programmeId}`, {
+      method: "PATCH",
+      token,
+      body: payload,
+    });
+  },
+
   placeCourse(token: string, stageId: string, courseId: string, order = 0) {
     return apiRequest(`/curriculum/stages/${stageId}/courses`, {
       method: "POST",

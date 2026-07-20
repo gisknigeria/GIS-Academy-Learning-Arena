@@ -6,6 +6,7 @@ import {
   CreateModuleDto,
   CreatePathwayDto,
   CreateProgrammeDto,
+  UpdateProgrammeDto,
   CreateStageDto,
   ImportModuleDto,
   PlaceCourseDto,
@@ -154,6 +155,23 @@ export class CurriculumService {
         },
       });
       return programme;
+    });
+  }
+
+  async updateProgramme(programmeId: string, dto: UpdateProgrammeDto) {
+    const programme = await this.prisma.learningPathway.findUnique({ where: { id: programmeId } });
+    if (!programme) throw new NotFoundException("Programme not found.");
+    if (dto.categoryId) {
+      const category = await this.prisma.trainingCategory.findUnique({ where: { id: dto.categoryId } });
+      if (!category) throw new NotFoundException("Training category not found.");
+    }
+    return this.prisma.learningPathway.update({
+      where: { id: programmeId },
+      data: {
+        categoryId: dto.categoryId,
+        name: dto.name?.trim(),
+        ...(dto.description !== undefined ? { description: dto.description.trim() || null } : {}),
+      },
     });
   }
 

@@ -52,6 +52,21 @@ export class CreateProgrammeDto {
   courseIds!: string[];
 }
 
+export class UpdateProgrammeDto {
+  @IsOptional()
+  @IsString()
+  categoryId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
+  name?: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+}
+
 export class CreateStageDto {
   @IsInt()
   @Min(1)

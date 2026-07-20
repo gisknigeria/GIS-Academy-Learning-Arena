@@ -10,6 +10,7 @@ import {
   CreateModuleDto,
   CreatePathwayDto,
   CreateProgrammeDto,
+  UpdateProgrammeDto,
   CreateStageDto,
   ImportModuleDto,
   PlaceCourseDto,
@@ -44,6 +45,12 @@ export class CurriculumController {
   @Post("programmes")
   createProgramme(@Body() dto: CreateProgrammeDto) {
     return this.curriculum.createProgramme(dto);
+  }
+
+  @Roles(...MANAGE_ROLES)
+  @Patch("programmes/:programmeId")
+  updateProgramme(@Param("programmeId") programmeId: string, @Body() dto: UpdateProgrammeDto) {
+    return this.curriculum.updateProgramme(programmeId, dto);
   }
 
   @Roles(...STRUCTURE_ROLES)

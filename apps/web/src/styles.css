@@ -107,6 +107,10 @@
   gap: 16px;
 }
 
+.pathway-edit-button {
+  margin-left: auto;
+}
+
 .tutor-chatbot form,
 .tutor-advice,
 .tutor-request-card,

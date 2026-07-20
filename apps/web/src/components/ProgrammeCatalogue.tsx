@@ -1,11 +1,12 @@
-import { Award, BookOpen, CheckCircle2, ChevronRight, Layers3, Loader2, LockKeyhole, Plus, Trash2 } from "lucide-react";
+import { Award, BookOpen, CheckCircle2, ChevronRight, Layers3, Loader2, LockKeyhole, Pencil, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { EditProgrammeModal } from "./EditProgrammeModal";
 import { curriculumApi } from "../lib/curriculum-api";
 import { isAdminRole } from "../lib/roles";
 import type { Course } from "../types/course";
-import type { TrainingCategory } from "../types/curriculum";
+import type { LearningPathway, TrainingCategory } from "../types/curriculum";
 
 type Props = {
   availableCourses: Course[];
@@ -20,6 +21,7 @@ export function ProgrammeCatalogue({ availableCourses, onChanged }: Props) {
   const [busyId, setBusyId] = useState("");
   const [selectedCourses, setSelectedCourses] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
+  const [editingProgramme, setEditingProgramme] = useState<LearningPathway | null>(null);
   const canManage = Boolean(user && (isAdminRole(user.role) || user.role === "TRAINER"));
 
   const load = useCallback(async () => {
@@ -123,6 +125,11 @@ export function ProgrammeCatalogue({ availableCourses, onChanged }: Props) {
                   <h3>{pathway.name}</h3>
                   {pathway.description ? <p>{pathway.description}</p> : null}
                 </div>
+                {canManage ? (
+                  <button className="secondary-button small-button pathway-edit-button" onClick={() => setEditingProgramme(pathway)}>
+                    <Pencil size={14} /> Edit programme
+                  </button>
+                ) : null}
               </div>
 
               <div className="stage-track">
@@ -191,6 +198,18 @@ export function ProgrammeCatalogue({ availableCourses, onChanged }: Props) {
             </section>
           ))}
         </div>
+      ) : null}
+      {editingProgramme ? (
+        <EditProgrammeModal
+          programme={editingProgramme}
+          categories={catalogue}
+          onClose={() => setEditingProgramme(null)}
+          onSaved={() => {
+            setEditingProgramme(null);
+            void load();
+            onChanged?.();
+          }}
+        />
       ) : null}
     </section>
   );
