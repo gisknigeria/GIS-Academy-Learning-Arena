@@ -464,7 +464,7 @@ export function LessonPlayerPage() {
           {!currentLesson.locked && currentLesson.content ? (
             <article className="lesson-content-panel">
               <h2>Lesson notes</h2>
-              <p>{currentLesson.content}</p>
+              <div className="lesson-note-render" dangerouslySetInnerHTML={{ __html: currentLesson.content }} />
             </article>
           ) : null}
 

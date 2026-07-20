@@ -3,6 +3,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { AssignmentSection } from "../components/AssignmentSection";
 import { CourseModuleManager } from "../components/CourseModuleManager";
+import { LessonNoteEditor } from "../components/LessonNoteEditor";
 import { PaymentGate } from "../components/PaymentGate";
 import { SectionHeading } from "../components/SectionHeading";
 import { useAuth } from "../context/AuthContext";
@@ -800,10 +801,9 @@ export function CourseDetailPage() {
                   </label>
                   <label className="lesson-form-full-field">
                     Lesson notes and instructions
-                    <textarea
+                    <LessonNoteEditor
                       value={form.content}
-                      onChange={(event) => setForm({ ...form, content: event.target.value })}
-                      rows={7}
+                      onChange={(value) => setForm({ ...form, content: value })}
                       placeholder="Write the lesson explanation, examples, instructions, or transcript..."
                     />
                   </label>

@@ -3128,6 +3128,108 @@ textarea {
   gap: 14px;
 }
 
+.lesson-note-editor {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 10px;
+  background: var(--surface);
+}
+
+.lesson-note-editor__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.lesson-note-editor__toolbar .icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--green-900);
+  cursor: pointer;
+}
+
+.lesson-note-editor__content {
+  min-height: 220px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: #fff;
+  color: var(--ink);
+  line-height: 1.7;
+  overflow: auto;
+}
+
+.lesson-note-editor__content:focus {
+  outline: none;
+  border-color: rgba(31, 166, 106, 0.4);
+  box-shadow: 0 0 0 3px rgba(31, 166, 106, 0.16);
+}
+
+.lesson-note-editor__content h1,
+.lesson-note-editor__content h2,
+.lesson-note-editor__content h3 {
+  margin: 0 0 8px;
+  color: var(--green-900);
+}
+
+.lesson-note-editor__content p {
+  margin: 0 0 10px;
+}
+
+.lesson-note-editor__content ul,
+.lesson-note-editor__content ol {
+  margin: 0 0 10px 18px;
+  padding: 0;
+}
+
+.lesson-note-editor__content blockquote {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--green-700);
+  background: #f6fcf8;
+  color: var(--muted);
+}
+
+.lesson-note-render {
+  display: grid;
+  gap: 8px;
+  color: var(--ink);
+  line-height: 1.75;
+}
+
+.lesson-note-render h1,
+.lesson-note-render h2,
+.lesson-note-render h3 {
+  margin: 0;
+  color: var(--green-900);
+}
+
+.lesson-note-render p {
+  margin: 0;
+}
+
+.lesson-note-render ul,
+.lesson-note-render ol {
+  margin: 0 0 0 18px;
+  padding: 0;
+}
+
+.lesson-note-render blockquote {
+  margin: 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--green-700);
+  background: #f6fcf8;
+  color: var(--muted);
+}
+
 .teachspace-hero {
   display: flex;
   align-items: center;
