@@ -3229,18 +3229,17 @@ textarea {
   border-color: var(--green-700);
 }
 
-.lesson-note-editor__toolbar .icon-button:active {
+.lesson-note-editor__toolbar .icon-button:active,
+.lesson-note-editor__toolbar .icon-button--active {
   background: #ddf3e5;
+  border-color: var(--green-700);
+  color: var(--green-700);
 }
 
-/* Placeholder via CSS — shown when editor is empty */
-.lesson-note-editor__content:empty::before {
-  content: attr(data-placeholder);
-  color: var(--muted);
-  pointer-events: none;
-}
+/* ── TipTap editor content area ─────────────────────────────────────── */
 
-.lesson-note-editor__content {
+/* Wrapper div TipTap renders — we target it for focus ring */
+.lesson-note-editor__content .tiptap {
   min-height: 260px;
   border: 1px solid var(--color-border);
   border-radius: 10px;
@@ -3249,34 +3248,42 @@ textarea {
   color: var(--ink);
   line-height: 1.7;
   overflow: auto;
-  direction: ltr;
-  unicode-bidi: embed;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
-.lesson-note-editor__content:focus {
-  outline: none;
+.lesson-note-editor__content .tiptap:focus {
   border-color: rgba(31, 166, 106, 0.4);
   box-shadow: 0 0 0 3px rgba(31, 166, 106, 0.16);
 }
 
-.lesson-note-editor__content h1,
-.lesson-note-editor__content h2,
-.lesson-note-editor__content h3 {
+/* Placeholder */
+.lesson-note-editor__content .tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--muted);
+  pointer-events: none;
+  float: left;
+  height: 0;
+}
+
+.lesson-note-editor__content .tiptap h1,
+.lesson-note-editor__content .tiptap h2,
+.lesson-note-editor__content .tiptap h3 {
   margin: 0 0 8px;
   color: var(--green-900);
 }
 
-.lesson-note-editor__content p {
+.lesson-note-editor__content .tiptap p {
   margin: 0 0 10px;
 }
 
-.lesson-note-editor__content ul,
-.lesson-note-editor__content ol {
+.lesson-note-editor__content .tiptap ul,
+.lesson-note-editor__content .tiptap ol {
   margin: 0 0 10px 18px;
   padding: 0;
 }
 
-.lesson-note-editor__content blockquote {
+.lesson-note-editor__content .tiptap blockquote {
   margin: 0 0 10px;
   padding: 10px 12px;
   border-left: 3px solid var(--green-700);
@@ -3285,20 +3292,21 @@ textarea {
   border-radius: 0 6px 6px 0;
 }
 
-.lesson-note-editor__content hr {
+.lesson-note-editor__content .tiptap hr {
   border: none;
   border-top: 2px solid var(--color-border);
   margin: 14px 0;
 }
 
-.lesson-note-editor__content a {
+.lesson-note-editor__content .tiptap a {
   color: var(--green-700);
   text-decoration: underline;
   word-break: break-word;
 }
 
-/* Code block — pre/code */
-.lesson-note-editor__content pre {
+/* Code block */
+.lesson-note-editor__content .tiptap pre,
+.lesson-note-editor__content .tiptap pre.lesson-code-block {
   background: #1e1e2e;
   color: #cdd6f4;
   border-radius: 8px;
@@ -3311,7 +3319,7 @@ textarea {
   white-space: pre;
 }
 
-.lesson-note-editor__content pre code {
+.lesson-note-editor__content .tiptap pre code {
   background: transparent;
   color: inherit;
   padding: 0;
@@ -3319,7 +3327,7 @@ textarea {
 }
 
 /* Inline code */
-.lesson-note-editor__content code {
+.lesson-note-editor__content .tiptap code {
   background: #f0faf4;
   color: #1a7a4a;
   padding: 2px 5px;
@@ -3328,24 +3336,13 @@ textarea {
   font-size: 0.88em;
 }
 
-/* Images inserted into the editor */
-.lesson-note-editor__content figure.lesson-note-image {
-  display: block;
-  margin: 10px 0;
-  text-align: center;
-}
-
-.lesson-note-editor__content figure.lesson-note-image img {
+/* Images */
+.lesson-note-editor__content .tiptap img.lesson-note-img {
   max-width: 100%;
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  cursor: default;
-}
-
-/* Drag-over highlight so users know they can drop images */
-.lesson-note-editor__content.drag-over {
-  border-color: var(--green-700);
-  background: #f0faf4;
+  display: block;
+  margin: 10px auto;
 }
 
 /* ── Lesson Note Render (learner view) ───────────────────────────────── */
