@@ -3128,6 +3128,7 @@ textarea {
   gap: 14px;
 }
 
+/* ── Lesson Note Editor ─────────────────────────────────────────────── */
 .lesson-note-editor {
   display: grid;
   gap: 10px;
@@ -3140,7 +3141,17 @@ textarea {
 .lesson-note-editor__toolbar {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  align-items: center;
+  gap: 4px;
+}
+
+.lesson-note-editor__divider {
+  display: inline-block;
+  width: 1px;
+  height: 22px;
+  background: var(--color-border);
+  margin: 0 4px;
+  flex-shrink: 0;
 }
 
 .lesson-note-editor__toolbar .icon-button {
@@ -3154,10 +3165,27 @@ textarea {
   background: #fff;
   color: var(--green-900);
   cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.lesson-note-editor__toolbar .icon-button:hover {
+  background: #f0faf4;
+  border-color: var(--green-700);
+}
+
+.lesson-note-editor__toolbar .icon-button:active {
+  background: #ddf3e5;
+}
+
+/* Placeholder via CSS — shown when editor is empty */
+.lesson-note-editor__content:empty::before {
+  content: attr(data-placeholder);
+  color: var(--muted);
+  pointer-events: none;
 }
 
 .lesson-note-editor__content {
-  min-height: 220px;
+  min-height: 260px;
   border: 1px solid var(--color-border);
   border-radius: 10px;
   padding: 12px 14px;
@@ -3165,6 +3193,8 @@ textarea {
   color: var(--ink);
   line-height: 1.7;
   overflow: auto;
+  direction: ltr;
+  unicode-bidi: embed;
 }
 
 .lesson-note-editor__content:focus {
@@ -3196,13 +3226,60 @@ textarea {
   border-left: 3px solid var(--green-700);
   background: #f6fcf8;
   color: var(--muted);
+  border-radius: 0 6px 6px 0;
 }
 
+.lesson-note-editor__content hr {
+  border: none;
+  border-top: 2px solid var(--color-border);
+  margin: 14px 0;
+}
+
+.lesson-note-editor__content a {
+  color: var(--green-700);
+  text-decoration: underline;
+  word-break: break-word;
+}
+
+/* Code block — pre/code */
+.lesson-note-editor__content pre {
+  background: #1e1e2e;
+  color: #cdd6f4;
+  border-radius: 8px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  margin: 0 0 12px;
+  font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  white-space: pre;
+}
+
+.lesson-note-editor__content pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  font-size: inherit;
+}
+
+/* Inline code */
+.lesson-note-editor__content code {
+  background: #f0faf4;
+  color: #1a7a4a;
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
+  font-size: 0.88em;
+}
+
+/* ── Lesson Note Render (learner view) ───────────────────────────────── */
 .lesson-note-render {
   display: grid;
   gap: 8px;
   color: var(--ink);
   line-height: 1.75;
+  direction: ltr;
+  unicode-bidi: embed;
 }
 
 .lesson-note-render h1,
@@ -3228,6 +3305,47 @@ textarea {
   border-left: 3px solid var(--green-700);
   background: #f6fcf8;
   color: var(--muted);
+  border-radius: 0 6px 6px 0;
+}
+
+.lesson-note-render hr {
+  border: none;
+  border-top: 2px solid var(--color-border);
+  margin: 14px 0;
+}
+
+.lesson-note-render a {
+  color: var(--green-700);
+  text-decoration: underline;
+  word-break: break-word;
+}
+
+.lesson-note-render pre {
+  background: #1e1e2e;
+  color: #cdd6f4;
+  border-radius: 8px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  white-space: pre;
+}
+
+.lesson-note-render pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  font-size: inherit;
+}
+
+.lesson-note-render code {
+  background: #f0faf4;
+  color: #1a7a4a;
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
+  font-size: 0.88em;
 }
 
 .teachspace-hero {
