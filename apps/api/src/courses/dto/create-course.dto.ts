@@ -3,7 +3,9 @@ import {
   IsBoolean,
   IsEnum,
   IsInt,
+  IsNumber,
   IsOptional,
+  IsPositive,
   IsString,
   Max,
   Min,
@@ -22,6 +24,35 @@ export class CreateCourseDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @IsOptional()
+  @IsString()
+  thumbnailUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  bannerUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  whatYoullLearn?: string;
+
+  @IsOptional()
+  @IsString()
+  prerequisites?: string;
+
+  @IsOptional()
+  @IsString()
+  targetAudience?: string;
+
+  @IsOptional()
+  @IsString()
+  language?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @IsPositive()
+  estimatedHours?: number;
 
   @IsOptional()
   @IsString()

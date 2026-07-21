@@ -374,7 +374,7 @@ export function LessonPlayerPage() {
   if (course?.accessStatus?.allowed === false) {
     return (
       <section className="module-page">
-        <Link className="back-link" to={`/courses/${courseId}`}>
+        <Link className="back-link" to={`/courses/${courseId}/workspace`}>
           <ArrowLeft size={16} />
           Back to course
         </Link>
@@ -386,7 +386,7 @@ export function LessonPlayerPage() {
   if (error || !currentLesson || !course) {
     return (
       <section className="module-page">
-        <Link className="back-link" to={`/courses/${courseId}`}>
+        <Link className="back-link" to={`/courses/${courseId}/workspace`}>
           <ArrowLeft size={16} />
           Back to course
         </Link>
@@ -397,7 +397,7 @@ export function LessonPlayerPage() {
 
   return (
     <section className="lesson-player-page">
-      <Link className="back-link" to={`/courses/${courseId}`}>
+      <Link className="back-link" to={`/courses/${courseId}/workspace`}>
         <ArrowLeft size={16} />
         Back to course
       </Link>

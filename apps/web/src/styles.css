@@ -3539,6 +3539,133 @@ textarea {
   gap: 8px;
 }
 
+/* ── Lesson cover media (section 2) ─────────────────────────────────── */
+.lesson-cover-tabs {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: start;
+  gap: 0;
+}
+
+.lesson-cover-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  padding-top: 36px; /* align with content */
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  user-select: none;
+}
+
+.lesson-cover-option {
+  display: grid;
+  gap: 8px;
+}
+
+.lesson-cover-option__label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.86rem;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+/* Preview card shown when a cover is already set */
+.lesson-cover-preview {
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #000;
+  position: relative;
+}
+
+.lesson-cover-preview--image {
+  background: #f4f7f5;
+}
+
+.lesson-cover-preview__img {
+  display: block;
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+}
+
+.lesson-cover-preview__video {
+  display: block;
+  width: 100%;
+  max-height: 200px;
+  background: #000;
+}
+
+.lesson-cover-preview__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.55);
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+.lesson-cover-preview--image .lesson-cover-preview__meta {
+  background: rgba(255, 255, 255, 0.92);
+  position: static;
+  border-top: 1px solid var(--color-border);
+}
+
+.lesson-cover-preview__meta span {
+  font-size: 0.78rem;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lesson-cover-preview--image .lesson-cover-preview__meta span {
+  color: var(--ink);
+}
+
+.lesson-cover-preview__remove {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(220, 38, 38, 0.85);
+  border: none;
+  border-radius: 6px;
+  padding: 3px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.lesson-cover-preview--image .lesson-cover-preview__remove {
+  color: #fff;
+}
+
+.lesson-cover-preview__remove:hover {
+  background: #dc2626;
+}
+
+@media (max-width: 680px) {
+  .lesson-cover-tabs {
+    grid-template-columns: 1fr;
+  }
+  .lesson-cover-divider {
+    padding: 8px 0;
+    border-top: 1px solid var(--color-border);
+    margin-top: 4px;
+  }
+}
+
 .lesson-form-full-field {
   grid-column: 1 / -1;
 }

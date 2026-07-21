@@ -18,6 +18,8 @@ const QuestionBankPage = lazy(() => import("./pages/QuestionBankPage"));
 const GradingPage = lazy(() => import("./pages/GradingPage"));
 const CoursesPage = lazy(() => import("./pages/CoursesPage").then((module) => ({ default: module.CoursesPage })));
 const CourseDetailPage = lazy(() => import("./pages/CourseDetailPage").then((module) => ({ default: module.CourseDetailPage })));
+const CourseLandingPage = lazy(() => import("./pages/CourseLandingPage").then((module) => ({ default: module.CourseLandingPage })));
+const ProgrammeLandingPage = lazy(() => import("./pages/ProgrammeLandingPage").then((module) => ({ default: module.ProgrammeLandingPage })));
 const LessonPlayerPage = lazy(() => import("./pages/LessonPlayerPage").then((module) => ({ default: module.LessonPlayerPage })));
 const LiveSessionPage = lazy(() => import("./pages/LiveSessionPage").then((module) => ({ default: module.LiveSessionPage })));
 const CompetitionDetailPage = lazy(() => import("./pages/CompetitionDetailPage").then((module) => ({ default: module.CompetitionDetailPage })));
@@ -54,9 +56,11 @@ function App() {
             <Route path="/knowledge-hub" element={<Navigate to="/personalize" replace />} />
             <Route element={<RoleRoute page="courses" />}>
               <Route path="/courses" element={<CoursesPage />} />
-              <Route path="/courses/:id" element={<CourseDetailPage />} />
+              <Route path="/courses/:id" element={<CourseLandingPage />} />
+              <Route path="/courses/:id/workspace" element={<CourseDetailPage />} />
               <Route path="/courses/:courseId/lessons/:lessonId" element={<LessonPlayerPage />} />
             </Route>
+            <Route path="/programmes/:id" element={<ProgrammeLandingPage />} />
             <Route path="/teachspace" element={<TeachSpacePage />} />
             <Route element={<RoleRoute page="learn" />}>
               <Route path="/learn" element={<LearnPage />} />

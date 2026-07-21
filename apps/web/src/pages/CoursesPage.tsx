@@ -15,7 +15,6 @@ import { Link } from "react-router-dom";
 import { CreateCourseModal } from "../components/CreateCourseModal";
 import { CreateProgrammeModal } from "../components/CreateProgrammeModal";
 import { EditCourseModal } from "../components/EditCourseModal";
-import { PaymentGate } from "../components/PaymentGate";
 import { PaymentStatusBanner } from "../components/PaymentStatusBanner";
 import { ProgrammeCatalogue } from "../components/ProgrammeCatalogue";
 import { SectionHeading } from "../components/SectionHeading";
@@ -110,7 +109,7 @@ function CourseRow({
           </button>
         ) : null}
         {!canArchive ? (
-          <Link className="secondary-button small-button" to={`/courses/${course.id}`}>Manage</Link>
+          <Link className="secondary-button small-button" to={`/courses/${course.id}/workspace`}>Manage</Link>
         ) : course.isArchived ? (
           <>
             <button
@@ -236,23 +235,16 @@ function CourseCard({
           </span>
         </div>
 
-        {/* CTA or payment gate */}
+        {/* Everyone can inspect the overview before enrolling or paying. */}
         <div className="course-card-v2-footer">
-          {isLocked ? (
-            <PaymentGate
-              accessStatus={access as { allowed: false; reason: "payment_required" | "account_blocked" | "account_overdue" }}
-              compact
-            />
-          ) : (
-            <Link
-              className="course-card-v2-cta"
-              to={`/courses/${course.id}`}
-              style={{ background: cfg.gradient }}
-            >
-              Open course
-              <ArrowRight size={15} />
-            </Link>
-          )}
+          <Link
+            className="course-card-v2-cta"
+            to={`/courses/${course.id}`}
+            style={{ background: isLocked ? "#64748b" : cfg.gradient }}
+          >
+            View overview
+            <ArrowRight size={15} />
+          </Link>
         </div>
       </div>
     </article>

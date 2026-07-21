@@ -42,6 +42,10 @@ export type LearningPathway = {
   categoryId: string;
   name: string;
   description?: string | null;
+  thumbnailUrl?: string | null;
+  whatYoullLearn?: string | null;
+  prerequisites?: string | null;
+  targetAudience?: string | null;
   order: number;
   stages: LearningStage[];
 };

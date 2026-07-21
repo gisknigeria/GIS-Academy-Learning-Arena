@@ -10,6 +10,10 @@ export const curriculumApi = {
     categoryId: string;
     name: string;
     description?: string;
+    thumbnailUrl?: string;
+    whatYoullLearn?: string;
+    prerequisites?: string;
+    targetAudience?: string;
     courseIds: string[];
   }) {
     return apiRequest("/curriculum/programmes", {
@@ -23,11 +27,27 @@ export const curriculumApi = {
     categoryId?: string;
     name?: string;
     description?: string;
+    thumbnailUrl?: string;
+    whatYoullLearn?: string;
+    prerequisites?: string;
+    targetAudience?: string;
   }) {
     return apiRequest(`/curriculum/programmes/${programmeId}`, {
       method: "PATCH",
       token,
       body: payload,
+    });
+  },
+
+  enrollProgramme(token: string, programmeId: string): Promise<{
+    enrolled: boolean;
+    programmeId: string;
+    courseIds: string[];
+    firstCourseId: string;
+  }> {
+    return apiRequest(`/curriculum/programmes/${programmeId}/enroll`, {
+      method: "POST",
+      token,
     });
   },
 

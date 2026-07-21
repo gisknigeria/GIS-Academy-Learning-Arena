@@ -124,7 +124,7 @@ export function LearnPage() {
                   <p>{session.class.course.title}</p>
                   {session.location ? <small><MapPin size={13} />{session.location}</small> : null}
                 </div>
-                {session.meetingUrl ? <a className="primary-button small-button" href={session.meetingUrl} target="_blank" rel="noreferrer">Join class</a> : <Link className="secondary-button small-button" to={`/courses/${session.class.course.id}`}>View course</Link>}
+                {session.meetingUrl ? <a className="primary-button small-button" href={session.meetingUrl} target="_blank" rel="noreferrer">Join class</a> : <Link className="secondary-button small-button" to={`/courses/${session.class.course.id}/workspace`}>View course</Link>}
               </article>
             ))}
           </div>

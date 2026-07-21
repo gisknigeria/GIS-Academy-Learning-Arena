@@ -16,6 +16,13 @@ export type Course = {
   code: string;
   title: string;
   description?: string | null;
+  thumbnailUrl?: string | null;
+  bannerUrl?: string | null;
+  whatYoullLearn?: string | null;
+  prerequisites?: string | null;
+  targetAudience?: string | null;
+  language?: string | null;
+  estimatedHours?: number | null;
   level?: number | null;
   trainingCategory?: string | null;
   deliveryMode: DeliveryMode;
@@ -95,6 +102,13 @@ export type CreateCoursePayload = {
   code: string;
   title: string;
   description?: string;
+  thumbnailUrl?: string;
+  bannerUrl?: string;
+  whatYoullLearn?: string;
+  prerequisites?: string;
+  targetAudience?: string;
+  language?: string;
+  estimatedHours?: number;
   trainingCategory?: string;
   level?: number;
   deliveryMode: DeliveryMode;

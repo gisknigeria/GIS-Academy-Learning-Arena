@@ -78,8 +78,9 @@ export function LessonNoteEditor({ value, onChange, placeholder }: LessonNoteEdi
   const colorPickerRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
-  // The last HTML we pushed into onChange — used to skip no-op external updates
-  const lastEmitted = useRef("");
+  // The last HTML we pushed into onChange — used to skip no-op external updates.
+  // Store it as the raw editor HTML (what TipTap produces) so comparisons are exact.
+  const lastEmitted = useRef<string | null>(null);
 
   const editor = useEditor({
     autofocus: false,
@@ -105,19 +106,10 @@ export function LessonNoteEditor({ value, onChange, placeholder }: LessonNoteEdi
       }),
     ],
     content: normalizeLessonNoteHtml(value),
-    // Prevent TipTap from moving focus to position 0 on mount
     editorProps: {
       attributes: {
         class: "lesson-note-editor__prose",
         spellcheck: "true",
-      },
-      handleDOMEvents: {
-        focus: (_view, event) => {
-          // Only allow focus events that originate from a real user interaction
-          // (pointer or keyboard), not synthetic ones fired during mount/init
-          if (!event.isTrusted) return true; // block synthetic focus → return true = handled
-          return false; // let natural user focus through
-        },
       },
     },
     onUpdate({ editor }) {
@@ -127,14 +119,24 @@ export function LessonNoteEditor({ value, onChange, placeholder }: LessonNoteEdi
     },
   });
 
-  // Sync external value changes (e.g. form reset) without disturbing the cursor
+  // Sync external value changes (e.g. form reset) without disturbing the cursor.
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;
-    if (lastEmitted.current === value) return; // came from our own onUpdate — skip
+
+    // If we emitted this exact value ourselves, the editor already has it — skip.
+    if (lastEmitted.current === value) return;
+
+    // Treat TipTap's empty-doc HTML and empty string as equivalent so we never
+    // reset the cursor just because "" !== "<p></p>".
+    const editorHtml = editor.getHTML();
+    const isEmpty = (s: string) => s === "" || s === "<p></p>";
+    if (isEmpty(value) && isEmpty(editorHtml)) return;
+
+    // Only push new content when it's genuinely different from what's on screen.
     const normalized = normalizeLessonNoteHtml(value);
-    if (editor.getHTML() !== normalized) {
-      editor.commands.setContent(normalized, false); // false = don't emit update
-    }
+    if (editorHtml === normalized) return;
+
+    editor.commands.setContent(normalized, false);
   }, [editor, value]);
 
   // Close colour picker on outside click

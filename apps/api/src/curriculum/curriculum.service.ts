@@ -130,6 +130,10 @@ export class CurriculumService {
           categoryId: dto.categoryId,
           name: dto.name.trim(),
           description: dto.description?.trim() || null,
+          thumbnailUrl: dto.thumbnailUrl?.trim() || null,
+          whatYoullLearn: dto.whatYoullLearn?.trim() || null,
+          prerequisites: dto.prerequisites?.trim() || null,
+          targetAudience: dto.targetAudience?.trim() || null,
           order: (lastProgramme?.order ?? 0) + 1,
           stages: {
             create: {
@@ -171,8 +175,45 @@ export class CurriculumService {
         categoryId: dto.categoryId,
         name: dto.name?.trim(),
         ...(dto.description !== undefined ? { description: dto.description.trim() || null } : {}),
+        ...(dto.thumbnailUrl !== undefined ? { thumbnailUrl: dto.thumbnailUrl.trim() || null } : {}),
+        ...(dto.whatYoullLearn !== undefined ? { whatYoullLearn: dto.whatYoullLearn.trim() || null } : {}),
+        ...(dto.prerequisites !== undefined ? { prerequisites: dto.prerequisites.trim() || null } : {}),
+        ...(dto.targetAudience !== undefined ? { targetAudience: dto.targetAudience.trim() || null } : {}),
       },
     });
+  }
+
+  async enrollProgramme(programmeId: string, userId: string) {
+    const programme = await this.prisma.learningPathway.findUnique({
+      where: { id: programmeId },
+      include: {
+        stages: {
+          where: { stageNumber: 1 },
+          include: { courses: { orderBy: { order: "asc" } } },
+        },
+      },
+    });
+    if (!programme) throw new NotFoundException("Programme not found.");
+
+    const firstStageCourses = programme.stages[0]?.courses ?? [];
+    if (firstStageCourses.length === 0) {
+      throw new ConflictException("This programme does not have any courses available for enrolment yet.");
+    }
+
+    await this.prisma.$transaction(
+      firstStageCourses.map((placement) => this.prisma.enrollment.upsert({
+        where: { userId_courseId: { userId, courseId: placement.courseId } },
+        update: {},
+        create: { userId, courseId: placement.courseId },
+      })),
+    );
+
+    return {
+      enrolled: true,
+      programmeId,
+      courseIds: firstStageCourses.map((placement) => placement.courseId),
+      firstCourseId: firstStageCourses[0].courseId,
+    };
   }
 
   createStage(pathwayId: string, dto: CreateStageDto) {
@@ -228,6 +269,13 @@ export class CurriculumService {
   }
 
   async listModules(courseId: string, userId: string, canManage = false) {
+    if (!canManage) {
+      const enrollment = await this.prisma.enrollment.findUnique({
+        where: { userId_courseId: { userId, courseId } },
+        select: { id: true },
+      });
+      if (!enrollment) throw new ForbiddenException("Enrollment required before opening course modules.");
+    }
     const modules = await this.prisma.courseModule.findMany({
       where: { courseId },
       orderBy: { order: "asc" },

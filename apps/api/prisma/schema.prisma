@@ -156,26 +156,33 @@ model LoginLog {
 }
 
 model Course {
-  id              String       @id @default(uuid())
-  code            String       @unique
-  title           String
-  description     String?
-  level           Int?
+  id               String       @id @default(uuid())
+  code             String       @unique
+  title            String
+  description      String?
+  thumbnailUrl     String?
+  bannerUrl        String?
+  whatYoullLearn   String?
+  prerequisites    String?
+  targetAudience   String?
+  language         String?
+  estimatedHours   Float?
+  level            Int?
   trainingCategory String?      @default("Academy")
-  deliveryMode    DeliveryMode
-  requiresPayment Boolean      @default(true)
-  isArchived      Boolean      @default(false)
-  lessons         Lesson[]
-  classes         Class[]
-  enrollments     Enrollment[]
-  assignments     Assignment[]
-  assessments     Assessment[]
+  deliveryMode     DeliveryMode
+  requiresPayment  Boolean      @default(true)
+  isArchived       Boolean      @default(false)
+  lessons          Lesson[]
+  classes          Class[]
+  enrollments      Enrollment[]
+  assignments      Assignment[]
+  assessments      Assessment[]
   libraryQuestions Question[]   @relation("QuestionCourse")
-  certificates    Certificate[]
-  stagePlacements LearningStageCourse[]
-  modules         CourseModule[]
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  certificates     Certificate[]
+  stagePlacements  LearningStageCourse[]
+  modules          CourseModule[]
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 }
 
 model TrainingCategory {
@@ -191,15 +198,19 @@ model TrainingCategory {
 }
 
 model LearningPathway {
-  id          String   @id @default(uuid())
-  categoryId  String
-  name        String
-  description String?
-  order       Int      @default(0)
-  category    TrainingCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  stages      LearningStage[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String   @id @default(uuid())
+  categoryId     String
+  name           String
+  description    String?
+  thumbnailUrl   String?
+  whatYoullLearn String?
+  prerequisites  String?
+  targetAudience String?
+  order          Int      @default(0)
+  category       TrainingCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  stages         LearningStage[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@unique([categoryId, name])
   @@index([categoryId, order])

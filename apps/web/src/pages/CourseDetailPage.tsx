@@ -218,8 +218,16 @@ export function CourseDetailPage() {
       try {
         const res = await coursesApi.isEnrolled(token, id);
         setEnrolled(Boolean(res.enrolled));
+        if (!res.enrolled && !canManageLessons) {
+          navigate(`/courses/${id}`, { replace: true });
+          return;
+        }
       } catch {
         setEnrolled(false);
+        if (!canManageLessons) {
+          navigate(`/courses/${id}`, { replace: true });
+          return;
+        }
       }
 
       if (currentCourse.accessStatus?.allowed === false && !canManageLessons) {
@@ -257,7 +265,7 @@ export function CourseDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [canManageLessons, id, token]);
+  }, [canManageLessons, id, navigate, token]);
 
   useEffect(() => {
     void load();
@@ -810,135 +818,177 @@ export function CourseDetailPage() {
                 </div>
               </section>
 
+              {/* ── Section 2: Cover media ───────────────────────────────────── */}
               <section className="lesson-form-section">
                 <div className="lesson-form-section-heading">
                   <span>2</span>
                   <div>
-                    <h3>Learning materials</h3>
-                    <p>Upload a file or paste a public link. Added materials appear immediately below.</p>
+                    <h3>Cover media</h3>
+                    <p>Add a video or cover image that learners see at the top of the lesson.</p>
                   </div>
                 </div>
 
-                <div className="lesson-material-inventory" aria-live="polite">
-                  <div className="lesson-material-inventory-heading">
-                    <div>
-                      <strong>Materials added</strong>
-                      <span>{lessonMaterialInventory.length ? "Review the files currently attached to this lesson." : "No files or links have been added yet."}</span>
+                <div className="lesson-cover-tabs">
+                  {/* Video cover */}
+                  <div className="lesson-cover-option">
+                    <div className="lesson-cover-option__label">
+                      <Video size={15} />
+                      <span>Video</span>
                     </div>
-                    <b>{lessonMaterialInventory.length}</b>
+                    {form.videoUrl ? (
+                      <div className="lesson-cover-preview lesson-cover-preview--video">
+                        <video
+                          src={/^https?:\/\/(www\.)?(youtube|vimeo|drive\.google)/.test(form.videoUrl) ? undefined : form.videoUrl}
+                          controls={!/^https?:\/\/(www\.)?(youtube|vimeo|drive\.google)/.test(form.videoUrl)}
+                          className="lesson-cover-preview__video"
+                        />
+                        <div className="lesson-cover-preview__meta">
+                          <span>{getMaterialDisplayName(form.videoUrl)}</span>
+                          <button type="button" className="lesson-cover-preview__remove" onClick={() => setForm({ ...form, videoUrl: "" })} aria-label="Remove video">
+                            <X size={14} /> Remove
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <MaterialField
+                        type="Video"
+                        label=""
+                        value={form.videoUrl}
+                        uploading={uploadingMaterial === "videoUrl"}
+                        hint="Upload MP4/WebM/MOV, or paste a YouTube / Vimeo / Drive link."
+                        accept="video/*,.mp4,.webm,.mov,.m4v"
+                        onUrlChange={(value) => setForm({ ...form, videoUrl: value })}
+                        onFileChange={(file) => void uploadMaterial(file, "videoUrl")}
+                        onClear={() => setForm({ ...form, videoUrl: "" })}
+                      />
+                    )}
                   </div>
-                  {lessonMaterialInventory.length ? (
-                    <div className="lesson-material-inventory-list">
-                      {lessonMaterialInventory.map((item) => (
-                        <a href={item.url} target="_blank" rel="noreferrer" key={`${item.label}-${item.url}`}>
-                          <span><MaterialIcon type={item.type} /></span>
-                          <div>
-                            <strong>{item.label}</strong>
-                            <small>{getMaterialDisplayName(item.url)}</small>
-                          </div>
-                          <ExternalLink size={15} />
-                        </a>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
 
-                <div className="lesson-material-grid">
-                <MaterialField
-                  type="Video"
-                  label="Video file or link"
-                  value={form.videoUrl}
-                  uploading={uploadingMaterial === "videoUrl"}
-                  hint="Upload MP4/WebM/MOV, or paste a YouTube/Vimeo/drive link."
-                  accept="video/*,.mp4,.webm,.mov,.m4v"
-                  onUrlChange={(value) => setForm({ ...form, videoUrl: value })}
-                  onFileChange={(file) => void uploadMaterial(file, "videoUrl")}
-                  onClear={() => setForm({ ...form, videoUrl: "" })}
-                />
-                <MaterialField
-                  type="Document"
-                  label="Resource file or link"
-                  value={form.resourceUrl}
-                  uploading={uploadingMaterial === "resourceUrl"}
-                  hint="Use this for PDFs, images, documents, datasets, or general files."
-                  accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.zip"
-                  onUrlChange={(value) => setForm({ ...form, resourceUrl: value })}
-                  onFileChange={(file) => void uploadMaterial(file, "resourceUrl")}
-                  onClear={() => setForm({ ...form, resourceUrl: "" })}
-                />
-                <MaterialField
-                  type="Subtitle"
-                  label="Subtitle file"
-                  value={form.subtitleUrl}
-                  uploading={uploadingMaterial === "subtitleUrl"}
-                  hint="Upload .vtt or .srt captions for video lessons."
-                  accept=".vtt,.srt"
-                  onUrlChange={(value) => setForm({ ...form, subtitleUrl: value })}
-                  onFileChange={(file) => void uploadMaterial(file, "subtitleUrl")}
-                  onClear={() => setForm({ ...form, subtitleUrl: "" })}
-                />
-                <MaterialField
-                  type="Document"
-                  label="Slide deck / presentation"
-                  value={form.slideUrl}
-                  uploading={uploadingMaterial === "slideUrl"}
-                  hint="Upload a .pptx / .pdf presentation or paste a public link. To build an editable deck, use TeachSpace."
-                  accept=".ppt,.pptx,.pdf,.key,.odp"
-                  onUrlChange={(value) => setForm({ ...form, slideUrl: value })}
-                  onFileChange={(file) => void uploadMaterial(file, "slideUrl")}
-                  onClear={() => setForm({ ...form, slideUrl: "" })}
-                />
-                <MaterialField
-                  type="GIS / Map"
-                  label="Map file"
-                  value={form.mapUrl}
-                  uploading={uploadingMaterial === "mapUrl"}
-                  hint="Upload GeoJSON, KML, GeoPackage, raster, or zipped shapefile bundles."
-                  accept=".zip,.shp,.shx,.dbf,.prj,.geojson,.json,.kml,.kmz,.gpkg,.tif,.tiff"
-                  onUrlChange={(value) => setForm({ ...form, mapUrl: value })}
-                  onFileChange={(file) => void uploadMaterial(file, "mapUrl")}
-                  onClear={() => setForm({ ...form, mapUrl: "" })}
-                />
-              </div>
+                  <div className="lesson-cover-divider"><span>or</span></div>
+
+                  {/* Image cover — stored in resourceUrl when it's an image */}
+                  <div className="lesson-cover-option">
+                    <div className="lesson-cover-option__label">
+                      <Image size={15} />
+                      <span>Cover image</span>
+                    </div>
+                    {form.resourceUrl && getMaterialType(form.resourceUrl) === "Image" ? (
+                      <div className="lesson-cover-preview lesson-cover-preview--image">
+                        <img src={form.resourceUrl} alt="Lesson cover" className="lesson-cover-preview__img" />
+                        <div className="lesson-cover-preview__meta">
+                          <span>{getMaterialDisplayName(form.resourceUrl)}</span>
+                          <button type="button" className="lesson-cover-preview__remove" onClick={() => setForm({ ...form, resourceUrl: "" })} aria-label="Remove image">
+                            <X size={14} /> Remove
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <MaterialField
+                        type="Image"
+                        label=""
+                        value={getMaterialType(form.resourceUrl) === "Image" ? form.resourceUrl : ""}
+                        uploading={uploadingMaterial === "resourceUrl"}
+                        hint="Upload PNG, JPG, or WebP. Recommended: 1280 × 720 px."
+                        accept="image/png,image/jpeg,image/webp,image/gif"
+                        onUrlChange={(value) => setForm({ ...form, resourceUrl: value })}
+                        onFileChange={(file) => void uploadMaterial(file, "resourceUrl")}
+                        onClear={() => setForm({ ...form, resourceUrl: "" })}
+                      />
+                    )}
+                  </div>
+                </div>
               </section>
 
+              {/* ── Section 3: Extra downloads ───────────────────────────────── */}
               <section className="lesson-form-section">
                 <div className="lesson-form-section-heading">
                   <span>3</span>
                   <div>
                     <h3>Extra downloads</h3>
-                    <p>Add supporting worksheets, datasets, reference files or zipped shapefiles.</p>
+                    <p>Add supporting files learners can download — documents, slides, maps, subtitles, datasets, or worksheets.</p>
                   </div>
                 </div>
-                <div className="lesson-attachment-uploader">
-                <label className="lesson-file-picker lesson-file-picker--large">
-                  <UploadCloud size={22} />
-                  <span>{uploadingMaterial === "attachments" ? "Uploading attachment..." : "Choose one or more attachments"}</span>
-                  <input
-                    type="file"
-                    multiple
-                    onChange={(event) => {
-                      const files = Array.from(event.target.files ?? []);
-                      files.forEach((file) => void uploadMaterial(file, "attachments"));
-                      event.currentTarget.value = "";
-                    }}
+
+                <div className="lesson-material-grid">
+                  {/* Non-image resource — only show when resourceUrl is not an image */}
+                  {getMaterialType(form.resourceUrl) !== "Image" && (
+                    <MaterialField
+                      type="Document"
+                      label="Resource file or link"
+                      value={form.resourceUrl}
+                      uploading={uploadingMaterial === "resourceUrl"}
+                      hint="PDFs, documents, datasets, or general files."
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.zip"
+                      onUrlChange={(value) => setForm({ ...form, resourceUrl: value })}
+                      onFileChange={(file) => void uploadMaterial(file, "resourceUrl")}
+                      onClear={() => setForm({ ...form, resourceUrl: "" })}
+                    />
+                  )}
+                  <MaterialField
+                    type="Subtitle"
+                    label="Subtitle file"
+                    value={form.subtitleUrl}
+                    uploading={uploadingMaterial === "subtitleUrl"}
+                    hint="Upload .vtt or .srt captions for video lessons."
+                    accept=".vtt,.srt"
+                    onUrlChange={(value) => setForm({ ...form, subtitleUrl: value })}
+                    onFileChange={(file) => void uploadMaterial(file, "subtitleUrl")}
+                    onClear={() => setForm({ ...form, subtitleUrl: "" })}
                   />
-                </label>
-                {form.attachments.length > 0 ? (
-                  <div className="lesson-attachment-list">
-                    {form.attachments.map((item) => (
-                      <div key={item.url}>
-                        <span><MaterialIcon type={getMaterialType(item.name || item.url, item.type)} /></span>
-                        <a href={item.url} target="_blank" rel="noreferrer">
-                          <strong>{item.name}</strong>
-                          <small>{getMaterialType(item.name || item.url, item.type)}</small>
-                        </a>
-                        <button type="button" onClick={() => removeAttachment(item.url)} aria-label={`Remove ${item.name}`} title={`Remove ${item.name}`}><Trash2 size={16} /></button>
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
+                  <MaterialField
+                    type="Document"
+                    label="Slide deck / presentation"
+                    value={form.slideUrl}
+                    uploading={uploadingMaterial === "slideUrl"}
+                    hint="Upload a .pptx / .pdf presentation or paste a public link."
+                    accept=".ppt,.pptx,.pdf,.key,.odp"
+                    onUrlChange={(value) => setForm({ ...form, slideUrl: value })}
+                    onFileChange={(file) => void uploadMaterial(file, "slideUrl")}
+                    onClear={() => setForm({ ...form, slideUrl: "" })}
+                  />
+                  <MaterialField
+                    type="GIS / Map"
+                    label="Map file"
+                    value={form.mapUrl}
+                    uploading={uploadingMaterial === "mapUrl"}
+                    hint="Upload GeoJSON, KML, GeoPackage, raster, or zipped shapefile bundles."
+                    accept=".zip,.shp,.shx,.dbf,.prj,.geojson,.json,.kml,.kmz,.gpkg,.tif,.tiff"
+                    onUrlChange={(value) => setForm({ ...form, mapUrl: value })}
+                    onFileChange={(file) => void uploadMaterial(file, "mapUrl")}
+                    onClear={() => setForm({ ...form, mapUrl: "" })}
+                  />
+                </div>
+
+                {/* Bulk attachment uploader */}
+                <div className="lesson-attachment-uploader">
+                  <label className="lesson-file-picker lesson-file-picker--large">
+                    <UploadCloud size={22} />
+                    <span>{uploadingMaterial === "attachments" ? "Uploading…" : "Choose one or more additional files"}</span>
+                    <input
+                      type="file"
+                      multiple
+                      onChange={(event) => {
+                        const files = Array.from(event.target.files ?? []);
+                        files.forEach((file) => void uploadMaterial(file, "attachments"));
+                        event.currentTarget.value = "";
+                      }}
+                    />
+                  </label>
+                  {form.attachments.length > 0 ? (
+                    <div className="lesson-attachment-list">
+                      {form.attachments.map((item) => (
+                        <div key={item.url}>
+                          <span><MaterialIcon type={getMaterialType(item.name || item.url, item.type)} /></span>
+                          <a href={item.url} target="_blank" rel="noreferrer">
+                            <strong>{item.name}</strong>
+                            <small>{getMaterialType(item.name || item.url, item.type)}</small>
+                          </a>
+                          <button type="button" onClick={() => removeAttachment(item.url)} aria-label={`Remove ${item.name}`} title={`Remove ${item.name}`}><Trash2 size={16} /></button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
               </section>
 
               {lessonError ? <p className="form-error">{lessonError}</p> : null}

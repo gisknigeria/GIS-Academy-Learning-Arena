@@ -53,6 +53,11 @@ export class CurriculumController {
     return this.curriculum.updateProgramme(programmeId, dto);
   }
 
+  @Post("programmes/:programmeId/enroll")
+  enrollProgramme(@Param("programmeId") programmeId: string, @Req() req: AuthenticatedRequest) {
+    return this.curriculum.enrollProgramme(programmeId, req.user.sub);
+  }
+
   @Roles(...STRUCTURE_ROLES)
   @Post("pathways/:pathwayId/stages")
   createStage(@Param("pathwayId") pathwayId: string, @Body() dto: CreateStageDto) {

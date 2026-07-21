@@ -46,6 +46,22 @@ export class CreateProgrammeDto {
   @IsString()
   description?: string;
 
+  @IsOptional()
+  @IsString()
+  thumbnailUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  whatYoullLearn?: string;
+
+  @IsOptional()
+  @IsString()
+  prerequisites?: string;
+
+  @IsOptional()
+  @IsString()
+  targetAudience?: string;
+
   @IsArray()
   @ArrayMinSize(1)
   @IsString({ each: true })
@@ -65,6 +81,22 @@ export class UpdateProgrammeDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @IsOptional()
+  @IsString()
+  thumbnailUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  whatYoullLearn?: string;
+
+  @IsOptional()
+  @IsString()
+  prerequisites?: string;
+
+  @IsOptional()
+  @IsString()
+  targetAudience?: string;
 }
 
 export class CreateStageDto {

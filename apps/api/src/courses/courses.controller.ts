@@ -128,6 +128,9 @@ export class CoursesController {
     if (!access.allowed) {
       throw new ForbiddenException(access.reason);
     }
+    if (!LESSON_WRITE_ROLES.includes(req.user.role) && !await this.coursesService.findEnrollment(id, req.user.sub)) {
+      throw new ForbiddenException("Enrollment required before opening course content.");
+    }
 
     return this.coursesService.listLessonsWithProgress(id, req.user.sub, LESSON_WRITE_ROLES.includes(req.user.role));
   }
@@ -138,6 +141,9 @@ export class CoursesController {
 
     if (!access.allowed) {
       throw new ForbiddenException(access.reason);
+    }
+    if (!LESSON_WRITE_ROLES.includes(req.user.role) && !await this.coursesService.findEnrollment(id, req.user.sub)) {
+      throw new ForbiddenException("Enrollment required before opening course progress.");
     }
 
     return this.coursesService.getCourseProgress(id, req.user.sub);
@@ -174,6 +180,9 @@ export class CoursesController {
 
     if (!access.allowed) {
       throw new ForbiddenException(access.reason);
+    }
+    if (!LESSON_WRITE_ROLES.includes(req.user.role) && !await this.coursesService.findEnrollment(id, req.user.sub)) {
+      throw new ForbiddenException("Enrollment required before completing lessons.");
     }
 
     return this.coursesService.markLessonComplete(id, lessonId, req.user.sub);

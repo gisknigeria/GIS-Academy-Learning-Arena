@@ -122,7 +122,7 @@ export function ProgrammeCatalogue({ availableCourses, onChanged }: Props) {
               <div className="pathway-heading">
                 <Layers3 size={20} />
                 <div>
-                  <h3>{pathway.name}</h3>
+                  <h3><Link to={`/programmes/${pathway.id}`}>{pathway.name}</Link></h3>
                   {pathway.description ? <p>{pathway.description}</p> : null}
                 </div>
                 {canManage ? (
