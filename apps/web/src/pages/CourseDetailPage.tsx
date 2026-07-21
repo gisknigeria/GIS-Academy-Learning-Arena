@@ -799,14 +799,14 @@ export function CourseDetailPage() {
                     Short summary
                     <textarea value={form.summary} onChange={(event) => setForm({ ...form, summary: event.target.value })} rows={2} placeholder="What will learners understand after this lesson?" />
                   </label>
-                  <label className="lesson-form-full-field">
-                    Lesson notes and instructions
+                  <div className="lesson-form-full-field">
+                    <span className="field-label">Lesson notes and instructions</span>
                     <LessonNoteEditor
                       value={form.content}
                       onChange={(value) => setForm({ ...form, content: value })}
                       placeholder="Write the lesson explanation, examples, instructions, or transcript..."
                     />
-                  </label>
+                  </div>
                 </div>
               </section>
 

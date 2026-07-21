@@ -3525,6 +3525,20 @@ textarea {
   grid-column: 1 / -1;
 }
 
+/* Used instead of <label> when wrapping a rich editor (avoids browser
+   re-dispatching clicks that steal focus from contentEditable) */
+div.lesson-form-full-field {
+  display: grid;
+  gap: 7px;
+}
+
+.field-label {
+  display: block;
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: var(--ink);
+}
+
 .lesson-material-inventory {
   display: grid;
   gap: 12px;
