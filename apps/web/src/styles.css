@@ -3154,6 +3154,62 @@ textarea {
   flex-shrink: 0;
 }
 
+/* ── Colour picker ──────────────────────────────────────────────────── */
+.lesson-note-editor__color-wrap {
+  position: relative;
+}
+
+.lesson-note-editor__color-btn {
+  /* same size as other icon-buttons, set via .icon-button */
+}
+
+.lesson-note-editor__color-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1;
+  gap: 2px;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.lesson-note-editor__color-swatch {
+  display: block;
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+.lesson-note-editor__color-picker {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 200;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.12);
+  width: 178px;
+}
+
+.lesson-note-editor__color-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: transform 0.12s, outline-offset 0.12s;
+  flex-shrink: 0;
+}
+
+.lesson-note-editor__color-dot:hover {
+  transform: scale(1.2);
+}
+
 .lesson-note-editor__toolbar .icon-button {
   display: inline-flex;
   align-items: center;
@@ -3272,6 +3328,26 @@ textarea {
   font-size: 0.88em;
 }
 
+/* Images inserted into the editor */
+.lesson-note-editor__content figure.lesson-note-image {
+  display: block;
+  margin: 10px 0;
+  text-align: center;
+}
+
+.lesson-note-editor__content figure.lesson-note-image img {
+  max-width: 100%;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  cursor: default;
+}
+
+/* Drag-over highlight so users know they can drop images */
+.lesson-note-editor__content.drag-over {
+  border-color: var(--green-700);
+  background: #f0faf4;
+}
+
 /* ── Lesson Note Render (learner view) ───────────────────────────────── */
 .lesson-note-render {
   display: grid;
@@ -3346,6 +3422,19 @@ textarea {
   border-radius: 4px;
   font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
   font-size: 0.88em;
+}
+
+/* Images in the learner read view */
+.lesson-note-render figure.lesson-note-image {
+  display: block;
+  margin: 10px 0;
+  text-align: center;
+}
+
+.lesson-note-render figure.lesson-note-image img {
+  max-width: 100%;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .teachspace-hero {
