@@ -3238,7 +3238,8 @@ textarea {
 
 /* ── TipTap editor content area ─────────────────────────────────────── */
 
-/* Wrapper div TipTap renders — we target it for focus ring */
+/* The prose div TipTap renders inside EditorContent */
+.lesson-note-editor__content .lesson-note-editor__prose,
 .lesson-note-editor__content .tiptap {
   min-height: 260px;
   border: 1px solid var(--color-border);
@@ -3249,15 +3250,18 @@ textarea {
   line-height: 1.7;
   overflow: auto;
   outline: none;
+  cursor: text;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 
+.lesson-note-editor__content .lesson-note-editor__prose:focus,
 .lesson-note-editor__content .tiptap:focus {
   border-color: rgba(31, 166, 106, 0.4);
   box-shadow: 0 0 0 3px rgba(31, 166, 106, 0.16);
 }
 
 /* Placeholder */
+.lesson-note-editor__content .lesson-note-editor__prose p.is-editor-empty:first-child::before,
 .lesson-note-editor__content .tiptap p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   color: var(--muted);
@@ -3266,6 +3270,9 @@ textarea {
   height: 0;
 }
 
+.lesson-note-editor__content .lesson-note-editor__prose h1,
+.lesson-note-editor__content .lesson-note-editor__prose h2,
+.lesson-note-editor__content .lesson-note-editor__prose h3,
 .lesson-note-editor__content .tiptap h1,
 .lesson-note-editor__content .tiptap h2,
 .lesson-note-editor__content .tiptap h3 {
@@ -3273,16 +3280,20 @@ textarea {
   color: var(--green-900);
 }
 
+.lesson-note-editor__content .lesson-note-editor__prose p,
 .lesson-note-editor__content .tiptap p {
   margin: 0 0 10px;
 }
 
+.lesson-note-editor__content .lesson-note-editor__prose ul,
+.lesson-note-editor__content .lesson-note-editor__prose ol,
 .lesson-note-editor__content .tiptap ul,
 .lesson-note-editor__content .tiptap ol {
   margin: 0 0 10px 18px;
   padding: 0;
 }
 
+.lesson-note-editor__content .lesson-note-editor__prose blockquote,
 .lesson-note-editor__content .tiptap blockquote {
   margin: 0 0 10px;
   padding: 10px 12px;
@@ -3292,12 +3303,14 @@ textarea {
   border-radius: 0 6px 6px 0;
 }
 
+.lesson-note-editor__content .lesson-note-editor__prose hr,
 .lesson-note-editor__content .tiptap hr {
   border: none;
   border-top: 2px solid var(--color-border);
   margin: 14px 0;
 }
 
+.lesson-note-editor__content .lesson-note-editor__prose a,
 .lesson-note-editor__content .tiptap a {
   color: var(--green-700);
   text-decoration: underline;
@@ -3305,6 +3318,8 @@ textarea {
 }
 
 /* Code block */
+.lesson-note-editor__content .lesson-note-editor__prose pre,
+.lesson-note-editor__content .lesson-note-editor__prose pre.lesson-code-block,
 .lesson-note-editor__content .tiptap pre,
 .lesson-note-editor__content .tiptap pre.lesson-code-block {
   background: #1e1e2e;
@@ -3319,6 +3334,7 @@ textarea {
   white-space: pre;
 }
 
+.lesson-note-editor__content .lesson-note-editor__prose pre code,
 .lesson-note-editor__content .tiptap pre code {
   background: transparent;
   color: inherit;
@@ -3327,6 +3343,7 @@ textarea {
 }
 
 /* Inline code */
+.lesson-note-editor__content .lesson-note-editor__prose code,
 .lesson-note-editor__content .tiptap code {
   background: #f0faf4;
   color: #1a7a4a;
@@ -3337,6 +3354,7 @@ textarea {
 }
 
 /* Images */
+.lesson-note-editor__content .lesson-note-editor__prose img.lesson-note-img,
 .lesson-note-editor__content .tiptap img.lesson-note-img {
   max-width: 100%;
   border-radius: 8px;

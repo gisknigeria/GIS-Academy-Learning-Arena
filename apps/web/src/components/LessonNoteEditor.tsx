@@ -82,10 +82,9 @@ export function LessonNoteEditor({ value, onChange, placeholder }: LessonNoteEdi
   const lastEmitted = useRef("");
 
   const editor = useEditor({
+    autofocus: false,
     extensions: [
       StarterKit.configure({
-        // StarterKit includes bold, italic, strike, code, codeBlock, blockquote,
-        // heading, bulletList, orderedList, hardBreak, horizontalRule, history
         heading: { levels: [1, 2, 3] },
         codeBlock: {
           HTMLAttributes: { class: "lesson-code-block" },
@@ -106,6 +105,21 @@ export function LessonNoteEditor({ value, onChange, placeholder }: LessonNoteEdi
       }),
     ],
     content: normalizeLessonNoteHtml(value),
+    // Prevent TipTap from moving focus to position 0 on mount
+    editorProps: {
+      attributes: {
+        class: "lesson-note-editor__prose",
+        spellcheck: "true",
+      },
+      handleDOMEvents: {
+        focus: (_view, event) => {
+          // Only allow focus events that originate from a real user interaction
+          // (pointer or keyboard), not synthetic ones fired during mount/init
+          if (!event.isTrusted) return true; // block synthetic focus → return true = handled
+          return false; // let natural user focus through
+        },
+      },
+    },
     onUpdate({ editor }) {
       const html = editor.getHTML();
       lastEmitted.current = html;
