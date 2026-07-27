@@ -2911,27 +2911,65 @@ textarea {
 .back-link:hover { color: var(--green-900); }
 
 .course-detail-hero {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.7fr);
   gap: 24px;
-  border-radius: var(--radius-lg);
+  align-items: stretch;
+  border-radius: 24px;
   background:
-    linear-gradient(135deg, rgba(12,51,38,0.96), rgba(20,107,74,0.9)),
+    linear-gradient(135deg, rgba(8,42,30,0.97), rgba(26,116,80,0.92)),
     url("https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=1400&q=80");
   background-position: center;
   background-size: cover;
   color: #fff;
-  padding: 32px;
+  padding: 34px;
+  box-shadow: 0 24px 60px rgba(3, 37, 24, 0.24);
+  position: relative;
+  overflow: hidden;
+}
+
+.course-detail-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, rgba(255,255,255,0.10), transparent 45%, rgba(255,255,255,0.04));
+  pointer-events: none;
+}
+
+.course-detail-hero__content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.course-detail-hero__eyebrow-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.course-detail-hero__pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.14);
+  border: 1px solid rgba(255,255,255,0.18);
+  color: rgba(255,255,255,0.88);
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
 .course-detail-hero h1 {
-  margin: 12px 0;
+  margin: 12px 0 10px;
   font-size: clamp(1.75rem, 3vw, 3rem);
   line-height: 1.05;
   letter-spacing: -0.01em;
 }
-.course-detail-hero p { max-width: 760px; color: rgba(255,255,255,0.78); line-height: 1.6; }
+.course-detail-hero p { max-width: 760px; color: rgba(255,255,255,0.78); line-height: 1.65; margin: 0; }
 
 .course-detail-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
 .course-detail-meta span {
@@ -2944,6 +2982,77 @@ textarea {
   font-weight: 900;
 }
 
+.course-detail-hero__side {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.course-detail-overview-card {
+  width: 100%;
+  max-width: 320px;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.96);
+  color: var(--ink);
+  padding: 18px;
+  box-shadow: 0 16px 36px rgba(5, 31, 21, 0.18);
+  display: grid;
+  gap: 12px;
+  border: 1px solid rgba(20,107,74,0.12);
+}
+
+.course-detail-overview-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 900;
+  color: var(--green-900);
+}
+
+.course-detail-overview-card__badge {
+  border-radius: 999px;
+  background: var(--green-50);
+  color: var(--green-700);
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.course-detail-overview-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.course-detail-overview-card__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.course-detail-overview-card__stats div {
+  border-radius: var(--radius-sm);
+  background: #f6fbf8;
+  padding: 10px 8px;
+  text-align: center;
+  display: grid;
+  gap: 4px;
+}
+
+.course-detail-overview-card__stats strong {
+  color: var(--green-900);
+  font-size: 1rem;
+}
+
+.course-detail-overview-card__stats span {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
 .course-management-actions {
   display: flex;
   align-items: center;
@@ -2951,11 +3060,32 @@ textarea {
   gap: 10px;
 }
 
+.course-management-actions .primary-button,
+.course-management-actions .secondary-button {
+  min-height: 40px;
+  box-shadow: 0 8px 16px rgba(5, 31, 21, 0.08);
+}
+
+.course-management-actions--stacked {
+  display: grid;
+  gap: 8px;
+}
+
+.course-detail-enroll-button {
+  margin-top: 4px;
+}
+
 .course-progress-summary {
   display: grid;
   gap: 10px;
   margin-top: 20px;
-  max-width: 480px;
+  max-width: 500px;
+  padding: 14px 15px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.16);
+  backdrop-filter: blur(8px);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
 }
 .course-progress-bar-row {
   display: flex;

@@ -300,7 +300,8 @@ export function CourseDetailPage() {
   }
 
   function startEditLesson(lesson: Lesson) {
-    setForm({
+    setForm((current) => ({
+      ...current,
       id: lesson.id,
       moduleId: lesson.moduleId ?? "",
       title: lesson.title,
@@ -313,7 +314,7 @@ export function CourseDetailPage() {
       slideUrl: lesson.slideUrl ?? "",
       mapUrl: lesson.mapUrl ?? "",
       attachments: lesson.attachments ?? [],
-    });
+    }));
     setShowLessonForm(true);
   }
 
@@ -496,6 +497,9 @@ export function CourseDetailPage() {
   }
 
   const isLocked = course.accessStatus?.allowed === false && !canManageLessons;
+  const lessonCount = course._count?.lessons ?? lessons.length;
+  const moduleCount = modules.length;
+  const assessmentCount = finalAssessments.length;
 
   return (
     <section className="module-page">
@@ -505,15 +509,19 @@ export function CourseDetailPage() {
       </Link>
 
       <div className="course-detail-hero">
-        <div>
-          <span className="course-code">{course.code}</span>
+        <div className="course-detail-hero__content">
+          <div className="course-detail-hero__eyebrow-row">
+            <span className="course-code">{course.code}</span>
+            {course.trainingCategory ? <span className="course-detail-hero__pill">{course.trainingCategory}</span> : null}
+            <span className="course-detail-hero__pill">{DELIVERY_MODE_LABELS[course.deliveryMode]}</span>
+          </div>
           <h1>{course.title}</h1>
           <p>{course.description || "No description has been added yet."}</p>
           <div className="course-detail-meta">
             {course.level ? <span>{getCourseAccessLevelLabel(course.trainingCategory, course.level)}</span> : null}
-            <span>{DELIVERY_MODE_LABELS[course.deliveryMode]}</span>
-            <span>{course.trainingCategory ?? "Programme"}</span>
-            <span>{course._count?.lessons ?? lessons.length} lessons</span>
+            <span>{lessonCount} lessons</span>
+            <span>{moduleCount} modules</span>
+            <span>{assessmentCount} assessments</span>
           </div>
 
           {/* Progress summary + CTA — only for learners with access */}
@@ -557,29 +565,54 @@ export function CourseDetailPage() {
             </div>
           ) : null}
         </div>
-        {canManageLessons ? (
-          <div className="course-management-actions">
-            <button className="primary-button" onClick={startCreateLesson}>
-              <PlusCircle size={17} />
-              Add lesson
-            </button>
-            <button className="secondary-button" onClick={openImportModal}>
-              <BookOpen size={17} />
-              Import existing
-            </button>
-            <button className="secondary-button" onClick={() => void handleCreateCourseAssessment()} disabled={creatingAssessmentLessonId === "course-final"}>
-              {creatingAssessmentLessonId === "course-final" ? <Loader2 className="spin" size={17} /> : <ClipboardCheck size={17} />}
-              Final assessment
-            </button>
-          </div>
-        ) : null}
 
-        {!canManageLessons && !enrolled ? (
-          <button className="primary-button" onClick={() => void handleEnroll()} disabled={enrolling}>
-            <PlusCircle size={17} />
-            {enrolling ? "Enrolling..." : "Enroll"}
-          </button>
-        ) : null}
+        <div className="course-detail-hero__side">
+          <div className="course-detail-overview-card">
+            <div className="course-detail-overview-card__header">
+              <span>Course overview</span>
+              <span className="course-detail-overview-card__badge">Live</span>
+            </div>
+            <p>Structured lessons, practical resources, and milestone assessments in one place.</p>
+            <div className="course-detail-overview-card__stats">
+              <div>
+                <strong>{lessonCount}</strong>
+                <span>Lessons</span>
+              </div>
+              <div>
+                <strong>{moduleCount}</strong>
+                <span>Modules</span>
+              </div>
+              <div>
+                <strong>{assessmentCount}</strong>
+                <span>Assessments</span>
+              </div>
+            </div>
+
+            {canManageLessons ? (
+              <div className="course-management-actions course-management-actions--stacked">
+                <button className="primary-button" onClick={startCreateLesson}>
+                  <PlusCircle size={17} />
+                  Add lesson
+                </button>
+                <button className="secondary-button" onClick={openImportModal}>
+                  <BookOpen size={17} />
+                  Import existing
+                </button>
+                <button className="secondary-button" onClick={() => void handleCreateCourseAssessment()} disabled={creatingAssessmentLessonId === "course-final"}>
+                  {creatingAssessmentLessonId === "course-final" ? <Loader2 className="spin" size={17} /> : <ClipboardCheck size={17} />}
+                  Final assessment
+                </button>
+              </div>
+            ) : null}
+
+            {!canManageLessons && !enrolled ? (
+              <button className="primary-button course-detail-enroll-button" onClick={() => void handleEnroll()} disabled={enrolling}>
+                <PlusCircle size={17} />
+                {enrolling ? "Enrolling..." : "Enroll"}
+              </button>
+            ) : null}
+          </div>
+        </div>
       </div>
 
       {isLocked ? (
@@ -790,28 +823,28 @@ export function CourseDetailPage() {
                 <div className="lesson-form-basics-grid">
                   <label>
                     Module
-                    <select value={form.moduleId} onChange={(event) => setForm({ ...form, moduleId: event.target.value })}>
+                    <select value={form.moduleId} onChange={(event) => setForm((current) => ({ ...current, moduleId: event.target.value }))}>
                       <option value="">Unassigned / legacy lesson</option>
                       {modules.map((module) => <option key={module.id} value={module.id}>{module.order}. {module.title}</option>)}
                     </select>
                   </label>
                   <label>
                     Lesson title
-                    <input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} placeholder="e.g. Understanding coordinate systems" required />
+                    <input value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} placeholder="e.g. Understanding coordinate systems" required />
                   </label>
                   <label>
                     Position
-                    <input type="number" min={1} value={form.order} onChange={(event) => setForm({ ...form, order: event.target.value })} required />
+                    <input type="number" min={1} value={form.order} onChange={(event) => setForm((current) => ({ ...current, order: event.target.value }))} required />
                   </label>
                   <label className="lesson-form-full-field">
                     Short summary
-                    <textarea value={form.summary} onChange={(event) => setForm({ ...form, summary: event.target.value })} rows={2} placeholder="What will learners understand after this lesson?" />
+                    <textarea value={form.summary} onChange={(event) => setForm((current) => ({ ...current, summary: event.target.value }))} rows={2} placeholder="What will learners understand after this lesson?" />
                   </label>
                   <div className="lesson-form-full-field">
                     <span className="field-label">Lesson notes and instructions</span>
                     <LessonNoteEditor
                       value={form.content}
-                      onChange={(value) => setForm({ ...form, content: value })}
+                      onChange={(value) => setForm((current) => ({ ...current, content: value }))}
                       placeholder="Write the lesson explanation, examples, instructions, or transcript..."
                     />
                   </div>
@@ -844,7 +877,7 @@ export function CourseDetailPage() {
                         />
                         <div className="lesson-cover-preview__meta">
                           <span>{getMaterialDisplayName(form.videoUrl)}</span>
-                          <button type="button" className="lesson-cover-preview__remove" onClick={() => setForm({ ...form, videoUrl: "" })} aria-label="Remove video">
+                          <button type="button" className="lesson-cover-preview__remove" onClick={() => setForm((current) => ({ ...current, videoUrl: "" }))} aria-label="Remove video">
                             <X size={14} /> Remove
                           </button>
                         </div>
@@ -857,9 +890,9 @@ export function CourseDetailPage() {
                         uploading={uploadingMaterial === "videoUrl"}
                         hint="Upload MP4/WebM/MOV, or paste a YouTube / Vimeo / Drive link."
                         accept="video/*,.mp4,.webm,.mov,.m4v"
-                        onUrlChange={(value) => setForm({ ...form, videoUrl: value })}
+                        onUrlChange={(value) => setForm((current) => ({ ...current, videoUrl: value }))}
                         onFileChange={(file) => void uploadMaterial(file, "videoUrl")}
-                        onClear={() => setForm({ ...form, videoUrl: "" })}
+                        onClear={() => setForm((current) => ({ ...current, videoUrl: "" }))}
                       />
                     )}
                   </div>
@@ -877,7 +910,7 @@ export function CourseDetailPage() {
                         <img src={form.resourceUrl} alt="Lesson cover" className="lesson-cover-preview__img" />
                         <div className="lesson-cover-preview__meta">
                           <span>{getMaterialDisplayName(form.resourceUrl)}</span>
-                          <button type="button" className="lesson-cover-preview__remove" onClick={() => setForm({ ...form, resourceUrl: "" })} aria-label="Remove image">
+                          <button type="button" className="lesson-cover-preview__remove" onClick={() => setForm((current) => ({ ...current, resourceUrl: "" }))} aria-label="Remove image">
                             <X size={14} /> Remove
                           </button>
                         </div>
@@ -890,9 +923,9 @@ export function CourseDetailPage() {
                         uploading={uploadingMaterial === "resourceUrl"}
                         hint="Upload PNG, JPG, or WebP. Recommended: 1280 × 720 px."
                         accept="image/png,image/jpeg,image/webp,image/gif"
-                        onUrlChange={(value) => setForm({ ...form, resourceUrl: value })}
+                        onUrlChange={(value) => setForm((current) => ({ ...current, resourceUrl: value }))}
                         onFileChange={(file) => void uploadMaterial(file, "resourceUrl")}
-                        onClear={() => setForm({ ...form, resourceUrl: "" })}
+                        onClear={() => setForm((current) => ({ ...current, resourceUrl: "" }))}
                       />
                     )}
                   </div>
@@ -919,9 +952,9 @@ export function CourseDetailPage() {
                       uploading={uploadingMaterial === "resourceUrl"}
                       hint="PDFs, documents, datasets, or general files."
                       accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.zip"
-                      onUrlChange={(value) => setForm({ ...form, resourceUrl: value })}
+                      onUrlChange={(value) => setForm((current) => ({ ...current, resourceUrl: value }))}
                       onFileChange={(file) => void uploadMaterial(file, "resourceUrl")}
-                      onClear={() => setForm({ ...form, resourceUrl: "" })}
+                      onClear={() => setForm((current) => ({ ...current, resourceUrl: "" }))}
                     />
                   )}
                   <MaterialField
@@ -931,9 +964,9 @@ export function CourseDetailPage() {
                     uploading={uploadingMaterial === "subtitleUrl"}
                     hint="Upload .vtt or .srt captions for video lessons."
                     accept=".vtt,.srt"
-                    onUrlChange={(value) => setForm({ ...form, subtitleUrl: value })}
+                    onUrlChange={(value) => setForm((current) => ({ ...current, subtitleUrl: value }))}
                     onFileChange={(file) => void uploadMaterial(file, "subtitleUrl")}
-                    onClear={() => setForm({ ...form, subtitleUrl: "" })}
+                    onClear={() => setForm((current) => ({ ...current, subtitleUrl: "" }))}
                   />
                   <MaterialField
                     type="Document"
@@ -942,9 +975,9 @@ export function CourseDetailPage() {
                     uploading={uploadingMaterial === "slideUrl"}
                     hint="Upload a .pptx / .pdf presentation or paste a public link."
                     accept=".ppt,.pptx,.pdf,.key,.odp"
-                    onUrlChange={(value) => setForm({ ...form, slideUrl: value })}
+                    onUrlChange={(value) => setForm((current) => ({ ...current, slideUrl: value }))}
                     onFileChange={(file) => void uploadMaterial(file, "slideUrl")}
-                    onClear={() => setForm({ ...form, slideUrl: "" })}
+                    onClear={() => setForm((current) => ({ ...current, slideUrl: "" }))}
                   />
                   <MaterialField
                     type="GIS / Map"
@@ -953,9 +986,9 @@ export function CourseDetailPage() {
                     uploading={uploadingMaterial === "mapUrl"}
                     hint="Upload GeoJSON, KML, GeoPackage, raster, or zipped shapefile bundles."
                     accept=".zip,.shp,.shx,.dbf,.prj,.geojson,.json,.kml,.kmz,.gpkg,.tif,.tiff"
-                    onUrlChange={(value) => setForm({ ...form, mapUrl: value })}
+                    onUrlChange={(value) => setForm((current) => ({ ...current, mapUrl: value }))}
                     onFileChange={(file) => void uploadMaterial(file, "mapUrl")}
-                    onClear={() => setForm({ ...form, mapUrl: "" })}
+                    onClear={() => setForm((current) => ({ ...current, mapUrl: "" }))}
                   />
                 </div>
 
