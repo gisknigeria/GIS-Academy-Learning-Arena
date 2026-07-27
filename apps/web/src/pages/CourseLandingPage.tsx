@@ -90,6 +90,7 @@ export function CourseLandingPage() {
   const audience     = parseLines(course.targetAudience);
   const lessonCount  = course._count?.lessons ?? 0;
   const enrollCount  = course._count?.enrollments ?? 0;
+  const highlightCount = Math.max(outcomes.length, 1);
 
   const paymentBlocked = course.accessStatus?.allowed === false && course.accessStatus.reason === "payment_required";
 
@@ -110,6 +111,21 @@ export function CourseLandingPage() {
           </div>
           <h1 className="course-landing__title">{course.title}</h1>
           {course.description ? <p className="course-landing__description">{course.description}</p> : null}
+
+          <div className="course-landing__hero-highlights">
+            <div>
+              <strong>{lessonCount}</strong>
+              <span>lessons</span>
+            </div>
+            <div>
+              <strong>{highlightCount}</strong>
+              <span>learning points</span>
+            </div>
+            <div>
+              <strong>{course.estimatedHours ? `${course.estimatedHours}h` : "—"}</strong>
+              <span>estimated time</span>
+            </div>
+          </div>
 
           <div className="course-landing__stats">
             {lessonCount > 0 ? (
@@ -175,42 +191,51 @@ export function CourseLandingPage() {
 
       {/* ── Body ─────────────────────────────────────────────────────── */}
       <div className="course-landing__body">
+        <div className="course-landing__content-stack">
+          {outcomes.length > 0 && (
+            <section className="course-landing__section-card">
+              <div className="course-landing__section-heading">
+                <CheckCircle2 size={18} />
+                <h2>What you'll learn</h2>
+              </div>
+              <ul className="course-landing__outcomes">
+                {outcomes.map((item, i) => (
+                  <li key={i}><span>{item}</span></li>
+                ))}
+              </ul>
+            </section>
+          )}
 
-        {/* What you'll learn */}
-        {outcomes.length > 0 && (
-          <section className="course-landing__section">
-            <h2>What you'll learn</h2>
-            <ul className="course-landing__outcomes">
-              {outcomes.map((item, i) => (
-                <li key={i}><CheckCircle2 size={16} className="outcome-check" /><span>{item}</span></li>
-              ))}
-            </ul>
-          </section>
-        )}
+          {prereqs.length > 0 && (
+            <section className="course-landing__section-card">
+              <div className="course-landing__section-heading">
+                <Layers3 size={18} />
+                <h2>Prerequisites</h2>
+              </div>
+              <ul className="course-landing__list">
+                {prereqs.map((item, i) => <li key={i}>{item}</li>)}
+              </ul>
+            </section>
+          )}
 
-        {/* Prerequisites */}
-        {prereqs.length > 0 && (
-          <section className="course-landing__section">
-            <h2>Prerequisites</h2>
-            <ul className="course-landing__list">
-              {prereqs.map((item, i) => <li key={i}>{item}</li>)}
-            </ul>
-          </section>
-        )}
+          {audience.length > 0 && (
+            <section className="course-landing__section-card">
+              <div className="course-landing__section-heading">
+                <Users size={18} />
+                <h2>Who this is for</h2>
+              </div>
+              <ul className="course-landing__list">
+                {audience.map((item, i) => <li key={i}>{item}</li>)}
+              </ul>
+            </section>
+          )}
+        </div>
 
-        {/* Who this is for */}
-        {audience.length > 0 && (
-          <section className="course-landing__section">
-            <h2><Users size={18} /> Who this is for</h2>
-            <ul className="course-landing__list">
-              {audience.map((item, i) => <li key={i}>{item}</li>)}
-            </ul>
-          </section>
-        )}
-
-        {/* Course details */}
-        <section className="course-landing__section">
-          <h2><Layers3 size={18} /> Course details</h2>
+        <aside className="course-landing__side-card">
+          <div className="course-landing__section-heading">
+            <Layers3 size={18} />
+            <h2>Course details</h2>
+          </div>
           <dl className="course-landing__details">
             <div><dt>Code</dt><dd>{course.code}</dd></div>
             <div><dt>Delivery</dt><dd>{DELIVERY_MODE_LABELS[course.deliveryMode]}</dd></div>
@@ -219,8 +244,7 @@ export function CourseLandingPage() {
             {course.estimatedHours   ? <div><dt>Duration</dt><dd>{course.estimatedHours} hours</dd></div> : null}
             {lessonCount > 0         ? <div><dt>Lessons</dt><dd>{lessonCount}</dd></div> : null}
           </dl>
-        </section>
-
+        </aside>
       </div>
     </div>
   );
