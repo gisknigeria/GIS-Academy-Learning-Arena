@@ -1614,6 +1614,7 @@ textarea {
 .modal-panel--lesson {
   width: min(960px, 96vw);
   max-height: calc(100vh - 32px);
+  --lesson-editor-toolbar-top: 82px;
 }
 
 .modal-header {
@@ -3559,6 +3560,16 @@ textarea {
   flex-wrap: wrap;
   align-items: center;
   gap: 4px;
+  position: sticky;
+  top: var(--lesson-editor-toolbar-top, 0);
+  z-index: 4;
+  margin: -10px -10px 0;
+  padding: 10px;
+  border-bottom: 1px solid var(--color-border);
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 8px 18px rgba(12, 51, 38, 0.08);
+  backdrop-filter: blur(10px);
 }
 
 .lesson-note-editor__divider {
@@ -3655,6 +3666,17 @@ textarea {
 .lesson-note-editor__toolbar .icon-button:disabled {
   cursor: not-allowed;
   opacity: 0.4;
+}
+
+.lesson-note-editor__toolbar .lesson-note-editor__callout-button {
+  gap: 3px;
+}
+
+.lesson-note-editor__callout-line {
+  width: 3px;
+  height: 18px;
+  border-radius: 999px;
+  background: currentColor;
 }
 
 .lesson-note-editor__error {
@@ -8296,6 +8318,7 @@ div.lesson-form-full-field {
     width: 100%;
     max-height: 100vh;
     border-radius: 0;
+    --lesson-editor-toolbar-top: 96px;
   }
 
   .modal-panel--lesson .modal-header,

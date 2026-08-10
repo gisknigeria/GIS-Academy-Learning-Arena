@@ -230,7 +230,16 @@ export function LessonNoteEditor({ value, onChange, placeholder, onUploadImage }
       <button type="button" className={buttonClass(formats.bulletList)} onMouseDown={toolbarAction(() => runCommand("insertUnorderedList"))} title="Bullet list"><List size={16} /></button>
       <button type="button" className={buttonClass(formats.orderedList)} onMouseDown={toolbarAction(() => runCommand("insertOrderedList"))} title="Numbered list"><ListOrdered size={16} /></button>
       <span className="lesson-note-editor__divider" />
-      <button type="button" className={buttonClass(formats.blockquote)} onMouseDown={toolbarAction(() => runCommand("formatBlock", formats.blockquote ? "p" : "blockquote"))} title="Blockquote"><Quote size={16} /></button>
+      <button
+        type="button"
+        className={`${buttonClass(formats.blockquote)} lesson-note-editor__callout-button`}
+        onMouseDown={toolbarAction(() => runCommand("formatBlock", formats.blockquote ? "p" : "blockquote"))}
+        title="Definition / note callout"
+        aria-label="Definition or note with vertical line"
+      >
+        <span className="lesson-note-editor__callout-line" aria-hidden="true" />
+        <Quote size={13} />
+      </button>
       <button type="button" className={buttonClass(formats.codeBlock)} onMouseDown={toolbarAction(() => runCommand("formatBlock", formats.codeBlock ? "p" : "pre"))} title="Code block"><Code size={16} /></button>
       <button type="button" className="icon-button" onMouseDown={toolbarAction(() => runCommand("insertHorizontalRule"))} title="Horizontal divider"><Minus size={16} /></button>
       <span className="lesson-note-editor__divider" />
