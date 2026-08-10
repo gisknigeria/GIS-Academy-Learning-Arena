@@ -18,8 +18,10 @@ import {
   ListOrdered,
   Minus,
   Quote,
+  Redo2,
   Strikethrough,
   Underline as UnderlineIcon,
+  Undo2,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -29,6 +31,7 @@ type LessonNoteEditorProps = {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  onUploadImage?: (file: File) => Promise<string>;
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -72,15 +75,14 @@ const TEXT_COLORS = [
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function LessonNoteEditor({ value, onChange, placeholder }: LessonNoteEditorProps) {
+export function LessonNoteEditor({ value, onChange, placeholder, onUploadImage }: LessonNoteEditorProps) {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [activeColor, setActiveColor] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [imageError, setImageError] = useState("");
   const colorPickerRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
-  // The last HTML we pushed into onChange — used to skip no-op external updates.
-  // Store it as the raw editor HTML (what TipTap produces) so comparisons are exact.
-  const lastEmitted = useRef<string | null>(null);
 
   const editor = useEditor({
     autofocus: false,
@@ -113,18 +115,16 @@ export function LessonNoteEditor({ value, onChange, placeholder }: LessonNoteEdi
       },
     },
     onUpdate({ editor }) {
-      const html = editor.getHTML();
-      lastEmitted.current = html;
-      onChange(html);
+      onChange(editor.isEmpty ? "" : editor.getHTML());
+    },
+    onSelectionUpdate({ editor }) {
+      setActiveColor((editor.getAttributes("textStyle").color as string | undefined) ?? "");
     },
   });
 
   // Sync external value changes (e.g. form reset) without disturbing the cursor.
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;
-
-    // If we emitted this exact value ourselves, the editor already has it — skip.
-    if (lastEmitted.current === value) return;
 
     // Treat TipTap's empty-doc HTML and empty string as equivalent so we never
     // reset the cursor just because "" !== "<p></p>".
@@ -161,7 +161,8 @@ export function LessonNoteEditor({ value, onChange, placeholder }: LessonNoteEdi
     if (url === "") {
       editor.chain().focus().unsetLink().run();
     } else {
-      editor.chain().focus().setLink({ href: url }).run();
+      const href = /^[a-z][a-z\d+.-]*:/i.test(url) ? url : `https://${url}`;
+      editor.chain().focus().extendMarkRange("link").setLink({ href }).run();
     }
   }
 
@@ -175,20 +176,34 @@ export function LessonNoteEditor({ value, onChange, placeholder }: LessonNoteEdi
     }
   }
 
-  function insertImage(files: FileList | null) {
+  async function insertImage(files: FileList | null) {
     if (!files || files.length === 0) return;
-    Array.from(files).forEach((file) => {
-      if (!file.type.startsWith("image/")) return;
-      const reader = new FileReader();
-      reader.onload = () => {
+    const images = Array.from(files).filter((file) => file.type.startsWith("image/"));
+    if (!images.length) {
+      setImageError("Please choose a supported image file.");
+      return;
+    }
+    if (!onUploadImage) {
+      setImageError("Image uploads are not available right now.");
+      return;
+    }
+
+    setUploadingImage(true);
+    setImageError("");
+    try {
+      for (const file of images) {
+        const url = await onUploadImage(file);
         editor
           .chain()
           .focus()
-          .setImage({ src: reader.result as string, alt: file.name.replace(/\.[^.]+$/, "") })
+          .setImage({ src: url, alt: file.name.replace(/\.[^.]+$/, "") })
           .run();
-      };
-      reader.readAsDataURL(file);
-    });
+      }
+    } catch (error) {
+      setImageError(error instanceof Error ? error.message : "The image could not be uploaded.");
+    } finally {
+      setUploadingImage(false);
+    }
   }
 
   // ── Active-state helpers ──────────────────────────────────────────────────
@@ -293,6 +308,18 @@ export function LessonNoteEditor({ value, onChange, placeholder }: LessonNoteEdi
 
         <span className="lesson-note-editor__divider" />
 
+        <button type="button" className="icon-button"
+          disabled={!editor.can().undo()}
+          onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().undo().run(); }}
+          title="Undo"><Undo2 size={16} /></button>
+
+        <button type="button" className="icon-button"
+          disabled={!editor.can().redo()}
+          onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().redo().run(); }}
+          title="Redo"><Redo2 size={16} /></button>
+
+        <span className="lesson-note-editor__divider" />
+
         {/* Link */}
         <button type="button" className={btnClass(editor.isActive("link"))}
           onMouseDown={(e) => { e.preventDefault(); insertLink(); }}
@@ -300,8 +327,10 @@ export function LessonNoteEditor({ value, onChange, placeholder }: LessonNoteEdi
 
         {/* Image */}
         <button type="button" className="icon-button"
+          disabled={uploadingImage}
           onMouseDown={(e) => { e.preventDefault(); imageInputRef.current?.click(); }}
-          title="Insert image" aria-label="Insert image">
+          title={uploadingImage ? "Uploading image" : "Insert image"}
+          aria-label={uploadingImage ? "Uploading image" : "Insert image"}>
           <ImagePlus size={16} />
         </button>
 
@@ -313,9 +342,11 @@ export function LessonNoteEditor({ value, onChange, placeholder }: LessonNoteEdi
           aria-hidden="true"
           tabIndex={-1}
           style={{ display: "none" }}
-          onChange={(e) => { insertImage(e.target.files); e.target.value = ""; }}
+          onChange={(e) => { void insertImage(e.target.files); e.target.value = ""; }}
         />
       </div>
+
+      {imageError ? <p className="lesson-note-editor__error" role="alert">{imageError}</p> : null}
 
       {/* ── Editor content area ─────────────────────────────────────────── */}
       <EditorContent

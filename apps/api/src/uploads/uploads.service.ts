@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
+import { randomUUID } from 'crypto';
 
 // Optional dependencies
 let S3Client: any = null;
@@ -29,6 +30,19 @@ try {
 }
 
 export type UploadResult = { url: string; key?: string };
+
+function sanitizePart(value: string, fallback: string): string {
+  const safe = value.trim().replace(/[^a-zA-Z0-9._-]/g, '-').replace(/^[.-]+|[.-]+$/g, '');
+  return safe || fallback;
+}
+
+function sanitizeFolder(folder?: string): string {
+  return (folder ?? 'files')
+    .split(/[\\/]+/)
+    .filter((part) => part && part !== '.' && part !== '..')
+    .map((part) => sanitizePart(part, 'files'))
+    .join('/');
+}
 
 function getPublicUploadUrl(uploadPath: string): string {
   const publicApiUrl = (process.env.PUBLIC_API_URL ?? process.env.RENDER_EXTERNAL_URL ?? '').replace(/\/$/, '');
@@ -72,9 +86,15 @@ export class UploadsService {
   }
 
   async uploadBuffer(filename: string, buffer: Buffer, mimetype?: string, folder?: string): Promise<UploadResult> {
+    if (!buffer?.length) throw new Error('Cannot upload an empty file.');
+
+    const safeFolder = sanitizeFolder(folder);
+    const safeFilename = sanitizePart(filename, 'upload');
+    const objectName = `${Date.now()}-${randomUUID()}-${safeFilename}`;
+    const key = `${safeFolder}/${objectName}`;
+
     if (this.provider === 's3' && this.s3Client) {
       const bucket = process.env.AWS_S3_BUCKET as string;
-      const key = `${folder ? `${folder.replace(/\/$/, "")}/` : ""}${Date.now()}-${filename}`;
       const cmd = new PutObjectCommand({ Bucket: bucket, Key: key, Body: buffer, ContentType: mimetype });
       await this.s3Client.send(cmd);
       const url = process.env.AWS_S3_PUBLIC_URL ? `${process.env.AWS_S3_PUBLIC_URL}/${key}` : `https://${bucket}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
@@ -83,7 +103,6 @@ export class UploadsService {
 
     if (this.provider === 'supabase' && this.supabase) {
       const bucket = process.env.SUPABASE_BUCKET ?? 'public';
-      const key = `${folder ? `${folder.replace(/\/$/, "")}/` : ""}${Date.now()}-${filename}`;
       const res = await this.supabase.storage.from(bucket).upload(key, buffer, { contentType: mimetype });
       if (res.error) throw res.error;
       const url = `${process.env.SUPABASE_URL}/storage/v1/object/public/${bucket}/${key}`;
@@ -93,8 +112,7 @@ export class UploadsService {
     if (this.provider === 'cloudinary' && cloudinary) {
       // Cloudinary supports streams; use upload_stream
       return new Promise<UploadResult>((resolve, reject) => {
-        const opts: any = { resource_type: 'auto' };
-        if (folder) opts.folder = folder;
+        const opts: any = { resource_type: 'auto', folder: safeFolder, public_id: objectName.replace(/\.[^.]+$/, '') };
         const stream = cloudinary.uploader.upload_stream(opts, (err: any, result: any) => {
           if (err) return reject(err);
           resolve({ url: result.secure_url, key: result.public_id });
@@ -104,13 +122,12 @@ export class UploadsService {
     }
 
     // local fallback
-    const uploadsDir = path.join(process.cwd(), 'uploads', folder ?? 'files');
+    const uploadsDir = path.join(process.cwd(), 'uploads', ...safeFolder.split('/'));
     await fs.promises.mkdir(uploadsDir, { recursive: true });
-    const safeName = `${Date.now()}-${filename.replace(/[^a-zA-Z0-9._-]/g, '')}`;
-    const filePath = path.join(uploadsDir, safeName);
+    const filePath = path.join(uploadsDir, objectName);
     await fs.promises.writeFile(filePath, buffer);
-    const uploadPath = `/uploads/${folder ?? 'files'}/${safeName}`;
+    const uploadPath = `/uploads/${safeFolder}/${objectName}`;
     const url = getPublicUploadUrl(uploadPath);
-    return { url, key: safeName };
+    return { url, key };
   }
 }

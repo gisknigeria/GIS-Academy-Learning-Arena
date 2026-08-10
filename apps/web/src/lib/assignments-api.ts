@@ -1,4 +1,4 @@
-import { API_BASE_URL, apiRequest } from "./api";
+import { API_BASE_URL, apiRequest, resolveApiAssetUrl } from "./api";
 import type {
   Assignment,
   CreateAssignmentPayload,
@@ -66,6 +66,7 @@ export const assignmentsApi = {
       body: form,
     });
     if (!response.ok) throw new Error(await response.text());
-    return response.json() as Promise<{ url: string }>;
+    const uploaded = await response.json() as { url: string };
+    return { url: resolveApiAssetUrl(uploaded.url) };
   },
 };

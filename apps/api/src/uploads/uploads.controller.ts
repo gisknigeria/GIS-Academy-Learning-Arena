@@ -1,4 +1,4 @@
-import { Controller, Post, UploadedFile, UseInterceptors, Body, UseGuards, Req } from '@nestjs/common';
+import { BadRequestException, Controller, Post, UploadedFile, UseInterceptors, Body, UseGuards, Req } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UserRole } from '@prisma/client';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -12,6 +12,10 @@ type UploadedBufferFile = {
   mimetype?: string;
 };
 
+const uploadOptions = {
+  limits: { fileSize: 100 * 1024 * 1024, files: 1 },
+};
+
 @Controller('uploads')
 export class UploadsController {
   constructor(private readonly uploadsService: UploadsService) {}
@@ -20,8 +24,9 @@ export class UploadsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TRAINING_MANAGER, UserRole.TRAINER)
   @Post('lesson-resource')
-  @UseInterceptors(FileInterceptor('file'))
-  async uploadLessonResource(@UploadedFile() file: UploadedBufferFile, @Body('lessonId') lessonId?: string) {
+  @UseInterceptors(FileInterceptor('file', uploadOptions))
+  async uploadLessonResource(@UploadedFile() file: UploadedBufferFile | undefined, @Body('lessonId') lessonId?: string) {
+    this.ensureFile(file);
     const folder = lessonId ? `lessons/${lessonId}` : 'lessons';
     const r = await this.uploadsService.uploadBuffer(file.originalname, file.buffer, file.mimetype, folder);
     return r;
@@ -30,8 +35,9 @@ export class UploadsController {
   // Assignment submission upload
   @UseGuards(JwtAuthGuard)
   @Post('submission')
-  @UseInterceptors(FileInterceptor('file'))
-  async uploadSubmission(@UploadedFile() file: UploadedBufferFile, @Body('assignmentId') assignmentId?: string, @Req() req?: any) {
+  @UseInterceptors(FileInterceptor('file', uploadOptions))
+  async uploadSubmission(@UploadedFile() file: UploadedBufferFile | undefined, @Body('assignmentId') assignmentId?: string, @Req() req?: any) {
+    this.ensureFile(file);
     const folder = assignmentId ? `submissions/${assignmentId}` : `submissions/user-${req.user.sub}`;
     const r = await this.uploadsService.uploadBuffer(file.originalname, file.buffer, file.mimetype, folder);
     return r;
@@ -40,8 +46,9 @@ export class UploadsController {
   // Profile avatar (authenticated)
   @UseGuards(JwtAuthGuard)
   @Post('avatar')
-  @UseInterceptors(FileInterceptor('file'))
-  async uploadAvatar(@UploadedFile() file: UploadedBufferFile, @Req() req?: any) {
+  @UseInterceptors(FileInterceptor('file', uploadOptions))
+  async uploadAvatar(@UploadedFile() file: UploadedBufferFile | undefined, @Req() req?: any) {
+    this.ensureFile(file);
     const folder = `avatars`;
     const r = await this.uploadsService.uploadBuffer(file.originalname, file.buffer, file.mimetype, folder);
     // Optionally update user's profile URL in DB (left to caller)
@@ -51,8 +58,9 @@ export class UploadsController {
   // Certificate asset
   @UseGuards(JwtAuthGuard)
   @Post('certificate')
-  @UseInterceptors(FileInterceptor('file'))
-  async uploadCertificate(@UploadedFile() file: UploadedBufferFile, @Body('certificateId') certificateId?: string) {
+  @UseInterceptors(FileInterceptor('file', uploadOptions))
+  async uploadCertificate(@UploadedFile() file: UploadedBufferFile | undefined, @Body('certificateId') certificateId?: string) {
+    this.ensureFile(file);
     const folder = certificateId ? `certificates/${certificateId}` : 'certificates';
     const r = await this.uploadsService.uploadBuffer(file.originalname, file.buffer, file.mimetype, folder);
     return r;
@@ -61,10 +69,17 @@ export class UploadsController {
   // Course thumbnail
   @UseGuards(JwtAuthGuard)
   @Post('course-thumbnail')
-  @UseInterceptors(FileInterceptor('file'))
-  async uploadCourseThumbnail(@UploadedFile() file: UploadedBufferFile, @Body('courseId') courseId?: string) {
+  @UseInterceptors(FileInterceptor('file', uploadOptions))
+  async uploadCourseThumbnail(@UploadedFile() file: UploadedBufferFile | undefined, @Body('courseId') courseId?: string) {
+    this.ensureFile(file);
     const folder = courseId ? `courses/${courseId}` : 'courses';
     const r = await this.uploadsService.uploadBuffer(file.originalname, file.buffer, file.mimetype, folder);
     return r;
+  }
+
+  private ensureFile(file: UploadedBufferFile | undefined): asserts file is UploadedBufferFile {
+    if (!file?.buffer?.length || !file.originalname) {
+      throw new BadRequestException('Please choose a non-empty file to upload.');
+    }
   }
 }

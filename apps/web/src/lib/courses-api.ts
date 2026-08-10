@@ -1,4 +1,4 @@
-import { API_BASE_URL, apiRequest } from "./api";
+import { API_BASE_URL, apiRequest, resolveApiAssetUrl } from "./api";
 import type {
   Course,
   CourseListResponse,
@@ -157,6 +157,7 @@ export const coursesApi = {
       throw new Error(errorText || "Upload failed");
     }
 
-    return response.json() as Promise<{ url: string; key?: string }>;
+    const uploaded = await response.json() as { url: string; key?: string };
+    return { ...uploaded, url: resolveApiAssetUrl(uploaded.url) };
   },
 };

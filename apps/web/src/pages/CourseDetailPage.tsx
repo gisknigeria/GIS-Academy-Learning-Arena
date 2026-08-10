@@ -160,6 +160,7 @@ function MaterialField({
         <input
           type="file"
           accept={accept}
+          disabled={uploading}
           onChange={(event) => {
             const file = event.target.files?.[0];
             if (file) onFileChange(file);
@@ -335,11 +336,48 @@ export function CourseDetailPage() {
       } else {
         setForm((current) => ({ ...current, [field]: uploaded.url }));
       }
-    } catch {
-      setLessonError("Could not upload this material. Please try again.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      setLessonError(message.includes("File too large")
+        ? "This file is too large. The maximum upload size is 100 MB."
+        : "Could not upload this material. Please try again.");
     } finally {
       setUploadingMaterial("");
     }
+  }
+
+  async function uploadAttachments(files: File[]) {
+    if (!token || !files.length) return;
+    setUploadingMaterial("attachments");
+    setLessonError("");
+
+    try {
+      const results = await Promise.allSettled(
+        files.map(async (file) => {
+          const uploaded = await coursesApi.uploadLessonResource(token, file, form.id);
+          return { name: file.name, url: uploaded.url, type: file.type || undefined };
+        }),
+      );
+      const uploaded = results
+        .filter((result): result is PromiseFulfilledResult<LessonAttachment> => result.status === "fulfilled")
+        .map((result) => result.value);
+      if (uploaded.length) {
+        setForm((current) => ({ ...current, attachments: [...current.attachments, ...uploaded] }));
+      }
+      const failedCount = results.length - uploaded.length;
+      if (failedCount) {
+        setLessonError(`${failedCount} file${failedCount === 1 ? "" : "s"} could not be uploaded. Please try again.`);
+      }
+    } finally {
+      setUploadingMaterial("");
+    }
+  }
+
+  async function uploadEditorImage(file: File): Promise<string> {
+    if (!token) throw new Error("Your session has expired. Please sign in again.");
+    if (!file.type.startsWith("image/")) throw new Error("Please choose an image file.");
+    const uploaded = await coursesApi.uploadLessonResource(token, file, form.id);
+    return uploaded.url;
   }
 
   function removeAttachment(url: string) {
@@ -845,6 +883,7 @@ export function CourseDetailPage() {
                     <LessonNoteEditor
                       value={form.content}
                       onChange={(value) => setForm((current) => ({ ...current, content: value }))}
+                      onUploadImage={uploadEditorImage}
                       placeholder="Write the lesson explanation, examples, instructions, or transcript..."
                     />
                   </div>
@@ -1000,9 +1039,10 @@ export function CourseDetailPage() {
                     <input
                       type="file"
                       multiple
+                      disabled={uploadingMaterial === "attachments"}
                       onChange={(event) => {
                         const files = Array.from(event.target.files ?? []);
-                        files.forEach((file) => void uploadMaterial(file, "attachments"));
+                        void uploadAttachments(files);
                         event.currentTarget.value = "";
                       }}
                     />
