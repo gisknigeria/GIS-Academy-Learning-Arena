@@ -5,6 +5,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import TextStyle from "@tiptap/extension-text-style";
 import Underline from "@tiptap/extension-underline";
 import { EditorContent, useEditor } from "@tiptap/react";
+import { DOMParser as ProseMirrorDOMParser } from "@tiptap/pm/model";
 import StarterKit from "@tiptap/starter-kit";
 import {
   Bold,
@@ -64,37 +65,7 @@ export function acknowledgePendingLessonNoteValue(pending: string[], value: stri
   return true;
 }
 
-const MAX_PASTED_HTML_LENGTH = 500_000;
 const MAX_PASTED_TEXT_LENGTH = 200_000;
-
-export function sanitizeLessonNotePaste(html: string): string {
-  if (typeof DOMParser === "undefined") return html;
-
-  const document = new DOMParser().parseFromString(html, "text/html");
-  document.querySelectorAll("script, style, meta, link, iframe, object, embed, svg, canvas, form, input, button")
-    .forEach((node) => node.remove());
-
-  document.body.querySelectorAll("*").forEach((element) => {
-    const tag = element.tagName.toLowerCase();
-    for (const attribute of Array.from(element.attributes)) {
-      const keep = (tag === "a" && ["href", "title"].includes(attribute.name.toLowerCase()))
-        || (tag === "img" && ["src", "alt", "title"].includes(attribute.name.toLowerCase()));
-      if (!keep) element.removeAttribute(attribute.name);
-    }
-
-    if (tag === "a") {
-      const href = element.getAttribute("href") ?? "";
-      if (href && !/^(?:https?:|mailto:|tel:|#|\/)/i.test(href)) element.removeAttribute("href");
-    }
-
-    if (tag === "img") {
-      const src = element.getAttribute("src") ?? "";
-      if (!/^(?:https?:|\/)/i.test(src)) element.remove();
-    }
-  });
-
-  return document.body.innerHTML;
-}
 
 // ─── Colour palette ───────────────────────────────────────────────────────────
 
@@ -153,9 +124,6 @@ export function LessonNoteEditor({ value, onChange, placeholder, onUploadImage }
         class: "lesson-note-editor__prose",
         spellcheck: "true",
       },
-      transformPastedHTML(html) {
-        return sanitizeLessonNotePaste(html);
-      },
       handlePaste(view, event) {
         const clipboard = event.clipboardData;
         if (!clipboard) return false;
@@ -168,13 +136,16 @@ export function LessonNoteEditor({ value, onChange, placeholder, onUploadImage }
           return true;
         }
 
-        const html = clipboard.getData("text/html");
-        if (html.length <= MAX_PASTED_HTML_LENGTH) return false;
-
         event.preventDefault();
-        const text = clipboard.getData("text/plain").slice(0, MAX_PASTED_TEXT_LENGTH);
-        view.dispatch(view.state.tr.insertText(text));
-        setImageError("Heavy clipboard formatting was removed to keep the editor responsive.");
+        const rawText = clipboard.getData("text/plain");
+        const text = rawText.slice(0, MAX_PASTED_TEXT_LENGTH);
+        const container = document.createElement("div");
+        container.innerHTML = normalizeLessonNoteHtml(text);
+        const slice = ProseMirrorDOMParser.fromSchema(view.state.schema).parseSlice(container);
+        view.dispatch(view.state.tr.replaceSelection(slice).scrollIntoView());
+        if (rawText.length > MAX_PASTED_TEXT_LENGTH) {
+          setImageError("Only the first 200,000 pasted characters were inserted to keep the editor responsive.");
+        }
         return true;
       },
     },
