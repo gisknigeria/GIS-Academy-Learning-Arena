@@ -57,6 +57,13 @@ export function normalizeLessonNoteHtml(value: string): string {
     .join("");
 }
 
+export function acknowledgePendingLessonNoteValue(pending: string[], value: string): boolean {
+  const index = pending.lastIndexOf(value);
+  if (index < 0) return false;
+  pending.splice(0, index + 1);
+  return true;
+}
+
 // ─── Colour palette ───────────────────────────────────────────────────────────
 
 const TEXT_COLORS = [
@@ -82,6 +89,7 @@ export function LessonNoteEditor({ value, onChange, placeholder, onUploadImage }
   const [imageError, setImageError] = useState("");
   const colorPickerRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const pendingValues = useRef<string[]>([]);
 
 
   const editor = useEditor({
@@ -115,7 +123,10 @@ export function LessonNoteEditor({ value, onChange, placeholder, onUploadImage }
       },
     },
     onUpdate({ editor }) {
-      onChange(editor.isEmpty ? "" : editor.getHTML());
+      const html = editor.isEmpty ? "" : editor.getHTML();
+      pendingValues.current.push(html);
+      if (pendingValues.current.length > 100) pendingValues.current.shift();
+      onChange(html);
     },
     onSelectionUpdate({ editor }) {
       setActiveColor((editor.getAttributes("textStyle").color as string | undefined) ?? "");
@@ -125,6 +136,11 @@ export function LessonNoteEditor({ value, onChange, placeholder, onUploadImage }
   // Sync external value changes (e.g. form reset) without disturbing the cursor.
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;
+
+    // React can deliver an earlier onChange value after the editor has already
+    // accepted more keystrokes. Treat it as an acknowledgement, not new content,
+    // so setContent never moves the caret back to the beginning while typing.
+    if (acknowledgePendingLessonNoteValue(pendingValues.current, value)) return;
 
     // Treat TipTap's empty-doc HTML and empty string as equivalent so we never
     // reset the cursor just because "" !== "<p></p>".
