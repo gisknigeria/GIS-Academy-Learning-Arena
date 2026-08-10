@@ -64,6 +64,38 @@ export function acknowledgePendingLessonNoteValue(pending: string[], value: stri
   return true;
 }
 
+const MAX_PASTED_HTML_LENGTH = 500_000;
+const MAX_PASTED_TEXT_LENGTH = 200_000;
+
+export function sanitizeLessonNotePaste(html: string): string {
+  if (typeof DOMParser === "undefined") return html;
+
+  const document = new DOMParser().parseFromString(html, "text/html");
+  document.querySelectorAll("script, style, meta, link, iframe, object, embed, svg, canvas, form, input, button")
+    .forEach((node) => node.remove());
+
+  document.body.querySelectorAll("*").forEach((element) => {
+    const tag = element.tagName.toLowerCase();
+    for (const attribute of Array.from(element.attributes)) {
+      const keep = (tag === "a" && ["href", "title"].includes(attribute.name.toLowerCase()))
+        || (tag === "img" && ["src", "alt", "title"].includes(attribute.name.toLowerCase()));
+      if (!keep) element.removeAttribute(attribute.name);
+    }
+
+    if (tag === "a") {
+      const href = element.getAttribute("href") ?? "";
+      if (href && !/^(?:https?:|mailto:|tel:|#|\/)/i.test(href)) element.removeAttribute("href");
+    }
+
+    if (tag === "img") {
+      const src = element.getAttribute("src") ?? "";
+      if (!/^(?:https?:|\/)/i.test(src)) element.remove();
+    }
+  });
+
+  return document.body.innerHTML;
+}
+
 // ─── Colour palette ───────────────────────────────────────────────────────────
 
 const TEXT_COLORS = [
@@ -120,6 +152,30 @@ export function LessonNoteEditor({ value, onChange, placeholder, onUploadImage }
       attributes: {
         class: "lesson-note-editor__prose",
         spellcheck: "true",
+      },
+      transformPastedHTML(html) {
+        return sanitizeLessonNotePaste(html);
+      },
+      handlePaste(view, event) {
+        const clipboard = event.clipboardData;
+        if (!clipboard) return false;
+        setImageError("");
+
+        const images = Array.from(clipboard.files).filter((file) => file.type.startsWith("image/"));
+        if (images.length) {
+          event.preventDefault();
+          void insertImage(images);
+          return true;
+        }
+
+        const html = clipboard.getData("text/html");
+        if (html.length <= MAX_PASTED_HTML_LENGTH) return false;
+
+        event.preventDefault();
+        const text = clipboard.getData("text/plain").slice(0, MAX_PASTED_TEXT_LENGTH);
+        view.dispatch(view.state.tr.insertText(text));
+        setImageError("Heavy clipboard formatting was removed to keep the editor responsive.");
+        return true;
       },
     },
     onUpdate({ editor }) {
@@ -192,7 +248,7 @@ export function LessonNoteEditor({ value, onChange, placeholder, onUploadImage }
     }
   }
 
-  async function insertImage(files: FileList | null) {
+  async function insertImage(files: FileList | File[] | null) {
     if (!files || files.length === 0) return;
     const images = Array.from(files).filter((file) => file.type.startsWith("image/"));
     if (!images.length) {
