@@ -1,32 +1,9 @@
-import Color from "@tiptap/extension-color";
-import Image from "@tiptap/extension-image";
-import Link from "@tiptap/extension-link";
-import Placeholder from "@tiptap/extension-placeholder";
-import TextStyle from "@tiptap/extension-text-style";
-import Underline from "@tiptap/extension-underline";
-import { EditorContent, useEditor } from "@tiptap/react";
-import { DOMParser as ProseMirrorDOMParser } from "@tiptap/pm/model";
-import StarterKit from "@tiptap/starter-kit";
 import {
-  Bold,
-  Code,
-  Heading1,
-  Heading2,
-  ImagePlus,
-  Italic,
-  Link as LinkIcon,
-  List,
-  ListOrdered,
-  Minus,
-  Quote,
-  Redo2,
-  Strikethrough,
-  Underline as UnderlineIcon,
-  Undo2,
+  Bold, Code, Heading1, Heading2, ImagePlus, Italic, Link as LinkIcon,
+  List, ListOrdered, Minus, Quote, Redo2, Strikethrough,
+  Underline as UnderlineIcon, Undo2,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
+import { ClipboardEvent, MouseEvent as ReactMouseEvent, useCallback, useEffect, useRef, useState } from "react";
 
 type LessonNoteEditorProps = {
   value: string;
@@ -35,7 +12,19 @@ type LessonNoteEditorProps = {
   onUploadImage?: (file: File) => Promise<string>;
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+type ActiveFormats = {
+  bold: boolean; italic: boolean; underline: boolean; strike: boolean;
+  heading1: boolean; heading2: boolean; bulletList: boolean; orderedList: boolean;
+  blockquote: boolean; codeBlock: boolean; link: boolean;
+};
+
+const EMPTY_FORMATS: ActiveFormats = {
+  bold: false, italic: false, underline: false, strike: false,
+  heading1: false, heading2: false, bulletList: false, orderedList: false,
+  blockquote: false, codeBlock: false, link: false,
+};
+
+const MAX_PASTED_TEXT_LENGTH = 200_000;
 
 export function normalizeLessonNoteHtml(value: string): string {
   const trimmed = value.trim();
@@ -44,17 +33,15 @@ export function normalizeLessonNoteHtml(value: string): string {
   if (hasBlockTag) return trimmed;
   return trimmed
     .split(/\n{2,}/)
-    .map((b) => b.trim())
+    .map((block) => block.trim())
     .filter(Boolean)
-    .map((b) =>
-      `<p>${b
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;")
-        .replace(/\n/g, "<br />")}</p>`,
-    )
+    .map((block) => `<p>${block
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;")
+      .replace(/\n/g, "<br />")}</p>`)
     .join("");
 }
 
@@ -65,337 +52,203 @@ export function acknowledgePendingLessonNoteValue(pending: string[], value: stri
   return true;
 }
 
-const MAX_PASTED_TEXT_LENGTH = 200_000;
-
-// ─── Colour palette ───────────────────────────────────────────────────────────
-
 const TEXT_COLORS = [
-  { label: "Default", value: "" },
-  { label: "Red",     value: "#e53e3e" },
-  { label: "Orange",  value: "#dd6b20" },
-  { label: "Yellow",  value: "#d69e2e" },
-  { label: "Green",   value: "#38a169" },
-  { label: "Teal",    value: "#319795" },
-  { label: "Blue",    value: "#3182ce" },
-  { label: "Purple",  value: "#805ad5" },
-  { label: "Pink",    value: "#d53f8c" },
-  { label: "Gray",    value: "#718096" },
-  { label: "Black",   value: "#1a202c" },
+  { label: "Default", value: "" }, { label: "Red", value: "#e53e3e" },
+  { label: "Orange", value: "#dd6b20" }, { label: "Yellow", value: "#d69e2e" },
+  { label: "Green", value: "#38a169" }, { label: "Teal", value: "#319795" },
+  { label: "Blue", value: "#3182ce" }, { label: "Purple", value: "#805ad5" },
+  { label: "Pink", value: "#d53f8c" }, { label: "Gray", value: "#718096" },
+  { label: "Black", value: "#1a202c" },
 ];
 
-// ─── Component ────────────────────────────────────────────────────────────────
+function readEditorHtml(element: HTMLDivElement): string {
+  const html = element.innerHTML.trim();
+  return !element.textContent?.trim() && !element.querySelector("img, hr") ? "" : html;
+}
 
 export function LessonNoteEditor({ value, onChange, placeholder, onUploadImage }: LessonNoteEditorProps) {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [activeColor, setActiveColor] = useState("");
+  const [formats, setFormats] = useState<ActiveFormats>(EMPTY_FORMATS);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [imageError, setImageError] = useState("");
-  const colorPickerRef = useRef<HTMLDivElement>(null);
+  const [editorError, setEditorError] = useState("");
+  const editorRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const colorPickerRef = useRef<HTMLDivElement>(null);
   const pendingValues = useRef<string[]>([]);
+  const savedRange = useRef<Range | null>(null);
 
+  const emitChange = useCallback(() => {
+    if (!editorRef.current) return;
+    const html = readEditorHtml(editorRef.current);
+    pendingValues.current.push(html);
+    if (pendingValues.current.length > 100) pendingValues.current.shift();
+    onChange(html);
+  }, [onChange]);
 
-  const editor = useEditor({
-    autofocus: false,
-    extensions: [
-      StarterKit.configure({
-        heading: { levels: [1, 2, 3] },
-        codeBlock: {
-          HTMLAttributes: { class: "lesson-code-block" },
-        },
-      }),
-      Underline,
-      TextStyle,
-      Color,
-      Link.configure({
-        openOnClick: false,
-        HTMLAttributes: { rel: "noopener noreferrer", target: "_blank" },
-      }),
-      Image.configure({
-        HTMLAttributes: { class: "lesson-note-img" },
-      }),
-      Placeholder.configure({
-        placeholder: placeholder ?? "Write the lesson explanation, examples, instructions, or transcript...",
-      }),
-    ],
-    content: normalizeLessonNoteHtml(value),
-    editorProps: {
-      attributes: {
-        class: "lesson-note-editor__prose",
-        spellcheck: "true",
-      },
-      handlePaste(view, event) {
-        const clipboard = event.clipboardData;
-        if (!clipboard) return false;
-        setImageError("");
-
-        const images = Array.from(clipboard.files).filter((file) => file.type.startsWith("image/"));
-        if (images.length) {
-          event.preventDefault();
-          void insertImage(images);
-          return true;
-        }
-
-        event.preventDefault();
-        const rawText = clipboard.getData("text/plain");
-        const text = rawText.slice(0, MAX_PASTED_TEXT_LENGTH);
-        const container = document.createElement("div");
-        container.innerHTML = normalizeLessonNoteHtml(text);
-        const slice = ProseMirrorDOMParser.fromSchema(view.state.schema).parseSlice(container);
-        view.dispatch(view.state.tr.replaceSelection(slice).scrollIntoView());
-        if (rawText.length > MAX_PASTED_TEXT_LENGTH) {
-          setImageError("Only the first 200,000 pasted characters were inserted to keep the editor responsive.");
-        }
-        return true;
-      },
-    },
-    onUpdate({ editor }) {
-      const html = editor.isEmpty ? "" : editor.getHTML();
-      pendingValues.current.push(html);
-      if (pendingValues.current.length > 100) pendingValues.current.shift();
-      onChange(html);
-    },
-    onSelectionUpdate({ editor }) {
-      setActiveColor((editor.getAttributes("textStyle").color as string | undefined) ?? "");
-    },
-  });
-
-  // Sync external value changes (e.g. form reset) without disturbing the cursor.
-  useEffect(() => {
-    if (!editor || editor.isDestroyed) return;
-
-    // React can deliver an earlier onChange value after the editor has already
-    // accepted more keystrokes. Treat it as an acknowledgement, not new content,
-    // so setContent never moves the caret back to the beginning while typing.
-    if (acknowledgePendingLessonNoteValue(pendingValues.current, value)) return;
-
-    // Treat TipTap's empty-doc HTML and empty string as equivalent so we never
-    // reset the cursor just because "" !== "<p></p>".
-    const editorHtml = editor.getHTML();
-    const isEmpty = (s: string) => s === "" || s === "<p></p>";
-    if (isEmpty(value) && isEmpty(editorHtml)) return;
-
-    // Only push new content when it's genuinely different from what's on screen.
-    const normalized = normalizeLessonNoteHtml(value);
-    if (editorHtml === normalized) return;
-
-    editor.commands.setContent(normalized, false);
-  }, [editor, value]);
-
-  // Close colour picker on outside click
-  useEffect(() => {
-    function onDown(e: MouseEvent) {
-      if (colorPickerRef.current && !colorPickerRef.current.contains(e.target as Node)) {
-        setShowColorPicker(false);
-      }
-    }
-    document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
+  const updateFormats = useCallback(() => {
+    const selection = window.getSelection();
+    if (!editorRef.current || !selection?.anchorNode || !editorRef.current.contains(selection.anchorNode)) return;
+    const block = String(document.queryCommandValue("formatBlock") || "").toLowerCase();
+    setFormats({
+      bold: document.queryCommandState("bold"), italic: document.queryCommandState("italic"),
+      underline: document.queryCommandState("underline"), strike: document.queryCommandState("strikeThrough"),
+      heading1: block === "h1", heading2: block === "h2",
+      bulletList: document.queryCommandState("insertUnorderedList"),
+      orderedList: document.queryCommandState("insertOrderedList"),
+      blockquote: block === "blockquote", codeBlock: block === "pre",
+      link: Boolean(selection.anchorNode.parentElement?.closest("a")),
+    });
+    const color = String(document.queryCommandValue("foreColor") || "");
+    if (color) setActiveColor(color);
   }, []);
 
-  if (!editor) return null;
+  const saveSelection = useCallback(() => {
+    const selection = window.getSelection();
+    if (selection?.rangeCount && editorRef.current?.contains(selection.anchorNode)) {
+      savedRange.current = selection.getRangeAt(0).cloneRange();
+    }
+  }, []);
 
-  // ── Toolbar actions ────────────────────────────────────────────────────────
+  const restoreSelection = useCallback(() => {
+    editorRef.current?.focus();
+    if (!savedRange.current) return;
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(savedRange.current);
+  }, []);
+
+  const runCommand = useCallback((command: string, commandValue?: string) => {
+    restoreSelection();
+    document.execCommand(command, false, commandValue);
+    emitChange();
+    updateFormats();
+    saveSelection();
+  }, [emitChange, restoreSelection, saveSelection, updateFormats]);
+
+  useEffect(() => {
+    const element = editorRef.current;
+    if (!element) return;
+    if (acknowledgePendingLessonNoteValue(pendingValues.current, value)) return;
+    const normalized = normalizeLessonNoteHtml(value);
+    if (element.innerHTML !== normalized) {
+      element.innerHTML = normalized;
+      pendingValues.current = [];
+    }
+  }, [value]);
+
+  useEffect(() => {
+    function handleDocumentMouseDown(event: MouseEvent) {
+      if (colorPickerRef.current && !colorPickerRef.current.contains(event.target as Node)) setShowColorPicker(false);
+    }
+    document.addEventListener("mousedown", handleDocumentMouseDown);
+    document.addEventListener("selectionchange", updateFormats);
+    return () => {
+      document.removeEventListener("mousedown", handleDocumentMouseDown);
+      document.removeEventListener("selectionchange", updateFormats);
+    };
+  }, [updateFormats]);
+
+  function handlePaste(event: ClipboardEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setEditorError("");
+    const images = Array.from(event.clipboardData.files).filter((file) => file.type.startsWith("image/"));
+    if (images.length) {
+      saveSelection();
+      void insertImages(images);
+      return;
+    }
+    const rawText = event.clipboardData.getData("text/plain");
+    document.execCommand("insertText", false, rawText.slice(0, MAX_PASTED_TEXT_LENGTH));
+    emitChange();
+    saveSelection();
+    if (rawText.length > MAX_PASTED_TEXT_LENGTH) {
+      setEditorError("Only the first 200,000 pasted characters were inserted to keep the editor responsive.");
+    }
+  }
 
   function insertLink() {
-    const previous = editor.getAttributes("link").href as string | undefined;
-    const url = window.prompt("Enter URL:", previous ?? "https://");
-    if (url === null) return; // cancelled
-    if (url === "") {
-      editor.chain().focus().unsetLink().run();
-    } else {
-      const href = /^[a-z][a-z\d+.-]*:/i.test(url) ? url : `https://${url}`;
-      editor.chain().focus().extendMarkRange("link").setLink({ href }).run();
-    }
+    saveSelection();
+    const url = window.prompt("Enter URL:", "https://");
+    if (url === null) return;
+    if (!url.trim()) return runCommand("unlink");
+    runCommand("createLink", /^[a-z][a-z\d+.-]*:/i.test(url) ? url : `https://${url}`);
   }
 
   function applyColor(color: string) {
-    setActiveColor(color);
     setShowColorPicker(false);
-    if (color) {
-      editor.chain().focus().setColor(color).run();
-    } else {
-      editor.chain().focus().unsetColor().run();
-    }
+    setActiveColor(color);
+    runCommand("foreColor", color || "#1a202c");
   }
 
-  async function insertImage(files: FileList | File[] | null) {
-    if (!files || files.length === 0) return;
-    const images = Array.from(files).filter((file) => file.type.startsWith("image/"));
-    if (!images.length) {
-      setImageError("Please choose a supported image file.");
-      return;
-    }
-    if (!onUploadImage) {
-      setImageError("Image uploads are not available right now.");
-      return;
-    }
-
+  async function insertImages(files: File[]) {
+    if (!onUploadImage) return setEditorError("Image uploads are not available right now.");
     setUploadingImage(true);
-    setImageError("");
+    setEditorError("");
     try {
-      for (const file of images) {
+      for (const file of files) {
         const url = await onUploadImage(file);
-        editor
-          .chain()
-          .focus()
-          .setImage({ src: url, alt: file.name.replace(/\.[^.]+$/, "") })
-          .run();
+        restoreSelection();
+        const image = document.createElement("img");
+        image.src = url;
+        image.alt = file.name.replace(/\.[^.]+$/, "");
+        image.className = "lesson-note-img";
+        const selection = window.getSelection();
+        const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
+        if (range) {
+          range.deleteContents(); range.insertNode(image); range.setStartAfter(image); range.collapse(true);
+          selection?.removeAllRanges(); selection?.addRange(range); savedRange.current = range.cloneRange();
+        } else editorRef.current?.append(image);
       }
+      emitChange();
     } catch (error) {
-      setImageError(error instanceof Error ? error.message : "The image could not be uploaded.");
+      setEditorError(error instanceof Error ? error.message : "The image could not be uploaded.");
     } finally {
       setUploadingImage(false);
     }
   }
 
-  // ── Active-state helpers ──────────────────────────────────────────────────
+  const buttonClass = (active: boolean) => `icon-button${active ? " icon-button--active" : ""}`;
+  const toolbarAction = (action: () => void) => (event: ReactMouseEvent<HTMLButtonElement>) => {
+    event.preventDefault(); saveSelection(); action();
+  };
 
-  function btnClass(active: boolean) {
-    return `icon-button${active ? " icon-button--active" : ""}`;
-  }
-
-  return (
-    <div className="lesson-note-editor">
-
-      {/* ── Toolbar ────────────────────────────────────────────────────── */}
-      <div className="lesson-note-editor__toolbar" role="toolbar" aria-label="Lesson note formatting">
-
-        {/* Text style */}
-        <button type="button" className={btnClass(editor.isActive("bold"))}
-          onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleBold().run(); }}
-          title="Bold"><Bold size={16} /></button>
-
-        <button type="button" className={btnClass(editor.isActive("italic"))}
-          onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleItalic().run(); }}
-          title="Italic"><Italic size={16} /></button>
-
-        <button type="button" className={btnClass(editor.isActive("underline"))}
-          onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleUnderline().run(); }}
-          title="Underline"><UnderlineIcon size={16} /></button>
-
-        <button type="button" className={btnClass(editor.isActive("strike"))}
-          onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleStrike().run(); }}
-          title="Strikethrough"><Strikethrough size={16} /></button>
-
-        {/* Colour picker */}
-        <div className="lesson-note-editor__color-wrap" ref={colorPickerRef}>
-          <button
-            type="button"
-            className="icon-button lesson-note-editor__color-btn"
-            onMouseDown={(e) => { e.preventDefault(); setShowColorPicker((v) => !v); }}
-            title="Text colour" aria-label="Text colour"
-          >
-            <span className="lesson-note-editor__color-icon">
-              <span style={{ color: activeColor || "inherit" }}>A</span>
-              <span className="lesson-note-editor__color-swatch"
-                style={{ background: activeColor || "var(--ink)" }} />
-            </span>
-          </button>
-          {showColorPicker && (
-            <div className="lesson-note-editor__color-picker" role="menu" aria-label="Pick a text colour">
-              {TEXT_COLORS.map((c) => (
-                <button
-                  key={c.value || "default"}
-                  type="button"
-                  className="lesson-note-editor__color-dot"
-                  title={c.label} aria-label={c.label}
-                  onMouseDown={(e) => { e.preventDefault(); applyColor(c.value); }}
-                  style={{
-                    background: c.value || "#e2e8f0",
-                    outline: activeColor === c.value ? "2px solid var(--green-700)" : undefined,
-                    outlineOffset: "2px",
-                  }}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-
-        <span className="lesson-note-editor__divider" />
-
-        {/* Headings */}
-        <button type="button" className={btnClass(editor.isActive("heading", { level: 1 }))}
-          onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleHeading({ level: 1 }).run(); }}
-          title="Heading 1"><Heading1 size={16} /></button>
-
-        <button type="button" className={btnClass(editor.isActive("heading", { level: 2 }))}
-          onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleHeading({ level: 2 }).run(); }}
-          title="Heading 2"><Heading2 size={16} /></button>
-
-        <span className="lesson-note-editor__divider" />
-
-        {/* Lists */}
-        <button type="button" className={btnClass(editor.isActive("bulletList"))}
-          onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleBulletList().run(); }}
-          title="Bullet list"><List size={16} /></button>
-
-        <button type="button" className={btnClass(editor.isActive("orderedList"))}
-          onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleOrderedList().run(); }}
-          title="Numbered list"><ListOrdered size={16} /></button>
-
-        <span className="lesson-note-editor__divider" />
-
-        {/* Blocks */}
-        <button type="button" className={btnClass(editor.isActive("blockquote"))}
-          onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleBlockquote().run(); }}
-          title="Blockquote"><Quote size={16} /></button>
-
-        <button type="button" className={btnClass(editor.isActive("codeBlock"))}
-          onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleCodeBlock().run(); }}
-          title="Code block"><Code size={16} /></button>
-
-        <button type="button" className="icon-button"
-          onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().setHorizontalRule().run(); }}
-          title="Horizontal divider"><Minus size={16} /></button>
-
-        <span className="lesson-note-editor__divider" />
-
-        <button type="button" className="icon-button"
-          disabled={!editor.can().undo()}
-          onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().undo().run(); }}
-          title="Undo"><Undo2 size={16} /></button>
-
-        <button type="button" className="icon-button"
-          disabled={!editor.can().redo()}
-          onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().redo().run(); }}
-          title="Redo"><Redo2 size={16} /></button>
-
-        <span className="lesson-note-editor__divider" />
-
-        {/* Link */}
-        <button type="button" className={btnClass(editor.isActive("link"))}
-          onMouseDown={(e) => { e.preventDefault(); insertLink(); }}
-          title="Insert / edit link"><LinkIcon size={16} /></button>
-
-        {/* Image */}
-        <button type="button" className="icon-button"
-          disabled={uploadingImage}
-          onMouseDown={(e) => { e.preventDefault(); imageInputRef.current?.click(); }}
-          title={uploadingImage ? "Uploading image" : "Insert image"}
-          aria-label={uploadingImage ? "Uploading image" : "Insert image"}>
-          <ImagePlus size={16} />
-        </button>
-
-        <input
-          ref={imageInputRef}
-          type="file"
-          accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml"
-          multiple
-          aria-hidden="true"
-          tabIndex={-1}
-          style={{ display: "none" }}
-          onChange={(e) => { void insertImage(e.target.files); e.target.value = ""; }}
-        />
+  return <div className="lesson-note-editor">
+    <div className="lesson-note-editor__toolbar" role="toolbar" aria-label="Lesson note formatting">
+      <button type="button" className={buttonClass(formats.bold)} onMouseDown={toolbarAction(() => runCommand("bold"))} title="Bold"><Bold size={16} /></button>
+      <button type="button" className={buttonClass(formats.italic)} onMouseDown={toolbarAction(() => runCommand("italic"))} title="Italic"><Italic size={16} /></button>
+      <button type="button" className={buttonClass(formats.underline)} onMouseDown={toolbarAction(() => runCommand("underline"))} title="Underline"><UnderlineIcon size={16} /></button>
+      <button type="button" className={buttonClass(formats.strike)} onMouseDown={toolbarAction(() => runCommand("strikeThrough"))} title="Strikethrough"><Strikethrough size={16} /></button>
+      <div className="lesson-note-editor__color-wrap" ref={colorPickerRef}>
+        <button type="button" className="icon-button lesson-note-editor__color-btn" onMouseDown={toolbarAction(() => setShowColorPicker((current) => !current))} title="Text colour" aria-label="Text colour"><span className="lesson-note-editor__color-icon"><span style={{ color: activeColor || "inherit" }}>A</span><span className="lesson-note-editor__color-swatch" style={{ background: activeColor || "var(--ink)" }} /></span></button>
+        {showColorPicker ? <div className="lesson-note-editor__color-picker" role="menu" aria-label="Pick a text colour">{TEXT_COLORS.map((color) => <button key={color.value || "default"} type="button" className="lesson-note-editor__color-dot" title={color.label} aria-label={color.label} onMouseDown={toolbarAction(() => applyColor(color.value))} style={{ background: color.value || "#e2e8f0" }} />)}</div> : null}
       </div>
-
-      {imageError ? <p className="lesson-note-editor__error" role="alert">{imageError}</p> : null}
-
-      {/* ── Editor content area ─────────────────────────────────────────── */}
-      <EditorContent
-        editor={editor}
-        className="lesson-note-editor__content"
-      />
+      <span className="lesson-note-editor__divider" />
+      <button type="button" className={buttonClass(formats.heading1)} onMouseDown={toolbarAction(() => runCommand("formatBlock", formats.heading1 ? "p" : "h1"))} title="Heading 1"><Heading1 size={16} /></button>
+      <button type="button" className={buttonClass(formats.heading2)} onMouseDown={toolbarAction(() => runCommand("formatBlock", formats.heading2 ? "p" : "h2"))} title="Heading 2"><Heading2 size={16} /></button>
+      <span className="lesson-note-editor__divider" />
+      <button type="button" className={buttonClass(formats.bulletList)} onMouseDown={toolbarAction(() => runCommand("insertUnorderedList"))} title="Bullet list"><List size={16} /></button>
+      <button type="button" className={buttonClass(formats.orderedList)} onMouseDown={toolbarAction(() => runCommand("insertOrderedList"))} title="Numbered list"><ListOrdered size={16} /></button>
+      <span className="lesson-note-editor__divider" />
+      <button type="button" className={buttonClass(formats.blockquote)} onMouseDown={toolbarAction(() => runCommand("formatBlock", formats.blockquote ? "p" : "blockquote"))} title="Blockquote"><Quote size={16} /></button>
+      <button type="button" className={buttonClass(formats.codeBlock)} onMouseDown={toolbarAction(() => runCommand("formatBlock", formats.codeBlock ? "p" : "pre"))} title="Code block"><Code size={16} /></button>
+      <button type="button" className="icon-button" onMouseDown={toolbarAction(() => runCommand("insertHorizontalRule"))} title="Horizontal divider"><Minus size={16} /></button>
+      <span className="lesson-note-editor__divider" />
+      <button type="button" className="icon-button" onMouseDown={toolbarAction(() => runCommand("undo"))} title="Undo"><Undo2 size={16} /></button>
+      <button type="button" className="icon-button" onMouseDown={toolbarAction(() => runCommand("redo"))} title="Redo"><Redo2 size={16} /></button>
+      <span className="lesson-note-editor__divider" />
+      <button type="button" className={buttonClass(formats.link)} onMouseDown={toolbarAction(insertLink)} title="Insert / edit link"><LinkIcon size={16} /></button>
+      <button type="button" className="icon-button" disabled={uploadingImage} onMouseDown={toolbarAction(() => imageInputRef.current?.click())} title="Insert image" aria-label={uploadingImage ? "Uploading image" : "Insert image"}><ImagePlus size={16} /></button>
+      <input ref={imageInputRef} type="file" accept="image/png,image/jpeg,image/gif,image/webp" multiple hidden onChange={(event) => { saveSelection(); void insertImages(Array.from(event.target.files ?? [])); event.currentTarget.value = ""; }} />
     </div>
-  );
+    {editorError ? <p className="lesson-note-editor__error" role="alert">{editorError}</p> : null}
+    <div className="lesson-note-editor__content"><div
+      ref={editorRef} className="lesson-note-editor__prose" contentEditable suppressContentEditableWarning spellCheck
+      role="textbox" aria-multiline="true" aria-label="Lesson notes and instructions"
+      data-placeholder={placeholder ?? "Write the lesson explanation, examples, instructions, or transcript..."}
+      onInput={() => { emitChange(); saveSelection(); }} onPaste={handlePaste}
+      onKeyUp={() => { saveSelection(); updateFormats(); }} onMouseUp={() => { saveSelection(); updateFormats(); }}
+      onFocus={() => { saveSelection(); updateFormats(); }}
+    /></div>
+  </div>;
 }

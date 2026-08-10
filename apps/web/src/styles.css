@@ -3697,6 +3697,12 @@ textarea {
   height: 0;
 }
 
+.lesson-note-editor__content .lesson-note-editor__prose:empty::before {
+  content: attr(data-placeholder);
+  color: var(--muted);
+  pointer-events: none;
+}
+
 .lesson-note-editor__content .lesson-note-editor__prose h1,
 .lesson-note-editor__content .lesson-note-editor__prose h2,
 .lesson-note-editor__content .lesson-note-editor__prose h3,
