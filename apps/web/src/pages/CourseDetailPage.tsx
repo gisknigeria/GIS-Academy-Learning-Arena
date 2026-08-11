@@ -1,6 +1,6 @@
 import { ArrowLeft, BookOpen, CheckCircle2, ClipboardCheck, Edit3, ExternalLink, FileArchive, FileText, Image, Link2, Loader2, Lock, Map, PlayCircle, PlusCircle, Presentation, Search, Trophy, Trash2, UploadCloud, Video, X } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { AssignmentSection } from "../components/AssignmentSection";
 import { CourseModuleManager } from "../components/CourseModuleManager";
 import { LessonNoteEditor } from "../components/LessonNoteEditor";
@@ -176,6 +176,7 @@ function MaterialField({
 export function CourseDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { token, user } = useAuth();
   const [course, setCourse] = useState<Course | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -318,6 +319,19 @@ export function CourseDetailPage() {
     }));
     setShowLessonForm(true);
   }
+
+  useEffect(() => {
+    const requestedLessonId = searchParams.get("editLesson");
+    if (!requestedLessonId || !canManageLessons || loading) return;
+
+    const requestedLesson = lessons.find((lesson) => lesson.id === requestedLessonId);
+    if (!requestedLesson) return;
+
+    startEditLesson(requestedLesson);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("editLesson");
+    setSearchParams(nextParams, { replace: true });
+  }, [canManageLessons, lessons, loading, searchParams, setSearchParams]);
 
   async function uploadMaterial(file: File, field: "videoUrl" | "resourceUrl" | "subtitleUrl" | "slideUrl" | "mapUrl" | "attachments") {
     if (!token) return;

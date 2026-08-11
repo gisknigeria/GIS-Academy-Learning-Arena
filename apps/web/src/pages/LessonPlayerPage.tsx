@@ -1,4 +1,4 @@
-import { ArrowLeft, CheckCircle2, ClipboardCheck, ExternalLink, FileArchive, FileText, Flame, Image, Loader2, Lock, Map, MessageSquare, Presentation, Send, Sparkles, Video } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ClipboardCheck, Edit3, ExternalLink, FileArchive, FileText, Flame, Image, Loader2, Lock, Map, MessageSquare, Presentation, Send, Sparkles, Video } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import { AchievementBadgeToast } from "../components/AchievementBadge";
@@ -116,12 +116,28 @@ function LessonMediaStage({ lesson }: { lesson: Lesson }) {
 
   if (!material) {
     return (
-      <section className="lesson-media-stage lesson-media-stage--notes">
-        <div className="lesson-media-empty">
-          <FileText size={30} />
-          <span>Text lesson</span>
-          <strong>{lesson.content ? "Read the notes below" : "No learning material has been added yet"}</strong>
-        </div>
+      <section className="lesson-media-stage lesson-media-stage--notes" aria-label="Lesson notes">
+        {lesson.content ? (
+          <>
+            <header className="lesson-text-notes-header">
+              <FileText size={22} />
+              <div>
+                <span>Text lesson</span>
+                <h2>Lesson notes</h2>
+              </div>
+            </header>
+            <div
+              className="lesson-text-notes-body lesson-note-render"
+              dangerouslySetInnerHTML={{ __html: lesson.content }}
+            />
+          </>
+        ) : (
+          <div className="lesson-media-empty">
+            <FileText size={30} />
+            <span>Text lesson</span>
+            <strong>No learning material has been added yet</strong>
+          </div>
+        )}
       </section>
     );
   }
@@ -219,6 +235,13 @@ export function LessonPlayerPage() {
   const previousLesson = currentIndex > 0 ? lessons[currentIndex - 1] : null;
   const nextLesson = currentIndex >= 0 && currentIndex < lessons.length - 1 ? lessons[currentIndex + 1] : null;
   const canAnswerQuestions = Boolean(user && (isAdminRole(user.role) || isInstructorRole(user.role)));
+  const hasLinkedResources = Boolean(
+    currentLesson?.videoUrl
+    || currentLesson?.resourceUrl
+    || currentLesson?.slideUrl
+    || currentLesson?.mapUrl
+    || currentLesson?.subtitleUrl,
+  );
 
   const load = useCallback(async () => {
     if (!token || !courseId) return;
@@ -397,10 +420,21 @@ export function LessonPlayerPage() {
 
   return (
     <section className="lesson-player-page">
-      <Link className="back-link" to={`/courses/${courseId}/workspace`}>
-        <ArrowLeft size={16} />
-        Back to course
-      </Link>
+      <div className="lesson-player-top-actions">
+        <Link className="back-link" to={`/courses/${courseId}/workspace`}>
+          <ArrowLeft size={16} />
+          Back to course
+        </Link>
+        {canAnswerQuestions ? (
+          <Link
+            className="primary-button lesson-edit-button"
+            to={`/courses/${course.id}/workspace?editLesson=${currentLesson.id}`}
+          >
+            <Edit3 size={17} />
+            Edit lesson
+          </Link>
+        ) : null}
+      </div>
 
       <section className="lesson-progress-overview" aria-label="Course progress">
         <div className="lesson-progress-copy">
@@ -441,12 +475,10 @@ export function LessonPlayerPage() {
 
           {!currentLesson.locked ? <LessonMediaStage lesson={currentLesson} /> : null}
 
-          {!currentLesson.locked ? <div className="lesson-resource-panel">
+          {!currentLesson.locked && hasLinkedResources ? <div className="lesson-resource-panel">
             {currentLesson.videoUrl ? (
               <MaterialLink href={currentLesson.videoUrl} type="Video" title="Open video lesson" />
-            ) : (
-              <span>No video link has been added yet.</span>
-            )}
+            ) : null}
             {currentLesson.resourceUrl ? (
               <MaterialLink href={currentLesson.resourceUrl} type={getMaterialType(currentLesson.resourceUrl)} title="Open lesson resource" />
             ) : null}
@@ -461,7 +493,7 @@ export function LessonPlayerPage() {
             ) : null}
           </div> : null}
 
-          {!currentLesson.locked && currentLesson.content ? (
+          {!currentLesson.locked && currentLesson.content && getPrimaryMaterial(currentLesson) ? (
             <article className="lesson-content-panel">
               <h2>Lesson notes</h2>
               <div className="lesson-note-render" dangerouslySetInnerHTML={{ __html: currentLesson.content }} />
