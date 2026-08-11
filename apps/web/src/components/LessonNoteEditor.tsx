@@ -1,6 +1,6 @@
 import {
-  Bold, Code, Heading1, Heading2, ImagePlus, Italic, Link as LinkIcon,
-  List, ListOrdered, Minus, Quote, Redo2, Strikethrough,
+  Bold, Code, Heading1, Heading2, Highlighter, ImagePlus, Italic, Link as LinkIcon,
+  List, ListOrdered, Minus, PaintBucket, Quote, Redo2, Strikethrough,
   Underline as UnderlineIcon, Undo2,
 } from "lucide-react";
 import { ClipboardEvent, MouseEvent as ReactMouseEvent, useCallback, useEffect, useRef, useState } from "react";
@@ -61,6 +61,17 @@ const TEXT_COLORS = [
   { label: "Black", value: "#1a202c" },
 ];
 
+const BACKGROUND_COLORS = [
+  { label: "No background", value: "transparent" },
+  { label: "Soft yellow", value: "#fff59d" },
+  { label: "Soft green", value: "#c6f6d5" },
+  { label: "Soft blue", value: "#bee3f8" },
+  { label: "Soft purple", value: "#e9d8fd" },
+  { label: "Soft pink", value: "#fed7e2" },
+  { label: "Soft orange", value: "#feebc8" },
+  { label: "Light gray", value: "#edf2f7" },
+];
+
 function readEditorHtml(element: HTMLDivElement): string {
   const html = element.innerHTML.trim();
   return !element.textContent?.trim() && !element.querySelector("img, hr") ? "" : html;
@@ -68,13 +79,16 @@ function readEditorHtml(element: HTMLDivElement): string {
 
 export function LessonNoteEditor({ value, onChange, placeholder, onUploadImage }: LessonNoteEditorProps) {
   const [showColorPicker, setShowColorPicker] = useState(false);
+  const [showBackgroundPicker, setShowBackgroundPicker] = useState(false);
   const [activeColor, setActiveColor] = useState("");
+  const [activeBackground, setActiveBackground] = useState("transparent");
   const [formats, setFormats] = useState<ActiveFormats>(EMPTY_FORMATS);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [editorError, setEditorError] = useState("");
   const editorRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const colorPickerRef = useRef<HTMLDivElement>(null);
+  const backgroundPickerRef = useRef<HTMLDivElement>(null);
   const pendingValues = useRef<string[]>([]);
   const savedRange = useRef<Range | null>(null);
 
@@ -120,6 +134,9 @@ export function LessonNoteEditor({ value, onChange, placeholder, onUploadImage }
 
   const runCommand = useCallback((command: string, commandValue?: string) => {
     restoreSelection();
+    if (command === "italic" || command === "backColor") {
+      document.execCommand("styleWithCSS", false, "true");
+    }
     document.execCommand(command, false, commandValue);
     emitChange();
     updateFormats();
@@ -140,6 +157,7 @@ export function LessonNoteEditor({ value, onChange, placeholder, onUploadImage }
   useEffect(() => {
     function handleDocumentMouseDown(event: MouseEvent) {
       if (colorPickerRef.current && !colorPickerRef.current.contains(event.target as Node)) setShowColorPicker(false);
+      if (backgroundPickerRef.current && !backgroundPickerRef.current.contains(event.target as Node)) setShowBackgroundPicker(false);
     }
     document.addEventListener("mousedown", handleDocumentMouseDown);
     document.addEventListener("selectionchange", updateFormats);
@@ -179,6 +197,17 @@ export function LessonNoteEditor({ value, onChange, placeholder, onUploadImage }
     setShowColorPicker(false);
     setActiveColor(color);
     runCommand("foreColor", color || "#1a202c");
+  }
+
+  function applyBackgroundColor(color: string) {
+    setShowBackgroundPicker(false);
+    setActiveBackground(color);
+    runCommand("backColor", color);
+  }
+
+  function applyQuickHighlight() {
+    setActiveBackground("#fff59d");
+    runCommand("backColor", "#fff59d");
   }
 
   async function insertImages(files: File[]) {
@@ -222,6 +251,11 @@ export function LessonNoteEditor({ value, onChange, placeholder, onUploadImage }
       <div className="lesson-note-editor__color-wrap" ref={colorPickerRef}>
         <button type="button" className="icon-button lesson-note-editor__color-btn" onMouseDown={toolbarAction(() => setShowColorPicker((current) => !current))} title="Text colour" aria-label="Text colour"><span className="lesson-note-editor__color-icon"><span style={{ color: activeColor || "inherit" }}>A</span><span className="lesson-note-editor__color-swatch" style={{ background: activeColor || "var(--ink)" }} /></span></button>
         {showColorPicker ? <div className="lesson-note-editor__color-picker" role="menu" aria-label="Pick a text colour">{TEXT_COLORS.map((color) => <button key={color.value || "default"} type="button" className="lesson-note-editor__color-dot" title={color.label} aria-label={color.label} onMouseDown={toolbarAction(() => applyColor(color.value))} style={{ background: color.value || "#e2e8f0" }} />)}</div> : null}
+      </div>
+      <button type="button" className="icon-button lesson-note-editor__highlight-btn" onMouseDown={toolbarAction(applyQuickHighlight)} title="Highlight selected text" aria-label="Highlight selected text"><Highlighter size={16} /><span aria-hidden="true" /></button>
+      <div className="lesson-note-editor__color-wrap" ref={backgroundPickerRef}>
+        <button type="button" className="icon-button lesson-note-editor__background-btn" onMouseDown={toolbarAction(() => setShowBackgroundPicker((current) => !current))} title="Text background colour" aria-label="Text background colour"><PaintBucket size={16} /><span className="lesson-note-editor__background-swatch" style={{ background: activeBackground }} /></button>
+        {showBackgroundPicker ? <div className="lesson-note-editor__color-picker" role="menu" aria-label="Pick a text background colour">{BACKGROUND_COLORS.map((color) => <button key={color.value} type="button" className={`lesson-note-editor__color-dot${color.value === "transparent" ? " lesson-note-editor__color-dot--clear" : ""}`} title={color.label} aria-label={color.label} onMouseDown={toolbarAction(() => applyBackgroundColor(color.value))} style={{ background: color.value }} />)}</div> : null}
       </div>
       <span className="lesson-note-editor__divider" />
       <button type="button" className={buttonClass(formats.heading1)} onMouseDown={toolbarAction(() => runCommand("formatBlock", formats.heading1 ? "p" : "h1"))} title="Heading 1"><Heading1 size={16} /></button>

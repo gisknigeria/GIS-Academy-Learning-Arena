@@ -3637,6 +3637,32 @@ textarea {
   transform: scale(1.2);
 }
 
+.lesson-note-editor__color-dot--clear {
+  background:
+    linear-gradient(135deg, transparent 44%, #dc2626 45%, #dc2626 55%, transparent 56%),
+    #fff !important;
+}
+
+.lesson-note-editor__highlight-btn,
+.lesson-note-editor__background-btn {
+  position: relative;
+}
+
+.lesson-note-editor__highlight-btn > span,
+.lesson-note-editor__background-swatch {
+  position: absolute;
+  right: 5px;
+  bottom: 4px;
+  width: 14px;
+  height: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 999px;
+}
+
+.lesson-note-editor__highlight-btn > span {
+  background: #fff59d;
+}
+
 .lesson-note-editor__toolbar .icon-button {
   display: inline-flex;
   align-items: center;
@@ -3738,6 +3764,14 @@ textarea {
 .lesson-note-editor__content .lesson-note-editor__prose p,
 .lesson-note-editor__content .tiptap p {
   margin: 0 0 10px;
+}
+
+.lesson-note-editor__content .lesson-note-editor__prose i,
+.lesson-note-editor__content .lesson-note-editor__prose em,
+.lesson-note-editor__content .lesson-note-editor__prose [style*="font-style: italic"],
+.lesson-note-editor__content .tiptap i,
+.lesson-note-editor__content .tiptap em {
+  font-style: italic !important;
 }
 
 .lesson-note-editor__content .lesson-note-editor__prose ul,
@@ -3847,6 +3881,12 @@ textarea {
 
 .lesson-note-render p {
   margin: 0;
+}
+
+.lesson-note-render i,
+.lesson-note-render em,
+.lesson-note-render [style*="font-style: italic"] {
+  font-style: italic !important;
 }
 
 .lesson-note-render ul,
