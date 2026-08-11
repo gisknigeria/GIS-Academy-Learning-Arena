@@ -1,6 +1,7 @@
 import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, Clock, Lightbulb, Loader2, Send, XCircle } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { normalizeLessonNoteHtml } from "../components/LessonNoteEditor";
 import { useAuth } from "../context/AuthContext";
 import { assessmentsApi } from "../lib/assessments-api";
 import { sounds } from "../lib/sound";
@@ -247,7 +248,13 @@ export function AssessmentTakePage() {
           </div>
 
           {currentQ.type === "NOTE" ? (
-            <div className="quiz-learning-note"><Lightbulb size={28} /><p>{currentQ.text}</p></div>
+            <div className="quiz-learning-note">
+              <Lightbulb size={28} />
+              <div
+                className="quiz-learning-note-content lesson-note-render"
+                dangerouslySetInnerHTML={{ __html: normalizeLessonNoteHtml(currentQ.text) }}
+              />
+            </div>
           ) : <p className="quiz-q-text">{currentQ.text}</p>}
 
           {/* MCQ */}

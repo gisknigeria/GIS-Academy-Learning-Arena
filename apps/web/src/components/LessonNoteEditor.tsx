@@ -281,8 +281,10 @@ export function LessonNoteEditor({ value, onChange, placeholder, onUploadImage }
       <button type="button" className="icon-button" onMouseDown={toolbarAction(() => runCommand("redo"))} title="Redo"><Redo2 size={16} /></button>
       <span className="lesson-note-editor__divider" />
       <button type="button" className={buttonClass(formats.link)} onMouseDown={toolbarAction(insertLink)} title="Insert / edit link"><LinkIcon size={16} /></button>
-      <button type="button" className="icon-button" disabled={uploadingImage} onMouseDown={toolbarAction(() => imageInputRef.current?.click())} title="Insert image" aria-label={uploadingImage ? "Uploading image" : "Insert image"}><ImagePlus size={16} /></button>
-      <input ref={imageInputRef} type="file" accept="image/png,image/jpeg,image/gif,image/webp" multiple hidden onChange={(event) => { saveSelection(); void insertImages(Array.from(event.target.files ?? [])); event.currentTarget.value = ""; }} />
+      {onUploadImage ? <>
+        <button type="button" className="icon-button" disabled={uploadingImage} onMouseDown={toolbarAction(() => imageInputRef.current?.click())} title="Insert image" aria-label={uploadingImage ? "Uploading image" : "Insert image"}><ImagePlus size={16} /></button>
+        <input ref={imageInputRef} type="file" accept="image/png,image/jpeg,image/gif,image/webp" multiple hidden onChange={(event) => { saveSelection(); void insertImages(Array.from(event.target.files ?? [])); event.currentTarget.value = ""; }} />
+      </> : null}
     </div>
     {editorError ? <p className="lesson-note-editor__error" role="alert">{editorError}</p> : null}
     <div className="lesson-note-editor__content"><div

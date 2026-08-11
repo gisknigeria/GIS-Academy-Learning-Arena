@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { LessonNoteEditor, normalizeLessonNoteHtml } from "../components/LessonNoteEditor";
 import { SectionHeading } from "../components/SectionHeading";
 import { useAuth } from "../context/AuthContext";
 import { assessmentsApi } from "../lib/assessments-api";
@@ -164,6 +165,12 @@ export function AssessmentBuilderPage() {
     if (!token || !id) return;
     setSavingQ(true);
     setQError("");
+    const readableText = qForm.text.replace(/<[^>]*>/g, "").replace(/&nbsp;/gi, " ").trim();
+    if (!readableText) {
+      setQError(qForm.type === "NOTE" ? "Add some note or instruction text." : "Add the question text.");
+      setSavingQ(false);
+      return;
+    }
     const choiceOptions = qForm.options.map((option) => option.trim()).filter(Boolean);
     if ((qForm.type === "MCQ" || qForm.type === "MULTIPLE_CHOICE") && choiceOptions.length < 2) {
       setQError("Add at least two answer options.");
@@ -378,7 +385,12 @@ export function AssessmentBuilderPage() {
                   <span className="question-type-badge">{QUESTION_TYPE_LABELS[q.type]}</span>
                   {q.type !== "NOTE" ? <span className="question-points">{q.points} pt{q.points !== 1 ? "s" : ""}</span> : null}
                 </div>
-                <p className="question-text">{q.text}</p>
+                {q.type === "NOTE" ? (
+                  <div
+                    className="question-text question-note-preview lesson-note-render"
+                    dangerouslySetInnerHTML={{ __html: normalizeLessonNoteHtml(q.text) }}
+                  />
+                ) : <p className="question-text">{q.text}</p>}
                 {(q.type === "MCQ" || q.type === "MULTIPLE_CHOICE") && q.options.length > 0 ? (
                   <ul className="question-options-preview">
                     {q.options.map((opt, oi) => {
@@ -432,13 +444,6 @@ export function AssessmentBuilderPage() {
             </div>
             <form className="modal-form" onSubmit={(e) => void saveQuestion(e)}>
               <label>
-                {qForm.type === "NOTE" ? "Note or instruction" : "Question text"}
-                <textarea rows={3} value={qForm.text} required
-                  placeholder={qForm.type === "NOTE" ? "Add an explanation, worked example, or instruction between questions..." : "Write the question learners will answer..."}
-                  onChange={(e) => setQForm({ ...qForm, text: e.target.value })} />
-              </label>
-
-              <label>
                 Type
                 <select value={qForm.type}
                   onChange={(e) => setQForm({ ...qForm, type: e.target.value as QuestionType, correctAnswers: [] })}>
@@ -447,6 +452,24 @@ export function AssessmentBuilderPage() {
                   ))}
                 </select>
               </label>
+
+              {qForm.type === "NOTE" ? (
+                <div className="assessment-note-editor-field">
+                  <span>Note or instruction</span>
+                  <LessonNoteEditor
+                    value={qForm.text}
+                    onChange={(text) => setQForm((current) => ({ ...current, text }))}
+                    placeholder="Add a formatted explanation, worked example, or instruction between questions..."
+                  />
+                </div>
+              ) : (
+                <label>
+                  Question text
+                  <textarea rows={3} value={qForm.text} required
+                    placeholder="Write the question learners will answer..."
+                    onChange={(e) => setQForm({ ...qForm, text: e.target.value })} />
+                </label>
+              )}
 
               {(qForm.type === "MCQ" || qForm.type === "MULTIPLE_CHOICE") && (
                 <div className="q-options-grid">

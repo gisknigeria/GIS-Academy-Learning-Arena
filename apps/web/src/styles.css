@@ -6331,6 +6331,27 @@ div.lesson-form-full-field {
   color: #fff3b0;
 }
 
+.assessment-note-editor-field {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.assessment-note-editor-field > span {
+  color: var(--ink);
+  font-size: 0.86rem;
+  font-weight: 900;
+}
+
+.assessment-note-editor-field .lesson-note-editor__prose {
+  min-height: 220px;
+}
+
+.question-note-preview {
+  margin-top: 8px;
+  color: inherit;
+}
+
 .question-number {
   flex: 0 0 auto;
   width: 34px;
@@ -6516,6 +6537,20 @@ div.lesson-form-full-field {
   padding: 18px;
 }
 .quiz-learning-note p { margin: 0; color: inherit; line-height: 1.7; white-space: pre-wrap; }
+
+.quiz-learning-note-content {
+  color: inherit;
+}
+
+.quiz-learning-note-content > :first-child,
+.question-note-preview > :first-child {
+  margin-top: 0;
+}
+
+.quiz-learning-note-content > :last-child,
+.question-note-preview > :last-child {
+  margin-bottom: 0;
+}
 
 .quiz-instant-feedback {
   display: grid;
