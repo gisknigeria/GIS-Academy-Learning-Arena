@@ -9,6 +9,12 @@ import { IoAdapter } from "@nestjs/platform-socket.io";
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
+  // Lesson notes are rich HTML and can be much larger than Express' 100 KB
+  // default, especially after trainers paste long teaching material. Register
+  // these before Nest initialises so they replace the default parsers.
+  app.useBodyParser("json", { limit: "25mb" });
+  app.useBodyParser("urlencoded", { limit: "25mb", extended: true });
+
   const allowedOrigins = [
     "http://127.0.0.1:5173",
     "http://localhost:5173",

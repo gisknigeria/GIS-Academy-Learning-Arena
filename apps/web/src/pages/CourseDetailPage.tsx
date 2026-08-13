@@ -419,8 +419,11 @@ export function CourseDetailPage() {
       }
       setShowLessonForm(false);
       setForm(emptyForm);
-    } catch {
-      setLessonError("Could not save lesson. Check the fields and try again.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message.toLowerCase() : "";
+      setLessonError(message.includes("payload too large") || message.includes("statuscode\":413")
+        ? "This lesson note is too large to save in one lesson. Please split it into two lessons."
+        : "Could not save lesson. Check the fields and try again.");
     } finally {
       setSaving(false);
     }

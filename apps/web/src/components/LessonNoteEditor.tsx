@@ -3,7 +3,7 @@ import {
   List, ListOrdered, Minus, PaintBucket, Quote, Redo2, Strikethrough,
   Underline as UnderlineIcon, Undo2,
 } from "lucide-react";
-import { ClipboardEvent, MouseEvent as ReactMouseEvent, useCallback, useEffect, useRef, useState } from "react";
+import { ClipboardEvent, DragEvent, MouseEvent as ReactMouseEvent, useCallback, useEffect, useRef, useState } from "react";
 
 type LessonNoteEditorProps = {
   value: string;
@@ -23,8 +23,6 @@ const EMPTY_FORMATS: ActiveFormats = {
   heading1: false, heading2: false, bulletList: false, orderedList: false,
   blockquote: false, codeBlock: false, link: false,
 };
-
-const MAX_PASTED_TEXT_LENGTH = 200_000;
 
 export function normalizeLessonNoteHtml(value: string): string {
   const trimmed = value.trim();
@@ -128,8 +126,13 @@ export function LessonNoteEditor({ value, onChange, placeholder, onUploadImage }
     editorRef.current?.focus();
     if (!savedRange.current) return;
     const selection = window.getSelection();
-    selection?.removeAllRanges();
-    selection?.addRange(savedRange.current);
+    try {
+      selection?.removeAllRanges();
+      selection?.addRange(savedRange.current);
+    } catch {
+      // A saved range can become detached while an upload dialog is open.
+      savedRange.current = null;
+    }
   }, []);
 
   const runCommand = useCallback((command: string, commandValue?: string) => {
@@ -177,12 +180,24 @@ export function LessonNoteEditor({ value, onChange, placeholder, onUploadImage }
       return;
     }
     const rawText = event.clipboardData.getData("text/plain");
-    document.execCommand("insertText", false, rawText.slice(0, MAX_PASTED_TEXT_LENGTH));
+    document.execCommand("insertText", false, rawText);
     emitChange();
     saveSelection();
-    if (rawText.length > MAX_PASTED_TEXT_LENGTH) {
-      setEditorError("Only the first 200,000 pasted characters were inserted to keep the editor responsive.");
+  }
+
+  function handleDrop(event: DragEvent<HTMLDivElement>) {
+    const images = Array.from(event.dataTransfer.files).filter((file) => file.type.startsWith("image/"));
+    if (!images.length) return;
+    event.preventDefault();
+    setEditorError("");
+
+    const caretRange = document.caretRangeFromPoint?.(event.clientX, event.clientY);
+    if (caretRange && editorRef.current?.contains(caretRange.startContainer)) {
+      savedRange.current = caretRange.cloneRange();
+    } else {
+      saveSelection();
     }
+    void insertImages(images);
   }
 
   function insertLink() {
@@ -212,26 +227,52 @@ export function LessonNoteEditor({ value, onChange, placeholder, onUploadImage }
 
   async function insertImages(files: File[]) {
     if (!onUploadImage) return setEditorError("Image uploads are not available right now.");
+    if (!files.length) return;
     setUploadingImage(true);
     setEditorError("");
-    try {
-      for (const file of files) {
+    let insertedCount = 0;
+    const failures: string[] = [];
+    for (const file of files) {
+      if (!file.type.startsWith("image/")) {
+        failures.push(file.name);
+        continue;
+      }
+      try {
         const url = await onUploadImage(file);
+        if (!url) throw new Error("The upload did not return an image URL.");
         restoreSelection();
         const image = document.createElement("img");
         image.src = url;
         image.alt = file.name.replace(/\.[^.]+$/, "");
         image.className = "lesson-note-img";
         const selection = window.getSelection();
-        const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
+        const selectedRange = selection?.rangeCount ? selection.getRangeAt(0) : null;
+        const range = selectedRange && editorRef.current?.contains(selectedRange.commonAncestorContainer)
+          ? selectedRange
+          : null;
         if (range) {
           range.deleteContents(); range.insertNode(image); range.setStartAfter(image); range.collapse(true);
           selection?.removeAllRanges(); selection?.addRange(range); savedRange.current = range.cloneRange();
-        } else editorRef.current?.append(image);
+        } else {
+          editorRef.current?.append(image);
+          const fallbackRange = document.createRange();
+          fallbackRange.setStartAfter(image);
+          fallbackRange.collapse(true);
+          savedRange.current = fallbackRange;
+        }
+        insertedCount += 1;
+      } catch {
+        failures.push(file.name);
       }
-      emitChange();
-    } catch (error) {
-      setEditorError(error instanceof Error ? error.message : "The image could not be uploaded.");
+    }
+    try {
+      if (insertedCount) {
+        emitChange();
+        saveSelection();
+      }
+      if (failures.length) {
+        setEditorError(`${failures.length} image${failures.length === 1 ? "" : "s"} could not be inserted. Please try again.`);
+      }
     } finally {
       setUploadingImage(false);
     }
@@ -282,8 +323,16 @@ export function LessonNoteEditor({ value, onChange, placeholder, onUploadImage }
       <span className="lesson-note-editor__divider" />
       <button type="button" className={buttonClass(formats.link)} onMouseDown={toolbarAction(insertLink)} title="Insert / edit link"><LinkIcon size={16} /></button>
       {onUploadImage ? <>
-        <button type="button" className="icon-button" disabled={uploadingImage} onMouseDown={toolbarAction(() => imageInputRef.current?.click())} title="Insert image" aria-label={uploadingImage ? "Uploading image" : "Insert image"}><ImagePlus size={16} /></button>
-        <input ref={imageInputRef} type="file" accept="image/png,image/jpeg,image/gif,image/webp" multiple hidden onChange={(event) => { saveSelection(); void insertImages(Array.from(event.target.files ?? [])); event.currentTarget.value = ""; }} />
+        <button
+          type="button"
+          className="icon-button"
+          disabled={uploadingImage}
+          onMouseDown={(event) => { event.preventDefault(); saveSelection(); }}
+          onClick={() => imageInputRef.current?.click()}
+          title="Insert image"
+          aria-label={uploadingImage ? "Uploading image" : "Insert image"}
+        ><ImagePlus size={16} /></button>
+        <input ref={imageInputRef} type="file" accept="image/*" multiple hidden onChange={(event) => { const files = Array.from(event.target.files ?? []); event.currentTarget.value = ""; void insertImages(files); }} />
       </> : null}
     </div>
     {editorError ? <p className="lesson-note-editor__error" role="alert">{editorError}</p> : null}
@@ -292,6 +341,7 @@ export function LessonNoteEditor({ value, onChange, placeholder, onUploadImage }
       role="textbox" aria-multiline="true" aria-label="Lesson notes and instructions"
       data-placeholder={placeholder ?? "Write the lesson explanation, examples, instructions, or transcript..."}
       onInput={() => { emitChange(); saveSelection(); }} onPaste={handlePaste}
+      onDrop={handleDrop} onDragOver={(event) => { if (Array.from(event.dataTransfer.items).some((item) => item.type.startsWith("image/"))) event.preventDefault(); }}
       onKeyUp={() => { saveSelection(); updateFormats(); }} onMouseUp={() => { saveSelection(); updateFormats(); }}
       onFocus={() => { saveSelection(); updateFormats(); }}
     /></div>
