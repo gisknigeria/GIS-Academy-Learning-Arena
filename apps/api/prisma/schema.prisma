@@ -21,6 +21,8 @@ enum UserRole {
   JUDGE
   GUEST
   ALUMNI
+  RESIDENT
+  MERCHANT
 }
 
 enum UserStatus {

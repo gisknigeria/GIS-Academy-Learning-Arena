@@ -32,6 +32,12 @@ type LessonFormState = {
   attachments: LessonAttachment[];
 };
 
+const LESSON_DRAFT_STORAGE_KEY = "gis-academy-lesson-editor-draft";
+
+function getLessonDraftStorageKey(courseId: string, userId?: string) {
+  return `${LESSON_DRAFT_STORAGE_KEY}:${userId ?? "anonymous"}:${courseId}`;
+}
+
 const emptyForm: LessonFormState = {
   moduleId: "",
   title: "",
@@ -189,6 +195,7 @@ export function CourseDetailPage() {
   const [showLessonForm, setShowLessonForm] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [form, setForm] = useState<LessonFormState>(emptyForm);
+  const [hasSavedLessonDraft, setHasSavedLessonDraft] = useState(false);
   const [librarySearch, setLibrarySearch] = useState("");
   const [libraryLessons, setLibraryLessons] = useState<LessonLibraryItem[]>([]);
   const [libraryLoading, setLibraryLoading] = useState(false);
@@ -273,7 +280,48 @@ export function CourseDetailPage() {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    if (!id || !canManageLessons || !showLessonForm) return;
+
+    localStorage.setItem(getLessonDraftStorageKey(id, user?.id), JSON.stringify({ courseId: id, form }));
+    setHasSavedLessonDraft(true);
+  }, [canManageLessons, form, id, showLessonForm, user?.id]);
+
+  function clearLessonDraft() {
+    if (id) localStorage.removeItem(getLessonDraftStorageKey(id, user?.id));
+    setHasSavedLessonDraft(false);
+  }
+
+  function restoreLessonDraft() {
+    if (!id) return;
+    try {
+      const saved = JSON.parse(localStorage.getItem(getLessonDraftStorageKey(id, user?.id)) ?? "null") as {
+        courseId?: string;
+        form?: LessonFormState;
+      } | null;
+      if (saved?.courseId !== id || !saved.form) return;
+      setForm({ ...emptyForm, ...saved.form, attachments: saved.form.attachments ?? [] });
+      setShowLessonForm(true);
+    } catch {
+      clearLessonDraft();
+    }
+  }
+
+  useEffect(() => {
+    if (!id || !canManageLessons) return;
+    try {
+      const saved = JSON.parse(localStorage.getItem(getLessonDraftStorageKey(id, user?.id)) ?? "null") as { courseId?: string } | null;
+      setHasSavedLessonDraft(saved?.courseId === id);
+    } catch {
+      clearLessonDraft();
+    }
+  }, [canManageLessons, id, user?.id]);
+
   function startCreateLesson() {
+    if (hasSavedLessonDraft) {
+      restoreLessonDraft();
+      return;
+    }
     setForm({ ...emptyForm, order: String(lessons.length + 1) });
     setShowLessonForm(true);
   }
@@ -419,6 +467,7 @@ export function CourseDetailPage() {
       }
       setShowLessonForm(false);
       setForm(emptyForm);
+      clearLessonDraft();
     } catch (error) {
       const message = error instanceof Error ? error.message.toLowerCase() : "";
       setLessonError(message.includes("payload too large") || message.includes("statuscode\":413")
@@ -649,6 +698,12 @@ export function CourseDetailPage() {
                   <PlusCircle size={17} />
                   Add lesson
                 </button>
+                {hasSavedLessonDraft ? (
+                  <button className="secondary-button" onClick={restoreLessonDraft}>
+                    <Edit3 size={17} />
+                    Continue draft
+                  </button>
+                ) : null}
                 <button className="secondary-button" onClick={openImportModal}>
                   <BookOpen size={17} />
                   Import existing
@@ -698,6 +753,12 @@ export function CourseDetailPage() {
                     <PlusCircle size={17} />
                     Add lesson
                   </button>
+                  {hasSavedLessonDraft ? (
+                    <button className="secondary-button" onClick={restoreLessonDraft}>
+                      <Edit3 size={17} />
+                      Continue draft
+                    </button>
+                  ) : null}
                   <button className="secondary-button" onClick={openImportModal}>
                     <BookOpen size={17} />
                     Import existing

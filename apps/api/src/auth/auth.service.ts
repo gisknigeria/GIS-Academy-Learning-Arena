@@ -18,7 +18,9 @@ export class AuthService {
   ) {}
 
   async register(createUserDto: CreateUserDto) {
-    const requestedRole = createUserDto.role === UserRole.TRAINER ? UserRole.TRAINER : UserRole.STUDENT;
+    // Public registration only permits the two self-service account types.
+    // Privileged roles must continue to be assigned by an administrator.
+    const requestedRole = createUserDto.role === UserRole.MERCHANT ? UserRole.MERCHANT : UserRole.RESIDENT;
     const user = await this.usersService.create({
       ...createUserDto,
       role: requestedRole,

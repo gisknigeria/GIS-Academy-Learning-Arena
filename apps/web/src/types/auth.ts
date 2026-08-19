@@ -10,7 +10,9 @@ export type UserRole =
   | "EXAMINER"
   | "JUDGE"
   | "GUEST"
-  | "ALUMNI";
+  | "ALUMNI"
+  | "RESIDENT"
+  | "MERCHANT";
 
 export type PaymentStatus = "NOT_REQUIRED" | "PENDING" | "PAID" | "OVERDUE" | "BLOCKED";
 

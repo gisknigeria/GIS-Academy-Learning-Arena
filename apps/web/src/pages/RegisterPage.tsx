@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import { BadgeCheck, BookOpen, Eye, EyeOff, Globe, GraduationCap, Map, MessageCircle, ShieldCheck, Sparkles, Trophy } from "lucide-react";
+import { BadgeCheck, Building2, Eye, EyeOff, Globe, Home, Map, MessageCircle, ShieldCheck, Sparkles, Trophy } from "lucide-react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import logoMark from "../assets/gis-academy-logo.svg";
 import { useAuth } from "../context/AuthContext";
@@ -12,7 +12,7 @@ export function RegisterPage() {
   const [phone, setPhone]             = useState("");
   const [password, setPassword]       = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [accountType, setAccountType] = useState<"STUDENT" | "TRAINER">("STUDENT");
+  const [accountType, setAccountType] = useState<"RESIDENT" | "MERCHANT">("RESIDENT");
   const [error, setError]             = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const visualFeatures = [
@@ -160,16 +160,17 @@ export function RegisterPage() {
             </label>
 
             {/* Account type */}
+            <span className="auth-field-label">Register as</span>
             <div className="auth-role-picker" role="radiogroup" aria-label="Account type">
-              <button type="button" className={accountType === "STUDENT" ? "selected" : ""} onClick={() => setAccountType("STUDENT")} aria-pressed={accountType === "STUDENT"}>
-                <span className="auth-role-icon"><GraduationCap size={18} /></span>
-                <strong>Learner</strong>
-                <span>Start learning immediately</span>
+              <button type="button" role="radio" className={accountType === "RESIDENT" ? "selected" : ""} onClick={() => setAccountType("RESIDENT")} aria-checked={accountType === "RESIDENT"}>
+                <span className="auth-role-icon"><Home size={18} /></span>
+                <strong>Resident</strong>
+                <span>Register a resident account</span>
               </button>
-              <button type="button" className={accountType === "TRAINER" ? "selected" : ""} onClick={() => setAccountType("TRAINER")} aria-pressed={accountType === "TRAINER"}>
-                <span className="auth-role-icon"><BookOpen size={18} /></span>
-                <strong>Trainer</strong>
-                <span>Requires approval</span>
+              <button type="button" role="radio" className={accountType === "MERCHANT" ? "selected" : ""} onClick={() => setAccountType("MERCHANT")} aria-checked={accountType === "MERCHANT"}>
+                <span className="auth-role-icon"><Building2 size={18} /></span>
+                <strong>Merchant</strong>
+                <span>Register a merchant account</span>
               </button>
             </div>
 
