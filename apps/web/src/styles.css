@@ -3353,6 +3353,18 @@ textarea {
   box-shadow: 0 8px 16px rgba(5, 31, 21, 0.08);
 }
 
+.course-detail-overview-card .course-management-actions .secondary-button {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
+.course-detail-overview-card .course-management-actions .secondary-button:hover {
+  background: #f0f4f2;
+  border-color: var(--green-700);
+  color: var(--green-900);
+}
+
 .course-management-actions--stacked {
   display: grid;
   gap: 8px;

@@ -70,7 +70,10 @@ export class CoursesService {
     const [data, total] = await this.prisma.$transaction([
       this.prisma.course.findMany({
         where,
-        orderBy: { createdAt: "desc" },
+        orderBy: [
+          { level: { sort: "asc", nulls: "last" } },
+          { code: "asc" },
+        ],
         skip,
         take: limit,
         include: {
