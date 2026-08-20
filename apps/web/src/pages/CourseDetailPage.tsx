@@ -30,6 +30,7 @@ type LessonFormState = {
   slideUrl: string;
   mapUrl: string;
   attachments: LessonAttachment[];
+  softwareTrackId: string;
 };
 
 const LESSON_DRAFT_STORAGE_KEY = "gis-academy-lesson-editor-draft";
@@ -50,6 +51,7 @@ const emptyForm: LessonFormState = {
   slideUrl: "",
   mapUrl: "",
   attachments: [],
+  softwareTrackId: "",
 };
 
 function toLessonPayload(form: LessonFormState): CreateLessonPayload {
@@ -65,6 +67,7 @@ function toLessonPayload(form: LessonFormState): CreateLessonPayload {
     slideUrl: form.slideUrl.trim() || undefined,
     mapUrl: form.mapUrl.trim() || undefined,
     attachments: form.attachments,
+    softwareTrackId: form.softwareTrackId || undefined,
   };
 }
 
@@ -204,6 +207,7 @@ export function CourseDetailPage() {
   const [creatingAssessmentLessonId, setCreatingAssessmentLessonId] = useState("");
   const [saving, setSaving] = useState(false);
   const [enrolled, setEnrolled] = useState(false);
+  const [selectedSoftwareTrackId, setSelectedSoftwareTrackId] = useState("");
   const [enrolling, setEnrolling] = useState(false);
 
   const canManageLessons = useMemo(
@@ -227,6 +231,7 @@ export function CourseDetailPage() {
       try {
         const res = await coursesApi.isEnrolled(token, id);
         setEnrolled(Boolean(res.enrolled));
+        setSelectedSoftwareTrackId(res.softwareTrackId ?? "");
         if (!res.enrolled && !canManageLessons) {
           navigate(`/courses/${id}`, { replace: true });
           return;
@@ -364,6 +369,7 @@ export function CourseDetailPage() {
       slideUrl: lesson.slideUrl ?? "",
       mapUrl: lesson.mapUrl ?? "",
       attachments: lesson.attachments ?? [],
+      softwareTrackId: lesson.softwareTrackId ?? "",
     }));
     setShowLessonForm(true);
   }
@@ -567,6 +573,18 @@ export function CourseDetailPage() {
     }
   }
 
+  async function handleSoftwareTrackChange(softwareTrackId: string) {
+    if (!token || !id) return;
+    setSelectedSoftwareTrackId(softwareTrackId);
+    setLessonError("");
+    try {
+      await coursesApi.selectSoftwareTrack(token, id, softwareTrackId);
+      await load();
+    } catch {
+      setLessonError("Could not save your software choice. Please try again.");
+    }
+  }
+
   const lessonMaterialInventory = [
     { label: "Video", url: form.videoUrl, type: "Video" },
     { label: "Main resource", url: form.resourceUrl, type: getMaterialType(form.resourceUrl) },
@@ -726,6 +744,23 @@ export function CourseDetailPage() {
         </div>
       </div>
 
+      {course.usesSoftware && course.softwareOptions?.length ? (
+        <section className="course-software-selector">
+          <div>
+            <strong>{canManageLessons ? "Software lesson tracks" : "Choose your preferred software"}</strong>
+            <p>{canManageLessons ? "Assign each lesson to a track or make it shared across all tracks." : "You will see shared lessons plus lessons prepared for this software."}</p>
+          </div>
+          {canManageLessons ? (
+            <div className="course-software-selector__chips">{course.softwareOptions.map((option) => <span key={option.id}>{option.name}{option.version ? ` ${option.version}` : ""}</span>)}</div>
+          ) : enrolled ? (
+            <select value={selectedSoftwareTrackId} onChange={(event) => void handleSoftwareTrackChange(event.target.value)}>
+              <option value="" disabled>Select software</option>
+              {course.softwareOptions.map((option) => <option key={option.id} value={option.id}>{option.name}{option.version ? ` ${option.version}` : ""}</option>)}
+            </select>
+          ) : <span className="form-hint">Enroll first, then choose your software.</span>}
+        </section>
+      ) : null}
+
       {isLocked ? (
         <PaymentGate accessStatus={course.accessStatus as { allowed: false; reason: "payment_required" | "account_blocked" | "account_overdue" }} />
       ) : (
@@ -774,6 +809,11 @@ export function CourseDetailPage() {
                   <div className="lesson-order">{lesson.order}</div>
                   <div className="lesson-body">
                     <h3>{lesson.title}</h3>
+                    {course.usesSoftware ? <span className="lesson-software-badge">
+                      {lesson.softwareTrackId
+                        ? (() => { const option = course.softwareOptions.find((item) => item.id === lesson.softwareTrackId); return option ? `${option.name}${option.version ? ` ${option.version}` : ""}` : "Unknown software"; })()
+                        : "Shared lesson"}
+                    </span> : null}
                     {lesson.summary ? <p>{lesson.summary}</p> : null}
                     <div className="lesson-links">
                       {lesson.videoUrl ? (
@@ -945,6 +985,13 @@ export function CourseDetailPage() {
                       {modules.map((module) => <option key={module.id} value={module.id}>{module.order}. {module.title}</option>)}
                     </select>
                   </label>
+                  {course.usesSoftware ? <label>
+                    Software track
+                    <select value={form.softwareTrackId} onChange={(event) => setForm((current) => ({ ...current, softwareTrackId: event.target.value }))}>
+                      <option value="">Shared across all software</option>
+                      {course.softwareOptions.map((option) => <option key={option.id} value={option.id}>{option.name}{option.version ? ` ${option.version}` : ""}</option>)}
+                    </select>
+                  </label> : null}
                   <label>
                     Lesson title
                     <input value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} placeholder="e.g. Understanding coordinate systems" required />

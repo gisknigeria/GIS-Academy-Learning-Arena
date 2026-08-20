@@ -1,8 +1,10 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
+import { randomUUID } from "node:crypto";
 import { DeliveryMode, Prisma } from "@prisma/client";
 import { CertificatesService } from "../certificates/certificates.service";
 import { CurriculumService } from "../curriculum/curriculum.service";
@@ -33,11 +35,15 @@ export class CoursesService {
       throw new ConflictException(`Course code "${dto.code.toUpperCase()}" is already in use.`);
     }
 
+    const { softwareOptions, ...courseData } = dto;
+    const normalizedSoftware = dto.usesSoftware ? this.normalizeSoftwareOptions(softwareOptions) : [];
     return this.prisma.course.create({
       data: {
-        ...dto,
+        ...courseData,
         code: dto.code.toUpperCase(),
         requiresPayment: dto.requiresPayment ?? true,
+        usesSoftware: Boolean(dto.usesSoftware),
+        softwareOptions: normalizedSoftware,
       },
     });
   }
@@ -110,7 +116,7 @@ export class CoursesService {
   }
 
   async update(id: string, dto: UpdateCourseDto) {
-    await this.findOne(id); // ensures 404 if not found
+    const existingCourse = await this.findOne(id); // ensures 404 if not found
 
     if (dto.code) {
       const conflict = await this.prisma.course.findFirst({
@@ -121,13 +127,38 @@ export class CoursesService {
       }
     }
 
-    return this.prisma.course.update({
+    const { softwareOptions, ...courseData } = dto;
+    const usesSoftware = dto.usesSoftware ?? existingCourse.usesSoftware;
+    const normalizedSoftware = softwareOptions === undefined
+      ? undefined
+      : usesSoftware ? this.normalizeSoftwareOptions(softwareOptions) : [];
+    const updated = await this.prisma.course.update({
       where: { id },
       data: {
-        ...dto,
+        ...courseData,
         ...(dto.code && { code: dto.code.toUpperCase() }),
+        ...(normalizedSoftware !== undefined && { softwareOptions: normalizedSoftware }),
       },
     });
+    if (!usesSoftware) {
+      await this.prisma.$transaction([
+        this.prisma.lesson.updateMany({ where: { courseId: id }, data: { softwareTrackId: null } }),
+        this.prisma.enrollment.updateMany({ where: { courseId: id }, data: { softwareTrackId: null } }),
+      ]);
+    } else if (normalizedSoftware !== undefined) {
+      const trackIds = normalizedSoftware.map((option) => option.id);
+      await this.prisma.$transaction([
+        this.prisma.lesson.updateMany({
+          where: { courseId: id, softwareTrackId: { notIn: trackIds } },
+          data: { softwareTrackId: null },
+        }),
+        this.prisma.enrollment.updateMany({
+          where: { courseId: id, softwareTrackId: { notIn: trackIds } },
+          data: { softwareTrackId: null },
+        }),
+      ]);
+    }
+    return updated;
   }
 
   async archive(id: string) {
@@ -167,6 +198,7 @@ export class CoursesService {
   async createLesson(courseId: string, dto: CreateLessonDto) {
     await this.findOne(courseId);
     await this.ensureModuleBelongsToCourse(dto.moduleId, courseId);
+    await this.ensureSoftwareTrackBelongsToCourse(dto.softwareTrackId, courseId);
 
     return this.prisma.lesson.create({
       data: {
@@ -182,6 +214,7 @@ export class CoursesService {
         slideUrl: dto.slideUrl,
         mapUrl: dto.mapUrl,
         attachments: dto.attachments ?? [],
+        softwareTrackId: dto.softwareTrackId,
       },
     });
   }
@@ -254,11 +287,15 @@ export class CoursesService {
   }
 
   async listLessonsWithProgress(courseId: string, userId: string, canManageLessons = false) {
-    await this.findOne(courseId);
+    const course = await this.findOne(courseId);
+    const enrollment = canManageLessons ? null : await this.findEnrollment(courseId, userId);
+    const trackFilter: Prisma.LessonWhereInput = course.usesSoftware && !canManageLessons
+      ? { OR: [{ softwareTrackId: null }, { softwareTrackId: enrollment?.softwareTrackId ?? "__no_track_selected__" }] }
+      : {};
     const lockContext = canManageLessons ? null : await this.getLessonLockContext(courseId, userId);
 
     const lessons = await this.prisma.lesson.findMany({
-      where: { courseId },
+      where: { courseId, ...trackFilter },
       orderBy: [{ module: { order: "asc" } }, { order: "asc" }],
       include: {
         progress: {
@@ -308,6 +345,7 @@ export class CoursesService {
       throw new NotFoundException(`Lesson "${id}" not found.`);
     }
     await this.ensureModuleBelongsToCourse(dto.moduleId, lesson.courseId);
+    await this.ensureSoftwareTrackBelongsToCourse(dto.softwareTrackId, lesson.courseId);
 
     return this.prisma.lesson.update({
       where: { id },
@@ -450,15 +488,32 @@ export class CoursesService {
     return this.prisma.enrollment.findUnique({ where: { userId_courseId: { userId, courseId } } });
   }
 
+  async selectSoftwareTrack(courseId: string, userId: string, softwareTrackId: string) {
+    await this.ensureSoftwareTrackBelongsToCourse(softwareTrackId, courseId);
+    const enrollment = await this.findEnrollment(courseId, userId);
+    if (!enrollment) throw new BadRequestException("Enroll in this course before selecting software.");
+    return this.prisma.enrollment.update({
+      where: { userId_courseId: { userId, courseId } },
+      data: { softwareTrackId, progress: 0 },
+    });
+  }
+
   async getCourseProgress(courseId: string, userId: string) {
-    await this.findOne(courseId);
+    const course = await this.findOne(courseId);
+    const enrollment = await this.findEnrollment(courseId, userId);
+    const lessonWhere: Prisma.LessonWhereInput = {
+      courseId,
+      ...(course.usesSoftware
+        ? { OR: [{ softwareTrackId: null }, { softwareTrackId: enrollment?.softwareTrackId ?? "__no_track_selected__" }] }
+        : {}),
+    };
 
     const [totalLessons, completedLessons, modules, finalAssessments] = await Promise.all([
-      this.prisma.lesson.count({ where: { courseId } }),
+      this.prisma.lesson.count({ where: lessonWhere }),
       this.prisma.lessonProgress.count({
         where: {
           userId,
-          lesson: { courseId },
+          lesson: lessonWhere,
         },
       }),
       this.prisma.courseModule.findMany({
@@ -561,12 +616,22 @@ export class CoursesService {
       throw new NotFoundException("This onsite lesson is locked until your trainer unlocks it.");
     }
 
+    const course = await this.findOne(courseId);
+    const enrollment = await this.findEnrollment(courseId, userId);
     const lessons = await this.prisma.lesson.findMany({
-      where: { courseId },
+      where: {
+        courseId,
+        ...(course.usesSoftware
+          ? { OR: [{ softwareTrackId: null }, { softwareTrackId: enrollment?.softwareTrackId ?? "__no_track_selected__" }] }
+          : {}),
+      },
       orderBy: [{ module: { order: "asc" } }, { order: "asc" }],
       select: { id: true },
     });
     const lessonIndex = lessons.findIndex((lesson) => lesson.id === lessonId);
+    if (lessonIndex < 0) {
+      throw new NotFoundException("This lesson is not part of your selected software track.");
+    }
     if (lessonIndex > 0) {
       const previousLesson = await this.prisma.lessonProgress.findUnique({
         where: { userId_lessonId: { userId, lessonId: lessons[lessonIndex - 1].id } },
@@ -574,6 +639,29 @@ export class CoursesService {
       if (!previousLesson) {
         throw new NotFoundException("Complete the previous lesson before opening this lesson.");
       }
+    }
+  }
+
+  private normalizeSoftwareOptions(options: Array<{ id?: string; name: string; version?: string }> | undefined) {
+    const normalized = (options ?? [])
+      .map((option) => ({
+        id: option.id?.trim() || randomUUID(),
+        name: option.name.trim(),
+        version: option.version?.trim() || "",
+      }))
+      .filter((option) => option.name);
+    if (!normalized.length) throw new BadRequestException("Add at least one software option.");
+    const labels = normalized.map((option) => `${option.name.toLowerCase()}::${option.version.toLowerCase()}`);
+    if (new Set(labels).size !== labels.length) throw new BadRequestException("Software options must be unique.");
+    return normalized;
+  }
+
+  private async ensureSoftwareTrackBelongsToCourse(softwareTrackId: string | undefined, courseId: string) {
+    if (!softwareTrackId) return;
+    const course = await this.prisma.course.findUnique({ where: { id: courseId }, select: { usesSoftware: true, softwareOptions: true } });
+    const options = Array.isArray(course?.softwareOptions) ? course.softwareOptions as Array<{ id?: string }> : [];
+    if (!course?.usesSoftware || !options.some((option) => option.id === softwareTrackId)) {
+      throw new BadRequestException("The selected software does not belong to this course.");
     }
   }
 

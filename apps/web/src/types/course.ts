@@ -11,6 +11,8 @@ export type AccessStatus =
   | { allowed: true }
   | { allowed: false; reason: "payment_required" | "account_blocked" | "account_overdue" };
 
+export type CourseSoftwareOption = { id: string; name: string; version?: string };
+
 export type Course = {
   id: string;
   code: string;
@@ -27,6 +29,8 @@ export type Course = {
   trainingCategory?: string | null;
   deliveryMode: DeliveryMode;
   requiresPayment: boolean;
+  usesSoftware: boolean;
+  softwareOptions: CourseSoftwareOption[];
   isArchived: boolean;
   createdAt: string;
   updatedAt: string;
@@ -52,6 +56,7 @@ export type Lesson = {
   slideUrl?: string | null;
   mapUrl?: string | null;
   attachments?: LessonAttachment[] | null;
+  softwareTrackId?: string | null;
   completed?: boolean;
   completedAt?: string | null;
   locked?: boolean;
@@ -113,6 +118,8 @@ export type CreateCoursePayload = {
   level?: number;
   deliveryMode: DeliveryMode;
   requiresPayment?: boolean;
+  usesSoftware?: boolean;
+  softwareOptions?: CourseSoftwareOption[];
 };
 
 export type UpdateCoursePayload = Partial<CreateCoursePayload>;
@@ -129,6 +136,7 @@ export type CreateLessonPayload = {
   slideUrl?: string;
   mapUrl?: string;
   attachments?: LessonAttachment[];
+  softwareTrackId?: string;
 };
 
 export type UpdateLessonPayload = Partial<CreateLessonPayload>;

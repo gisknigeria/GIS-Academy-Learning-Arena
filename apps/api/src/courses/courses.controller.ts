@@ -26,6 +26,7 @@ import { UpdateLessonDto } from "./dto/update-lesson.dto";
 import { AnswerLessonDiscussionDto } from "./dto/answer-lesson-discussion.dto";
 import { CreateLessonDiscussionDto } from "./dto/create-lesson-discussion.dto";
 import { ImportLessonDto } from "./dto/import-lesson.dto";
+import { SelectSoftwareTrackDto } from "./dto/select-software-track.dto";
 
 const WRITE_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TRAINING_MANAGER, UserRole.TRAINER];
 const LESSON_WRITE_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TRAINING_MANAGER, UserRole.TRAINER];
@@ -167,7 +168,16 @@ export class CoursesController {
   @Get(":id/enrollment")
   async checkEnrollment(@Param("id") id: string, @Req() req: AuthenticatedRequest) {
     const e = await this.coursesService.findEnrollment(id, req.user.sub);
-    return { enrolled: Boolean(e) };
+    return { enrolled: Boolean(e), softwareTrackId: e?.softwareTrackId ?? null };
+  }
+
+  @Patch(":id/enrollment/software")
+  async selectSoftware(
+    @Param("id") id: string,
+    @Body() dto: SelectSoftwareTrackDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.coursesService.selectSoftwareTrack(id, req.user.sub, dto.softwareTrackId);
   }
 
   @Post(":id/lessons/:lessonId/complete")

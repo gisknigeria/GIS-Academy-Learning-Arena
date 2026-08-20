@@ -1,5 +1,6 @@
 import { DeliveryMode } from "@prisma/client";
 import {
+  IsArray,
   IsBoolean,
   IsEnum,
   IsInt,
@@ -10,7 +11,23 @@ import {
   Max,
   Min,
   MinLength,
+  ValidateNested,
 } from "class-validator";
+import { Type } from "class-transformer";
+
+export class CourseSoftwareOptionDto {
+  @IsOptional()
+  @IsString()
+  id?: string;
+
+  @IsString()
+  @MinLength(2)
+  name!: string;
+
+  @IsOptional()
+  @IsString()
+  version?: string;
+}
 
 export class CreateCourseDto {
   @IsString()
@@ -70,4 +87,14 @@ export class CreateCourseDto {
   @IsOptional()
   @IsBoolean()
   requiresPayment?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  usesSoftware?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CourseSoftwareOptionDto)
+  softwareOptions?: CourseSoftwareOptionDto[];
 }

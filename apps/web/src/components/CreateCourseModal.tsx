@@ -5,6 +5,7 @@ import { getCourseAccessLevelOptions, trainingCategories } from "../data/knowled
 import { COURSE_PREFIX_OPTIONS, normalizeCourseCode } from "../lib/course-code-utils";
 import { coursesApi } from "../lib/courses-api";
 import type { Course, CreateCoursePayload, DeliveryMode } from "../types/course";
+import { CourseSoftwareOptionsField } from "./CourseSoftwareOptionsField";
 
 type Props = { onClose: () => void; onCreated: (course: Course) => void };
 type Tab = "basic" | "overview";
@@ -34,6 +35,8 @@ export function CreateCourseModal({ onClose, onCreated }: Props) {
     level:           100,
     deliveryMode:    "E_LEARNING",
     requiresPayment: true,
+    usesSoftware: false,
+    softwareOptions: [],
   });
   const [coursePrefix, setCoursePrefix]   = useState(COURSE_PREFIX_OPTIONS[0]);
   const [customPrefix, setCustomPrefix]   = useState("");
@@ -69,6 +72,8 @@ export function CreateCourseModal({ onClose, onCreated }: Props) {
         trainingCategory: form.trainingCategory      || undefined,
         level:           selectedLevel,
         requiresPayment: form.requiresPayment,
+        usesSoftware: form.usesSoftware,
+        softwareOptions: form.usesSoftware ? form.softwareOptions : [],
       });
       onCreated(created);
     } catch (err) {
@@ -156,6 +161,12 @@ export function CreateCourseModal({ onClose, onCreated }: Props) {
                   Requires payment
                 </label>
               </div>
+              <CourseSoftwareOptionsField
+                enabled={Boolean(form.usesSoftware)}
+                options={form.softwareOptions ?? []}
+                onEnabledChange={(enabled) => set("usesSoftware", enabled)}
+                onChange={(options) => set("softwareOptions", options)}
+              />
             </>
           )}
 

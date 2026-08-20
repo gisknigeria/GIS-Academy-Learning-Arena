@@ -4110,6 +4110,70 @@ textarea {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
+/* Optional technology tracks on course and lesson forms */
+.course-software-field {
+  display: grid;
+  gap: 8px;
+  padding: 13px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: #f8fbf9;
+}
+
+.course-software-field__toggle { margin: 0; }
+.course-software-field > .form-hint { margin: 0; }
+.course-software-field__options { display: grid; gap: 10px; }
+.course-software-field__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(120px, 0.8fr) 36px;
+  gap: 8px;
+  align-items: end;
+}
+.course-software-field__row .icon-button { margin-bottom: 2px; }
+
+.course-software-selector {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin: 16px 0;
+  padding: 16px 18px;
+  border: 1px solid #cfe7d7;
+  border-radius: 12px;
+  background: #f4fbf6;
+}
+.course-software-selector strong { color: var(--green-900); }
+.course-software-selector p { margin: 3px 0 0; color: var(--muted); font-size: 0.85rem; }
+.course-software-selector select { min-width: 220px; }
+.course-software-selector__chips { display: flex; flex-wrap: wrap; gap: 7px; justify-content: flex-end; }
+.course-software-selector__chips span {
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #dff3e5;
+  color: var(--green-900);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.lesson-software-badge {
+  display: inline-flex;
+  width: fit-content;
+  margin: 2px 0 5px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: #e8f5ec;
+  color: var(--green-900);
+  font-size: 0.72rem;
+  font-weight: 750;
+}
+
+@media (max-width: 680px) {
+  .course-software-field__row { grid-template-columns: minmax(0, 1fr) 42px; }
+  .course-software-field__row label:first-child { grid-column: 1 / -1; }
+  .course-software-selector { align-items: stretch; flex-direction: column; }
+  .course-software-selector select { width: 100%; min-width: 0; }
+  .course-software-selector__chips { justify-content: flex-start; }
+}
+
 .lesson-note-render .lesson-note-columns {
   align-items: start;
 }

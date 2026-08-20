@@ -48,4 +48,8 @@ export class CreateLessonDto {
   @IsOptional()
   @IsArray()
   attachments?: Array<{ name: string; url: string; type?: string }>;
+
+  @IsOptional()
+  @IsString()
+  softwareTrackId?: string;
 }

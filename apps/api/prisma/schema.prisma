@@ -171,6 +171,8 @@ model Course {
   trainingCategory String?      @default("Academy")
   deliveryMode     DeliveryMode
   requiresPayment  Boolean      @default(true)
+  usesSoftware     Boolean      @default(false)
+  softwareOptions  Json         @default("[]")
   isArchived       Boolean      @default(false)
   lessons          Lesson[]
   classes          Class[]
@@ -282,6 +284,7 @@ model Lesson {
   slideUrl     String?
   mapUrl       String?
   attachments  Json     @default("[]")
+  softwareTrackId String?
   course       Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   module       CourseModule? @relation(fields: [moduleId], references: [id], onDelete: SetNull)
   importedFrom Lesson?  @relation("LessonImports", fields: [importedFromId], references: [id], onDelete: SetNull)
@@ -416,6 +419,7 @@ model Enrollment {
   classId    String?
   progress   Int      @default(0)
   points     Int      @default(0)
+  softwareTrackId String?
   enrolledAt DateTime @default(now())
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)

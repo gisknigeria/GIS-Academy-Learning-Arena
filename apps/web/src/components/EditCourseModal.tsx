@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { getCourseAccessLevelOptions, trainingCategories } from "../data/knowledgeHub";
 import { coursesApi } from "../lib/courses-api";
 import type { Course, DeliveryMode, UpdateCoursePayload } from "../types/course";
+import { CourseSoftwareOptionsField } from "./CourseSoftwareOptionsField";
 
 type Props = { course: Course; onClose: () => void; onSaved: (course: Course) => void };
 
@@ -34,6 +35,8 @@ export function EditCourseModal({ course, onClose, onSaved }: Props) {
     level:             course.level              ?? 100,
     deliveryMode:      course.deliveryMode,
     requiresPayment:   course.requiresPayment,
+    usesSoftware:      course.usesSoftware,
+    softwareOptions:   course.softwareOptions ?? [],
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -112,6 +115,12 @@ export function EditCourseModal({ course, onClose, onSaved }: Props) {
                 <input type="checkbox" checked={form.requiresPayment ?? true} onChange={(e) => set("requiresPayment", e.target.checked)} />
                 Requires payment
               </label>
+              <CourseSoftwareOptionsField
+                enabled={Boolean(form.usesSoftware)}
+                options={form.softwareOptions ?? []}
+                onEnabledChange={(enabled) => set("usesSoftware", enabled)}
+                onChange={(options) => set("softwareOptions", options)}
+              />
             </>
           )}
 

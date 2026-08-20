@@ -137,8 +137,12 @@ export const coursesApi = {
     return apiRequest(`/courses/${courseId}/enroll`, { method: "POST", token });
   },
 
-  isEnrolled(token: string, courseId: string): Promise<{ enrolled: boolean }> {
+  isEnrolled(token: string, courseId: string): Promise<{ enrolled: boolean; softwareTrackId?: string | null }> {
     return apiRequest<{ enrolled: boolean }>(`/courses/${courseId}/enrollment`, { token });
+  },
+
+  selectSoftwareTrack(token: string, courseId: string, softwareTrackId: string) {
+    return apiRequest(`/courses/${courseId}/enrollment/software`, { method: "PATCH", token, body: { softwareTrackId } });
   },
 
   async uploadLessonResource(token: string, file: File, lessonId?: string): Promise<{ url: string; key?: string }> {
