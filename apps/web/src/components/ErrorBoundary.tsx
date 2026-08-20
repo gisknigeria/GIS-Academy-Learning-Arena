@@ -1,6 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import logoMark from "../assets/gis-academy-logo.svg";
+import { recoverFromChunkLoadError } from "../lib/chunk-load-recovery";
 
 type Props = {
   children: ReactNode;
@@ -24,10 +25,11 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error("[ErrorBoundary]", error, info);
+    recoverFromChunkLoadError(error);
   }
 
   handleReset = () => {
-    this.setState({ hasError: false, error: null });
+    window.location.reload();
   };
 
   render() {

@@ -10,6 +10,7 @@ type LessonNoteEditorProps = {
   onChange: (value: string) => void;
   placeholder?: string;
   onUploadMedia?: (file: File) => Promise<string>;
+  onUploadStateChange?: (uploading: boolean) => void;
 };
 
 type ActiveFormats = {
@@ -106,7 +107,7 @@ export function splitPopulatedListItem(editor: HTMLElement, selection: Selection
   return true;
 }
 
-export function LessonNoteEditor({ value, onChange, placeholder, onUploadMedia }: LessonNoteEditorProps) {
+export function LessonNoteEditor({ value, onChange, placeholder, onUploadMedia, onUploadStateChange }: LessonNoteEditorProps) {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showBackgroundPicker, setShowBackgroundPicker] = useState(false);
   const [activeColor, setActiveColor] = useState("");
@@ -334,6 +335,7 @@ export function LessonNoteEditor({ value, onChange, placeholder, onUploadMedia }
     if (!onUploadMedia) return setEditorError("Media uploads are not available right now.");
     if (!files.length) return;
     setUploadingMedia(kind);
+    onUploadStateChange?.(true);
     setEditorError("");
     let insertedCount = 0;
     const failures: string[] = [];
@@ -363,6 +365,7 @@ export function LessonNoteEditor({ value, onChange, placeholder, onUploadMedia }
       }
     } finally {
       setUploadingMedia("");
+      onUploadStateChange?.(false);
     }
   }
 

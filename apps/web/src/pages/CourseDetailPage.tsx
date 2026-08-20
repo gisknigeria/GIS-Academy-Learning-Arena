@@ -71,6 +71,40 @@ function toLessonPayload(form: LessonFormState): CreateLessonPayload {
   };
 }
 
+function lessonSaveErrorMessage(error: unknown): string {
+  const rawMessage = error instanceof Error ? error.message : "";
+  const lowerMessage = rawMessage.toLowerCase();
+
+  if (lowerMessage.includes("payload too large") || lowerMessage.includes('statuscode\":413')) {
+    return "This lesson is too large to save in one lesson. Please split it into two lessons.";
+  }
+  if (lowerMessage.includes('statuscode\":401') || lowerMessage.includes("unauthorized")) {
+    return "Your session expired while saving. Your draft is safe—please sign in again and continue it.";
+  }
+  if (lowerMessage.includes('statuscode\":403') || lowerMessage.includes("forbidden")) {
+    return "Your account does not currently have permission to save lessons.";
+  }
+  if (lowerMessage.includes("software track")) {
+    return "That software track is no longer available. Choose another track or save this as a shared lesson.";
+  }
+  if (lowerMessage.includes("failed to fetch") || lowerMessage.includes("networkerror")) {
+    return "The server could not be reached. Your draft is safe; check your connection and try saving again.";
+  }
+  if (lowerMessage.includes('statuscode\":500') || lowerMessage.includes("internal server error")) {
+    return "The server could not save this lesson. Your draft is safe; please try again shortly.";
+  }
+
+  try {
+    const response = JSON.parse(rawMessage) as { message?: string | string[] };
+    const detail = Array.isArray(response.message) ? response.message.join(" ") : response.message;
+    if (detail) return `Could not save lesson: ${detail}`;
+  } catch {
+    // The request helper may return plain text rather than a JSON error body.
+  }
+
+  return "Could not save lesson. Your draft is safe; check the fields and try again.";
+}
+
 function getMaterialType(nameOrUrl: string, mimeType?: string) {
   const text = `${nameOrUrl} ${mimeType ?? ""}`.toLowerCase();
   if (text.includes("video/") || /\.(mp4|webm|mov|m4v|avi|mkv)(\?|$)/.test(text)) return "Video";
@@ -204,6 +238,7 @@ export function CourseDetailPage() {
   const [libraryLoading, setLibraryLoading] = useState(false);
   const [importingLessonId, setImportingLessonId] = useState("");
   const [uploadingMaterial, setUploadingMaterial] = useState("");
+  const [uploadingEditorMedia, setUploadingEditorMedia] = useState(false);
   const [creatingAssessmentLessonId, setCreatingAssessmentLessonId] = useState("");
   const [saving, setSaving] = useState(false);
   const [enrolled, setEnrolled] = useState(false);
@@ -288,8 +323,18 @@ export function CourseDetailPage() {
   useEffect(() => {
     if (!id || !canManageLessons || !showLessonForm) return;
 
-    localStorage.setItem(getLessonDraftStorageKey(id, user?.id), JSON.stringify({ courseId: id, form }));
-    setHasSavedLessonDraft(true);
+    const saveDraftTimer = window.setTimeout(() => {
+      try {
+        localStorage.setItem(getLessonDraftStorageKey(id, user?.id), JSON.stringify({ courseId: id, form }));
+        setHasSavedLessonDraft(true);
+      } catch {
+        // Saving the lesson to the API must remain usable when browser storage
+        // is disabled or full.
+        setHasSavedLessonDraft(false);
+      }
+    }, 500);
+
+    return () => window.clearTimeout(saveDraftTimer);
   }, [canManageLessons, form, id, showLessonForm, user?.id]);
 
   function clearLessonDraft() {
@@ -458,28 +503,43 @@ export function CourseDetailPage() {
 
   async function handleSaveLesson(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!token || !id) return;
+    if (!token || !id) {
+      setLessonError("Your session is unavailable. Your draft is safe—please sign in again.");
+      return;
+    }
+    if (uploadingMaterial || uploadingEditorMedia) {
+      setLessonError("Please wait for all lesson files to finish uploading before saving.");
+      return;
+    }
+
+    const payload = toLessonPayload(form);
+    if (payload.title.length < 3) {
+      setLessonError("Lesson title must contain at least 3 characters.");
+      return;
+    }
+    if (!Number.isInteger(payload.order) || payload.order < 1) {
+      setLessonError("Lesson position must be a whole number starting from 1.");
+      return;
+    }
+
     setSaving(true);
     setLessonError("");
 
     try {
       if (form.id) {
-        const updated = await coursesApi.updateLesson(token, form.id, toLessonPayload(form));
+        const updated = await coursesApi.updateLesson(token, form.id, payload);
         setLessons((current) =>
           current.map((lesson) => (lesson.id === updated.id ? updated : lesson)).sort((a, b) => a.order - b.order),
         );
       } else {
-        const created = await coursesApi.createLesson(token, id, toLessonPayload(form));
+        const created = await coursesApi.createLesson(token, id, payload);
         setLessons((current) => [...current, created].sort((a, b) => a.order - b.order));
       }
       setShowLessonForm(false);
       setForm(emptyForm);
       clearLessonDraft();
     } catch (error) {
-      const message = error instanceof Error ? error.message.toLowerCase() : "";
-      setLessonError(message.includes("payload too large") || message.includes("statuscode\":413")
-        ? "This lesson note is too large to save in one lesson. Please split it into two lessons."
-        : "Could not save lesson. Check the fields and try again.");
+      setLessonError(lessonSaveErrorMessage(error));
     } finally {
       setSaving(false);
     }
@@ -1010,6 +1070,7 @@ export function CourseDetailPage() {
                       value={form.content}
                       onChange={(value) => setForm((current) => ({ ...current, content: value }))}
                       onUploadMedia={uploadEditorMedia}
+                      onUploadStateChange={setUploadingEditorMedia}
                       placeholder="Write the lesson explanation, examples, instructions, or transcript..."
                     />
                   </div>
@@ -1195,8 +1256,8 @@ export function CourseDetailPage() {
                 <button type="button" className="secondary-button" onClick={() => setShowLessonForm(false)}>
                   Cancel
                 </button>
-                <button className="primary-button" disabled={saving}>
-                  {saving ? "Saving..." : "Save lesson"}
+                <button type="submit" className="primary-button" disabled={saving || Boolean(uploadingMaterial) || uploadingEditorMedia}>
+                  {saving ? "Saving..." : uploadingMaterial || uploadingEditorMedia ? "Uploading files..." : "Save lesson"}
                 </button>
               </div>
             </form>
