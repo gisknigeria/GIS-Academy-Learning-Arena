@@ -3854,7 +3854,107 @@ textarea {
   font-size: 0.88em;
 }
 
-/* Images */
+/* Tables, split layouts, and media */
+.lesson-note-editor__prose .lesson-note-table,
+.lesson-note-editor__prose table {
+  width: 100%;
+  margin: 12px 0;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.lesson-note-editor__prose .lesson-note-table th,
+.lesson-note-editor__prose .lesson-note-table td,
+.lesson-note-editor__prose table th,
+.lesson-note-editor__prose table td {
+  min-width: 72px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.lesson-note-editor__prose .lesson-note-table th,
+.lesson-note-editor__prose table th {
+  background: #edf8f1;
+  color: var(--green-900);
+  font-weight: 700;
+}
+
+.lesson-note-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  width: 100%;
+  margin: 12px 0;
+}
+
+.lesson-note-editor__prose .lesson-note-column {
+  min-height: 140px;
+  padding: 12px;
+  border: 1px dashed #a7cdb5;
+  border-radius: 10px;
+  background: #fbfefc;
+}
+
+.lesson-note-editor__prose .lesson-note-column:focus-within {
+  border-color: var(--green-700);
+  box-shadow: inset 0 0 0 1px var(--green-700);
+}
+
+.lesson-note-editor__prose .lesson-note-column > p:only-child:has(> br:only-child)::before {
+  content: attr(data-placeholder);
+  color: #8a9b93;
+  pointer-events: none;
+}
+
+.lesson-note-media {
+  width: 100%;
+  margin: 12px auto;
+  text-align: center;
+}
+
+.lesson-note-editor__prose .lesson-note-media {
+  padding: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: #f8fbf9;
+}
+
+.lesson-note-media img,
+.lesson-note-media video {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  max-height: 540px;
+  margin: 0 auto;
+  border-radius: 8px;
+}
+
+.lesson-note-media video {
+  width: 100%;
+  background: #101814;
+}
+
+.lesson-note-media figcaption {
+  display: block;
+  min-height: 1.35em;
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-style: italic;
+  line-height: 1.4;
+  text-align: center;
+  outline: none;
+}
+
+.lesson-note-editor__prose .lesson-note-media figcaption:empty::before {
+  content: attr(data-placeholder);
+  color: #8a9b93;
+  font-style: normal;
+  pointer-events: none;
+}
+
 .lesson-note-editor__content .lesson-note-editor__prose img.lesson-note-img,
 .lesson-note-editor__content .tiptap img.lesson-note-img {
   max-width: 100%;
@@ -3980,6 +4080,21 @@ textarea {
   width: 100%;
   max-width: 100% !important;
   overflow-x: auto;
+  border-collapse: collapse;
+}
+
+.lesson-note-render table th,
+.lesson-note-render table td {
+  min-width: 110px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.lesson-note-render table th {
+  background: #edf8f1;
+  color: var(--green-900);
 }
 
 /* Images in the learner read view */
@@ -3993,6 +4108,24 @@ textarea {
   max-width: 100%;
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.lesson-note-render .lesson-note-columns {
+  align-items: start;
+}
+
+.lesson-note-render .lesson-note-column {
+  min-width: 0;
+}
+
+.lesson-note-render .lesson-note-media {
+  max-width: 100% !important;
+}
+
+@media (max-width: 680px) {
+  .lesson-note-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .teachspace-hero {

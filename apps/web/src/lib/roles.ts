@@ -14,8 +14,6 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   JUDGE: "Judge",
   GUEST: "Guest",
   ALUMNI: "Alumni",
-  RESIDENT: "Resident",
-  MERCHANT: "Merchant",
 };
 
 export function getRoleLabel(role: UserRole): string {
@@ -38,14 +36,12 @@ export const COORDINATOR_ROLES: UserRole[] = [
   "SCHOOL_COORDINATOR",
   "CORPORATE_CLIENT",
   "OLYMPIAD_COORDINATOR",
-  "MERCHANT",
 ];
 
 export const LEARNER_ROLES: UserRole[] = [
   "STUDENT",
   "ALUMNI",
   "GUEST",
-  "RESIDENT",
 ];
 
 export function isAdminRole(role: UserRole): boolean {
@@ -79,8 +75,6 @@ export function getVisibleNavPages(role: UserRole): Set<PageId> {
     JUDGE: ["arena"],
     GUEST: ["knowledge", "courses", "learn"],
     ALUMNI: ["knowledge", "courses", "learn", "arena", "certificates"],
-    RESIDENT: ["knowledge", "courses", "learn", "arena", "assessments", "certificates"],
-    MERCHANT: ["courses", "classes", "reports"],
   };
 
   return new Set([...always, ...(byRole[role] ?? [])]);

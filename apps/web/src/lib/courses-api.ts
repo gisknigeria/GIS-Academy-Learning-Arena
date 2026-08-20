@@ -1,4 +1,4 @@
-import { API_BASE_URL, apiRequest, resolveApiAssetUrl } from "./api";
+import { API_BASE_URL, apiRequest, refreshApiAccessToken, resolveApiAssetUrl } from "./api";
 import type {
   Course,
   CourseListResponse,
@@ -146,11 +146,16 @@ export const coursesApi = {
     form.append("file", file);
     if (lessonId) form.append("lessonId", lessonId);
 
-    const response = await fetch(`${API_BASE_URL}/uploads/lesson-resource`, {
+    const upload = (accessToken: string) => fetch(`${API_BASE_URL}/uploads/lesson-resource`, {
       method: "POST",
-      headers: { authorization: `Bearer ${token}` },
+      headers: { authorization: `Bearer ${accessToken}` },
       body: form,
     });
+    let response = await upload(token);
+    if (response.status === 401) {
+      const refreshedToken = await refreshApiAccessToken();
+      if (refreshedToken) response = await upload(refreshedToken);
+    }
 
     if (!response.ok) {
       const errorText = await response.text();

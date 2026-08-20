@@ -10,9 +10,7 @@ export type UserRole =
   | "EXAMINER"
   | "JUDGE"
   | "GUEST"
-  | "ALUMNI"
-  | "RESIDENT"
-  | "MERCHANT";
+  | "ALUMNI";
 
 export type PaymentStatus = "NOT_REQUIRED" | "PENDING" | "PAID" | "OVERDUE" | "BLOCKED";
 
@@ -30,4 +28,5 @@ export type AuthUser = {
 export type AuthResponse = {
   user: AuthUser;
   accessToken: string;
+  refreshToken?: string;
 };

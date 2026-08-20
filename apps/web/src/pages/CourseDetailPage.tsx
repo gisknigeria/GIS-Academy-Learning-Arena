@@ -435,9 +435,10 @@ export function CourseDetailPage() {
     }
   }
 
-  async function uploadEditorImage(file: File): Promise<string> {
+  async function uploadEditorMedia(file: File): Promise<string> {
     if (!token) throw new Error("Your session has expired. Please sign in again.");
-    if (!file.type.startsWith("image/")) throw new Error("Please choose an image file.");
+    const supportedExtension = /\.(png|jpe?g|gif|webp|svg|mp4|webm|mov|m4v|avi|mkv)$/i.test(file.name);
+    if (!file.type.startsWith("image/") && !file.type.startsWith("video/") && !supportedExtension) throw new Error("Please choose an image or video file.");
     const uploaded = await coursesApi.uploadLessonResource(token, file, form.id);
     return uploaded.url;
   }
@@ -961,7 +962,7 @@ export function CourseDetailPage() {
                     <LessonNoteEditor
                       value={form.content}
                       onChange={(value) => setForm((current) => ({ ...current, content: value }))}
-                      onUploadImage={uploadEditorImage}
+                      onUploadMedia={uploadEditorMedia}
                       placeholder="Write the lesson explanation, examples, instructions, or transcript..."
                     />
                   </div>

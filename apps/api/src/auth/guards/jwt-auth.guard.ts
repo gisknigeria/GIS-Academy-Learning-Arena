@@ -20,9 +20,14 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     try {
-      request.user = await this.jwtService.verifyAsync<AuthTokenPayload>(token);
+      const payload = await this.jwtService.verifyAsync<AuthTokenPayload>(token);
+      if (payload.tokenType === "refresh") {
+        throw new UnauthorizedException("A refresh token cannot be used to access this resource.");
+      }
+      request.user = payload;
       return true;
-    } catch {
+    } catch (error) {
+      if (error instanceof UnauthorizedException) throw error;
       throw new UnauthorizedException("Invalid or expired token.");
     }
   }

@@ -1,15 +1,15 @@
 import {
   Bold, Code, Heading1, Heading2, Highlighter, ImagePlus, Italic, Link as LinkIcon,
-  List, ListOrdered, Minus, PaintBucket, Quote, Redo2, Strikethrough,
-  Underline as UnderlineIcon, Undo2,
+  Columns2, List, ListOrdered, Minus, PaintBucket, Quote, Redo2, Strikethrough,
+  Table2, Underline as UnderlineIcon, Undo2, Video,
 } from "lucide-react";
-import { ClipboardEvent, DragEvent, MouseEvent as ReactMouseEvent, useCallback, useEffect, useRef, useState } from "react";
+import { ClipboardEvent, DragEvent, KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent, useCallback, useEffect, useRef, useState } from "react";
 
 type LessonNoteEditorProps = {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
-  onUploadImage?: (file: File) => Promise<string>;
+  onUploadMedia?: (file: File) => Promise<string>;
 };
 
 type ActiveFormats = {
@@ -27,8 +27,8 @@ const EMPTY_FORMATS: ActiveFormats = {
 export function normalizeLessonNoteHtml(value: string): string {
   const trimmed = value.trim();
   if (!trimmed) return "";
-  const hasBlockTag = /<(h1|h2|h3|h4|p|ul|ol|li|blockquote|pre|table|div|section)[\s>]/i.test(trimmed);
-  if (hasBlockTag) return trimmed;
+  const hasEditorMarkup = /<(h1|h2|h3|h4|p|ul|ol|li|blockquote|pre|table|figure|img|video|iframe|hr|div|section|strong|b|em|i|u|s|strike|a|span|br|code|mark|sub|sup)[\s>/]/i.test(trimmed);
+  if (hasEditorMarkup) return trimmed;
   return trimmed
     .split(/\n{2,}/)
     .map((block) => block.trim())
@@ -70,21 +70,53 @@ const BACKGROUND_COLORS = [
   { label: "Light gray", value: "#edf2f7" },
 ];
 
-function readEditorHtml(element: HTMLDivElement): string {
+export function readEditorHtml(element: HTMLDivElement): string {
   const html = element.innerHTML.trim();
-  return !element.textContent?.trim() && !element.querySelector("img, hr") ? "" : html;
+  return !element.textContent?.trim() && !element.querySelector("img, video, iframe, table, hr, .lesson-note-columns") ? "" : html;
 }
 
-export function LessonNoteEditor({ value, onChange, placeholder, onUploadImage }: LessonNoteEditorProps) {
+function isMediaFile(file: File, kind: "image" | "video") {
+  if (file.type.startsWith(`${kind}/`)) return true;
+  return kind === "image"
+    ? /\.(png|jpe?g|gif|webp|svg)$/i.test(file.name)
+    : /\.(mp4|webm|mov|m4v|avi|mkv)$/i.test(file.name);
+}
+
+export function splitPopulatedListItem(editor: HTMLElement, selection: Selection | null): boolean {
+  if (!selection?.rangeCount || !selection.anchorNode) return false;
+  const anchor = selection.anchorNode instanceof Element ? selection.anchorNode : selection.anchorNode.parentElement;
+  const listItem = anchor?.closest("li");
+  if (!listItem || !editor.contains(listItem) || !listItem.textContent?.trim()) return false;
+
+  const range = selection.getRangeAt(0);
+  range.deleteContents();
+  const tailRange = document.createRange();
+  tailRange.setStart(range.startContainer, range.startOffset);
+  tailRange.setEnd(listItem, listItem.childNodes.length);
+  const tail = tailRange.extractContents();
+  const nextItem = document.createElement("li");
+  nextItem.append(tail);
+  if (!nextItem.hasChildNodes()) nextItem.append(document.createElement("br"));
+  listItem.parentNode?.insertBefore(nextItem, listItem.nextSibling);
+  const nextRange = document.createRange();
+  nextRange.selectNodeContents(nextItem);
+  nextRange.collapse(true);
+  selection.removeAllRanges();
+  selection.addRange(nextRange);
+  return true;
+}
+
+export function LessonNoteEditor({ value, onChange, placeholder, onUploadMedia }: LessonNoteEditorProps) {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showBackgroundPicker, setShowBackgroundPicker] = useState(false);
   const [activeColor, setActiveColor] = useState("");
   const [activeBackground, setActiveBackground] = useState("transparent");
   const [formats, setFormats] = useState<ActiveFormats>(EMPTY_FORMATS);
-  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingMedia, setUploadingMedia] = useState<"image" | "video" | "">("");
   const [editorError, setEditorError] = useState("");
   const editorRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
   const colorPickerRef = useRef<HTMLDivElement>(null);
   const backgroundPickerRef = useRef<HTMLDivElement>(null);
   const pendingValues = useRef<string[]>([]);
@@ -176,7 +208,7 @@ export function LessonNoteEditor({ value, onChange, placeholder, onUploadImage }
     const images = Array.from(event.clipboardData.files).filter((file) => file.type.startsWith("image/"));
     if (images.length) {
       saveSelection();
-      void insertImages(images);
+      void insertMedia(images, "image");
       return;
     }
     const rawText = event.clipboardData.getData("text/plain");
@@ -186,8 +218,8 @@ export function LessonNoteEditor({ value, onChange, placeholder, onUploadImage }
   }
 
   function handleDrop(event: DragEvent<HTMLDivElement>) {
-    const images = Array.from(event.dataTransfer.files).filter((file) => file.type.startsWith("image/"));
-    if (!images.length) return;
+    const media = Array.from(event.dataTransfer.files).filter((file) => isMediaFile(file, "image") || isMediaFile(file, "video"));
+    if (!media.length) return;
     event.preventDefault();
     setEditorError("");
 
@@ -197,7 +229,12 @@ export function LessonNoteEditor({ value, onChange, placeholder, onUploadImage }
     } else {
       saveSelection();
     }
-    void insertImages(images);
+    const images = media.filter((file) => isMediaFile(file, "image"));
+    const videos = media.filter((file) => isMediaFile(file, "video"));
+    void (async () => {
+      if (images.length) await insertMedia(images, "image");
+      if (videos.length) await insertMedia(videos, "video");
+    })();
   }
 
   function insertLink() {
@@ -225,41 +262,92 @@ export function LessonNoteEditor({ value, onChange, placeholder, onUploadImage }
     runCommand("backColor", "#fff59d");
   }
 
-  async function insertImages(files: File[]) {
-    if (!onUploadImage) return setEditorError("Image uploads are not available right now.");
+  function insertNodeAtSelection(node: Node) {
+    restoreSelection();
+    const selection = window.getSelection();
+    const selectedRange = selection?.rangeCount ? selection.getRangeAt(0) : null;
+    const range = selectedRange && editorRef.current?.contains(selectedRange.commonAncestorContainer)
+      ? selectedRange
+      : null;
+    const trailingParagraph = document.createElement("p");
+    trailingParagraph.append(document.createElement("br"));
+    const anchor = selection?.anchorNode instanceof Element ? selection.anchorNode : selection?.anchorNode?.parentElement;
+    const selectedFigure = anchor?.closest("figure.lesson-note-media");
+    const selectedTextBlock = anchor?.closest("p, h1, h2, h3, blockquote, pre");
+    const insertionAnchor = selectedFigure && editorRef.current?.contains(selectedFigure)
+      ? selectedFigure
+      : selectedTextBlock && editorRef.current?.contains(selectedTextBlock)
+        ? selectedTextBlock
+        : null;
+    if (insertionAnchor?.parentNode) {
+      if (range && !range.collapsed) range.deleteContents();
+      insertionAnchor.parentNode.insertBefore(node, insertionAnchor.nextSibling);
+      node.parentNode?.insertBefore(trailingParagraph, node.nextSibling);
+    } else if (range) {
+      range.deleteContents();
+      range.insertNode(node);
+      node.parentNode?.insertBefore(trailingParagraph, node.nextSibling);
+    } else {
+      editorRef.current?.append(node, trailingParagraph);
+    }
+    const nextRange = document.createRange();
+    nextRange.setStart(trailingParagraph, 0);
+    nextRange.collapse(true);
+    selection?.removeAllRanges();
+    selection?.addRange(nextRange);
+    savedRange.current = nextRange.cloneRange();
+  }
+
+  function moveCaretTo(element: Element) {
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    range.collapse(true);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    savedRange.current = range.cloneRange();
+    (element as HTMLElement).focus?.();
+  }
+
+  function createMediaFigure(url: string, file: File, kind: "image" | "video") {
+    const figure = document.createElement("figure");
+    figure.className = `lesson-note-media lesson-note-media--${kind}`;
+    figure.contentEditable = "false";
+    const media = document.createElement(kind);
+    media.setAttribute("src", url);
+    if (kind === "image") {
+      media.setAttribute("alt", file.name.replace(/\.[^.]+$/, ""));
+      media.className = "lesson-note-img";
+    } else {
+      (media as HTMLVideoElement).controls = true;
+      (media as HTMLVideoElement).preload = "metadata";
+    }
+    const caption = document.createElement("figcaption");
+    caption.contentEditable = "true";
+    caption.dataset.placeholder = "Add a short description (optional)";
+    caption.setAttribute("aria-label", `${kind === "image" ? "Image" : "Video"} description`);
+    figure.append(media, caption);
+    return figure;
+  }
+
+  async function insertMedia(files: File[], kind: "image" | "video") {
+    if (!onUploadMedia) return setEditorError("Media uploads are not available right now.");
     if (!files.length) return;
-    setUploadingImage(true);
+    setUploadingMedia(kind);
     setEditorError("");
     let insertedCount = 0;
     const failures: string[] = [];
     for (const file of files) {
-      if (!file.type.startsWith("image/")) {
+      if (!isMediaFile(file, kind)) {
         failures.push(file.name);
         continue;
       }
       try {
-        const url = await onUploadImage(file);
-        if (!url) throw new Error("The upload did not return an image URL.");
-        restoreSelection();
-        const image = document.createElement("img");
-        image.src = url;
-        image.alt = file.name.replace(/\.[^.]+$/, "");
-        image.className = "lesson-note-img";
-        const selection = window.getSelection();
-        const selectedRange = selection?.rangeCount ? selection.getRangeAt(0) : null;
-        const range = selectedRange && editorRef.current?.contains(selectedRange.commonAncestorContainer)
-          ? selectedRange
-          : null;
-        if (range) {
-          range.deleteContents(); range.insertNode(image); range.setStartAfter(image); range.collapse(true);
-          selection?.removeAllRanges(); selection?.addRange(range); savedRange.current = range.cloneRange();
-        } else {
-          editorRef.current?.append(image);
-          const fallbackRange = document.createRange();
-          fallbackRange.setStartAfter(image);
-          fallbackRange.collapse(true);
-          savedRange.current = fallbackRange;
-        }
+        const url = await onUploadMedia(file);
+        if (!url) throw new Error("The upload did not return a media URL.");
+        const figure = createMediaFigure(url, file, kind);
+        insertNodeAtSelection(figure);
+        moveCaretTo(figure.querySelector("figcaption")!);
         insertedCount += 1;
       } catch {
         failures.push(file.name);
@@ -271,11 +359,79 @@ export function LessonNoteEditor({ value, onChange, placeholder, onUploadImage }
         saveSelection();
       }
       if (failures.length) {
-        setEditorError(`${failures.length} image${failures.length === 1 ? "" : "s"} could not be inserted. Please try again.`);
+        setEditorError(`${failures.length} ${kind}${failures.length === 1 ? "" : "s"} could not be inserted. Please try again.`);
       }
     } finally {
-      setUploadingImage(false);
+      setUploadingMedia("");
     }
+  }
+
+  function insertTable() {
+    const rowInput = window.prompt("How many rows?", "3");
+    if (rowInput === null) return;
+    const columnInput = window.prompt("How many columns?", "3");
+    if (columnInput === null) return;
+    const rows = Math.min(12, Math.max(1, Number.parseInt(rowInput, 10) || 3));
+    const columns = Math.min(8, Math.max(1, Number.parseInt(columnInput, 10) || 3));
+    const table = document.createElement("table");
+    table.className = "lesson-note-table";
+    const tbody = document.createElement("tbody");
+    for (let rowIndex = 0; rowIndex < rows; rowIndex += 1) {
+      const row = document.createElement("tr");
+      for (let columnIndex = 0; columnIndex < columns; columnIndex += 1) {
+        const cell = document.createElement(rowIndex === 0 ? "th" : "td");
+        cell.append(document.createElement("br"));
+        row.append(cell);
+      }
+      tbody.append(row);
+    }
+    table.append(tbody);
+    insertNodeAtSelection(table);
+    moveCaretTo(table.querySelector("th, td")!);
+    emitChange();
+  }
+
+  function insertColumns() {
+    const columns = document.createElement("div");
+    columns.className = "lesson-note-columns";
+    for (const label of ["Left side", "Right side"]) {
+      const column = document.createElement("div");
+      column.className = "lesson-note-column";
+      column.dataset.placeholder = `${label}: add text, an image, or a video`;
+      const paragraph = document.createElement("p");
+      paragraph.dataset.placeholder = column.dataset.placeholder;
+      paragraph.append(document.createElement("br"));
+      column.append(paragraph);
+      columns.append(column);
+    }
+    insertNodeAtSelection(columns);
+    moveCaretTo(columns.querySelector(".lesson-note-column p")!);
+    emitChange();
+  }
+
+  function handleKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
+    if (event.key !== "Enter" || event.isDefaultPrevented() || event.nativeEvent.isComposing) return;
+    const selection = window.getSelection();
+    const anchor = selection?.anchorNode instanceof Element ? selection.anchorNode : selection?.anchorNode?.parentElement;
+    const caption = anchor?.closest("figcaption");
+    if (caption && !event.shiftKey) {
+      event.preventDefault();
+      const figure = caption.closest("figure");
+      let nextBlock = figure?.nextElementSibling;
+      if (!nextBlock || nextBlock.tagName !== "P") {
+        nextBlock = document.createElement("p");
+        nextBlock.append(document.createElement("br"));
+        figure?.parentNode?.insertBefore(nextBlock, figure.nextSibling);
+        emitChange();
+      }
+      moveCaretTo(nextBlock);
+      return;
+    }
+    if (event.shiftKey) return;
+    if (!editorRef.current || !splitPopulatedListItem(editorRef.current, selection)) return;
+    event.preventDefault();
+    if (selection?.rangeCount) savedRange.current = selection.getRangeAt(0).cloneRange();
+    emitChange();
   }
 
   const buttonClass = (active: boolean) => `icon-button${active ? " icon-button--active" : ""}`;
@@ -322,26 +478,40 @@ export function LessonNoteEditor({ value, onChange, placeholder, onUploadImage }
       <button type="button" className="icon-button" onMouseDown={toolbarAction(() => runCommand("redo"))} title="Redo"><Redo2 size={16} /></button>
       <span className="lesson-note-editor__divider" />
       <button type="button" className={buttonClass(formats.link)} onMouseDown={toolbarAction(insertLink)} title="Insert / edit link"><LinkIcon size={16} /></button>
-      {onUploadImage ? <>
+      <button type="button" className="icon-button" onMouseDown={toolbarAction(insertTable)} title="Insert table" aria-label="Insert table"><Table2 size={16} /></button>
+      <button type="button" className="icon-button" onMouseDown={toolbarAction(insertColumns)} title="Insert two-column section" aria-label="Insert two-column section"><Columns2 size={16} /></button>
+      {onUploadMedia ? <>
         <button
           type="button"
           className="icon-button"
-          disabled={uploadingImage}
+          disabled={Boolean(uploadingMedia)}
           onMouseDown={(event) => { event.preventDefault(); saveSelection(); }}
           onClick={() => imageInputRef.current?.click()}
           title="Insert image"
-          aria-label={uploadingImage ? "Uploading image" : "Insert image"}
+          aria-label={uploadingMedia === "image" ? "Uploading image" : "Insert image"}
         ><ImagePlus size={16} /></button>
-        <input ref={imageInputRef} type="file" accept="image/*" multiple hidden onChange={(event) => { const files = Array.from(event.target.files ?? []); event.currentTarget.value = ""; void insertImages(files); }} />
+        <input ref={imageInputRef} type="file" accept="image/*" multiple hidden onChange={(event) => { const files = Array.from(event.target.files ?? []); event.currentTarget.value = ""; void insertMedia(files, "image"); }} />
+        <button
+          type="button"
+          className="icon-button"
+          disabled={Boolean(uploadingMedia)}
+          onMouseDown={(event) => { event.preventDefault(); saveSelection(); }}
+          onClick={() => videoInputRef.current?.click()}
+          title="Insert video"
+          aria-label={uploadingMedia === "video" ? "Uploading video" : "Insert video"}
+        ><Video size={16} /></button>
+        <input ref={videoInputRef} type="file" accept="video/*,.mp4,.webm,.mov,.m4v" hidden onChange={(event) => { const files = Array.from(event.target.files ?? []); event.currentTarget.value = ""; void insertMedia(files, "video"); }} />
       </> : null}
     </div>
     {editorError ? <p className="lesson-note-editor__error" role="alert">{editorError}</p> : null}
     <div className="lesson-note-editor__content"><div
       ref={editorRef} className="lesson-note-editor__prose" contentEditable suppressContentEditableWarning spellCheck
       role="textbox" aria-multiline="true" aria-label="Lesson notes and instructions"
+      data-no-translate
       data-placeholder={placeholder ?? "Write the lesson explanation, examples, instructions, or transcript..."}
       onInput={() => { emitChange(); saveSelection(); }} onPaste={handlePaste}
-      onDrop={handleDrop} onDragOver={(event) => { if (Array.from(event.dataTransfer.items).some((item) => item.type.startsWith("image/"))) event.preventDefault(); }}
+      onKeyDown={handleKeyDown}
+      onDrop={handleDrop} onDragOver={(event) => { if (Array.from(event.dataTransfer.items).some((item) => item.type.startsWith("image/") || item.type.startsWith("video/"))) event.preventDefault(); }}
       onKeyUp={() => { saveSelection(); updateFormats(); }} onMouseUp={() => { saveSelection(); updateFormats(); }}
       onFocus={() => { saveSelection(); updateFormats(); }}
     /></div>

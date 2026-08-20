@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { AttemptStatus, PaymentStatus, SubmissionStatus, UserRole } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 
-const LEARNER_ROLES: UserRole[] = [UserRole.STUDENT, UserRole.ALUMNI, UserRole.GUEST, UserRole.RESIDENT];
+const LEARNER_ROLES: UserRole[] = [UserRole.STUDENT, UserRole.ALUMNI, UserRole.GUEST];
 const STAFF_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TRAINING_MANAGER];
 const TRAINER_ROLES: UserRole[] = [UserRole.TRAINER, UserRole.EXAMINER];
 

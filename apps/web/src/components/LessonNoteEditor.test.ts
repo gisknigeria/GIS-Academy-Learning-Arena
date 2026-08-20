@@ -13,6 +13,16 @@ describe("normalizeLessonNoteHtml", () => {
     expect(html).toBe("<h2>Heading</h2><p>Body text</p>");
   });
 
+  it("preserves standalone media figures", () => {
+    const html = '<figure class="lesson-note-media"><video src="lesson.mp4"></video><figcaption>Demo</figcaption></figure>';
+    expect(normalizeLessonNoteHtml(html)).toBe(html);
+  });
+
+  it("preserves image-only and inline-formatted legacy notes", () => {
+    expect(normalizeLessonNoteHtml('<img src="map.png" alt="Map">')).toBe('<img src="map.png" alt="Map">');
+    expect(normalizeLessonNoteHtml("<strong>Important</strong>")).toBe("<strong>Important</strong>");
+  });
+
   it("stores an empty editor as an empty value", () => {
     expect(normalizeLessonNoteHtml("   ")).toBe("");
   });

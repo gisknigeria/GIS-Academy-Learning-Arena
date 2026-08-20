@@ -41,6 +41,7 @@ export class CompetitionsGateway implements OnGatewayInit, OnGatewayConnection, 
       const token = (client.handshake.auth && (client.handshake.auth.token || client.handshake.auth.accessToken)) as string | undefined;
       if (token) {
         const payload = this.jwtService.verify(token, { ignoreExpiration: false });
+        if (payload.tokenType === "refresh") throw new UnauthorizedException("Refresh tokens cannot authenticate sockets.");
         // attach minimal user info
         (client as any).data = { user: { id: payload.sub, role: payload.role, email: payload.email } };
         this.logger.log(`Socket ${client.id} authenticated as ${payload.sub}`);

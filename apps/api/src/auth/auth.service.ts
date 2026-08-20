@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, UnauthorizedException } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import { UserRole, UserStatus } from "@prisma/client";
 import { compare } from "bcryptjs";
@@ -13,27 +14,28 @@ import { AuthTokenPayload } from "./types/authenticated-request";
 export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
     private readonly emailService: EmailService,
     private readonly usersService: UsersService,
   ) {}
 
   async register(createUserDto: CreateUserDto) {
-    // Public registration only permits the two self-service account types.
-    // Privileged roles must continue to be assigned by an administrator.
-    const requestedRole = createUserDto.role === UserRole.MERCHANT ? UserRole.MERCHANT : UserRole.RESIDENT;
+    // Public registration only permits learners and trainers. Privileged
+    // roles must continue to be assigned by an administrator.
+    const requestedRole = createUserDto.role === UserRole.TRAINER ? UserRole.TRAINER : UserRole.STUDENT;
     const user = await this.usersService.create({
       ...createUserDto,
       role: requestedRole,
     });
     void this.emailService.sendWelcomeEmail(user.email, user.fullName).catch(() => undefined);
-    const accessToken = await this.signToken({
+    const tokens = await this.signTokens({
       sub: user.id,
       email: user.email,
       role: user.role,
       paymentStatus: user.paymentStatus,
     });
 
-    return { user, accessToken };
+    return { user, ...tokens };
   }
 
   async login(loginDto: LoginDto) {
@@ -54,14 +56,34 @@ export class AuthService {
     }
 
     const safeUser = this.usersService.toSafeUser(user);
-    const accessToken = await this.signToken({
+    const tokens = await this.signTokens({
       sub: user.id,
       email: user.email,
       role: user.role,
       paymentStatus: user.paymentStatus,
     });
 
-    return { user: safeUser, accessToken };
+    return { user: safeUser, ...tokens };
+  }
+
+  async refresh(refreshToken: string) {
+    try {
+      const payload = await this.jwtService.verifyAsync<AuthTokenPayload>(refreshToken);
+      const user = await this.usersService.findSafeById(payload.sub);
+      if (user.status === UserStatus.SUSPENDED) {
+        throw new UnauthorizedException("This account has been suspended.");
+      }
+      const tokens = await this.signTokens({
+        sub: user.id,
+        email: user.email,
+        role: user.role,
+        paymentStatus: user.paymentStatus,
+      });
+      return { user, ...tokens };
+    } catch (error) {
+      if (error instanceof UnauthorizedException) throw error;
+      throw new UnauthorizedException("Invalid or expired refresh token.");
+    }
   }
 
   async getCurrentUser(userId: string) {
@@ -76,7 +98,7 @@ export class AuthService {
     }
 
     const user = await this.usersService.markPaidByPromo(userId);
-    const accessToken = await this.signToken({
+    const tokens = await this.signTokens({
       sub: user.id,
       email: user.email,
       role: user.role,
@@ -86,11 +108,18 @@ export class AuthService {
     return {
       message: "Promo code accepted. Paid courses are now unlocked.",
       user,
-      accessToken,
+      ...tokens,
     };
   }
 
-  private signToken(payload: AuthTokenPayload) {
-    return this.jwtService.signAsync(payload);
+  private async signTokens(payload: AuthTokenPayload) {
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync({ ...payload, tokenType: "access" }),
+      this.jwtService.signAsync(
+        { ...payload, tokenType: "refresh" },
+        { expiresIn: (this.configService.get<string>("JWT_REFRESH_EXPIRES_IN") ?? "30d") as never },
+      ),
+    ]);
+    return { accessToken, refreshToken };
   }
 }

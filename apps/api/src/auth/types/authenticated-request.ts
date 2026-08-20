@@ -5,6 +5,7 @@ export type AuthTokenPayload = {
   email: string;
   role: UserRole;
   paymentStatus: PaymentStatus;
+  tokenType?: "access" | "refresh";
 };
 
 export type AuthenticatedRequest = {
